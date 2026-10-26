@@ -20,7 +20,7 @@ human_gate: true
 reviewers: [security]
 branch: "agent/platform/T-0006-observability"
 worktree: "C:\\Users\\EG\\Desktop\\Conexa\\worktrees\\T-0006"
-pr: ""
+pr: "#5"
 notes: "Validation humaine obligatoire : deploy/. Aucune PII dans les logs, métriques ni libellés (le test de masquage est bloquant). Vérifié sans Docker : compose résolu (10 services), configuration validée (11 alertes, 4 tableaux de bord), masquage statique vert. Reste à exécuter sur un poste Docker : pnpm test:observability:runtime et la trace de bout en bout gateway → service → bus, qui exige le gabarit T-0005 (non livré)."
 ---
 
