@@ -3,7 +3,7 @@ id: T-0002
 title: "Environnement de développement Docker Compose"
 feature: F0.2
 agent: platform
-status: in_progress
+status: review
 depends_on: [T-0001]
 size: M
 owned_paths:
@@ -21,7 +21,7 @@ human_gate: true
 reviewers: [security]
 branch: "agent/platform/T-0002-compose-dev"
 worktree: "C:\\Users\\EG\\Desktop\\Conexa\\worktrees\\T-0002"
-pr: ""
+pr: "https://github.com/junguck/CONEXA/pull/4"
 notes: "Validation humaine obligatoire : tout changement dans deploy/. Aucune clé Campay réelle, mots de passe de développement uniquement dans .env.example."
 ---
 
