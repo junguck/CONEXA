@@ -60,7 +60,7 @@ La CI (`.github/workflows/ci.yml`) refuse automatiquement une PR qui sort des ch
 - **Base de comparaison** : `origin/main` par défaut ; `--working-tree` inclut le travail non commité ; `--branch` force la branche (utile en CI ou après un rebase).
 - **Résolution de la tâche** : `agent/<agent>/T-xxxx-…`, ou le champ `branch:` de la tâche pour les branches `v1/…`.
 - **Propriété étendue** : les `owned_paths` de la tâche s'ajoutent aux chemins de l'agent, sinon un agent ne pourrait pas livrer une tranche verticale (écran + service + migration).
-- **Secrets** : `check-secrets` couvre l'arbre de travail ; `gitleaks` couvre l'historique et reste l'autorité. `pnpm audit --audit-level=high` bloque les vulnérabilités hautes.
+- **Secrets** : `check-secrets` couvre l'arbre de travail ; `gitleaks` (image épinglée) couvre tout l'historique et reste l'autorité. `pnpm audit --audit-level=high` bloque les vulnérabilités hautes.
 - **CI** : `quality` (format, docs, commits conventionnels, lint/types/tests/build filtrés, intégration si définie, audit), `guards` (propriété, migrations, contrats), `privacy` (PII, secrets, gitleaks), `python-services` (worker IA quand `services/ai-worker/pyproject.toml` existe).
 - **Étiquettes et revue** : `.github/labels.yml` synchronisé par `.github/workflows/labels.yml` ; `.github/CODEOWNERS` et le modèle de PR rappellent `human-ok`, `review:architect-ok`, `review:security-ok`, `review:qa-ok`.
 - **`pnpm ci:guards`** enchaîne tous les gardes et leurs tests ; à lancer avant d'ouvrir une PR.

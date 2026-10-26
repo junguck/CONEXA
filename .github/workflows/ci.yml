@@ -88,10 +88,11 @@ jobs:
       - name: Secrets (arbre de travail)
         run: python3 tools/check-secrets.py
       - name: gitleaks (historique git)
-        uses: gitleaks/gitleaks-action@v2
-        env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-          GITLEAKS_LICENSE: ${{ secrets.GITLEAKS_LICENSE }}
+        # Image épinglée : l'action gitleaks calcule une plage de commits fragile
+        # sur les PR empilées. Ici la plage est explicite et couvre tout l'historique.
+        run: |
+          docker run --rm -v "$PWD:/repo" ghcr.io/gitleaks/gitleaks:v8.24.3 \
+            detect --source=/repo --redact --verbose --no-banner --log-opts=--all
 
   python-services:
     name: Services Python (worker IA)
