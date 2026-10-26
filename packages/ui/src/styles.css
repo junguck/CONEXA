@@ -5,6 +5,19 @@
  * classe (dk, lt). Les composants ne lisent que ces variables.
  */
 
+/* Repères d'angle des consoles desktop (maquette v1, .plate.tick). */
+.cxa-tick::before {
+  content: '';
+  position: absolute;
+  inset: -1px;
+  pointer-events: none;
+  background:
+    linear-gradient(var(--act), var(--act)) 0 0 / 12px 2px no-repeat,
+    linear-gradient(var(--act), var(--act)) 0 0 / 2px 12px no-repeat,
+    linear-gradient(var(--act), var(--act)) 100% 100% / 12px 2px no-repeat,
+    linear-gradient(var(--act), var(--act)) 100% 100% / 2px 12px no-repeat;
+}
+
 /* Accent plein : dégradé pour Meet, couleur unie ailleurs. */
 .cxa-gradient {
   background: var(--grad);
