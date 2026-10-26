@@ -1,0 +1,15 @@
+{
+  "service": "notifications",
+  "base_path": "",
+  "upstream": "http://localhost:3018",
+  "internal": false,
+  "routes": [
+    { "method": "GET", "path": "/health", "auth": false },
+    { "method": "GET", "path": "/ready", "auth": false },
+    { "method": "GET", "path": "/push/key", "auth": true },
+    { "method": "GET", "path": "/push/subscriptions", "auth": true },
+    { "method": "POST", "path": "/push/subscriptions", "auth": true },
+    { "method": "DELETE", "path": "/push/subscriptions/:id", "auth": true },
+    { "method": "GET", "path": "/push/deliveries", "auth": true }
+  ]
+}
