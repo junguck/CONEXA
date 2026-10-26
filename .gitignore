@@ -1,0 +1,28 @@
+# Dépendances
+node_modules/
+.pnpm-store/
+
+# Builds et caches
+dist/
+.next/
+out/
+coverage/
+.turbo/
+*.tsbuildinfo
+
+# Secrets locaux — seul .env.example est versionné
+.env
+.env.*
+!.env.example
+
+# Worktrees git (voir agents/GIT_WORKFLOW.md)
+worktrees/
+
+# Divers
+*.log
+.DS_Store
+Thumbs.db
+.idea/
+.vscode/
+__pycache__/
+*.pyc

@@ -1,0 +1,13 @@
+packages:
+  - apps/*
+  - services/*
+  - services/_runtimes/*
+  - packages/*
+
+# Versions épinglées dans les manifestes (le lockfile fait foi).
+saveExact: true
+engineStrict: true
+
+# Scripts d'installation autorisés (pnpm 12 bloque les build scripts par défaut).
+allowBuilds:
+  lefthook: true

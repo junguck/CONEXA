@@ -1,0 +1,1113 @@
+<!DOCTYPE html>
+<html lang="fr" class="dark">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>CONVEXA - Pro & Dating App</title>
+  <!-- Tailwind CSS -->
+  <script src="https://cdn.tailwindcss.com"></script>
+  <!-- Google Fonts: Plus Jakarta Sans & Space Grotesk -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@300;400;500;600;700;800&family=Space+Grotesk:wght@500;700&display=swap" rel="stylesheet">
+  <!-- Lucide Icons -->
+  <script src="https://unpkg.com/lucide@latest"></script>
+  
+  <script>
+    tailwind.config = {
+      darkMode: 'class',
+      theme: {
+        extend: {
+          colors: {
+            brand: {
+              black: '#07090e',
+              dark: '#0e131f',
+              card: '#161d2f',
+              border: '#273248',
+              blue: '#00a8ff',
+              blueHover: '#008ecc',
+              blueGlow: 'rgba(0, 168, 255, 0.35)',
+              gray: '#64748b',
+              grayDark: '#334155',
+              love: '#ff2a6d',
+              loveGlow: 'rgba(255, 42, 109, 0.35)'
+            }
+          },
+          fontFamily: {
+            sans: ['"Plus Jakarta Sans"', 'sans-serif'],
+            display: ['"Space Grotesk"', 'sans-serif']
+          }
+        }
+      }
+    }
+  </script>
+
+  <style>
+    body {
+      background-color: #030508;
+      font-family: 'Plus Jakarta Sans', sans-serif;
+      color: #f1f5f9;
+      user-select: none;
+    }
+
+    /* Custom Glassmorphism */
+    .glass-card {
+      background: rgba(22, 29, 47, 0.75);
+      backdrop-filter: blur(16px);
+      -webkit-backdrop-filter: blur(16px);
+      border: 1px solid rgba(255, 255, 255, 0.08);
+    }
+
+    .glass-pill {
+      background: rgba(255, 255, 255, 0.06);
+      backdrop-filter: blur(8px);
+      border: 1px solid rgba(255, 255, 255, 0.1);
+    }
+
+    /* Card Stack Transitions */
+    .swipe-card {
+      transition: transform 0.3s cubic-bezier(0.2, 0.8, 0.2, 1), opacity 0.3s ease;
+      will-change: transform, opacity;
+    }
+
+    /* Custom Scrollbars */
+    ::-webkit-scrollbar {
+      width: 4px;
+      height: 4px;
+    }
+    ::-webkit-scrollbar-track {
+      background: rgba(0, 0, 0, 0.2);
+    }
+    ::-webkit-scrollbar-thumb {
+      background: rgba(0, 168, 255, 0.3);
+      border-radius: 999px;
+    }
+
+    /* Electric Neon Animations */
+    @keyframes pulseGlow {
+      0%, 100% { box-shadow: 0 0 15px rgba(0, 168, 255, 0.3); }
+      50% { box-shadow: 0 0 30px rgba(0, 168, 255, 0.7); }
+    }
+    .neon-pulse {
+      animation: pulseGlow 3s infinite ease-in-out;
+    }
+
+    @keyframes radarScan {
+      0% { transform: rotate(0deg); }
+      100% { transform: rotate(360deg); }
+    }
+    .radar-sweep {
+      animation: radarScan 4s linear infinite;
+    }
+  </style>
+</head>
+<div class="min-h-screen flex flex-col items-center justify-center p-0 sm:p-4 bg-[#030508]">
+
+  <!-- Top Global Bar (Desktop Controls) -->
+  <header class="w-full max-w-md sm:max-w-4xl mb-2 sm:mb-4 px-4 py-2 flex items-center justify-between text-xs text-slate-400">
+    <div class="flex items-center space-x-2">
+      <span class="inline-block w-2 h-2 rounded-full bg-emerald-500 animate-ping"></span>
+      <span class="font-medium text-slate-300">CONVEXA Prototype v2.4</span>
+    </div>
+    <div class="flex items-center space-x-3">
+      <button onclick="toggleDeviceFrame()" id="frameToggleBtn" class="hover:text-brand-blue transition flex items-center space-x-1 bg-slate-900 px-2.5 py-1 rounded-lg border border-slate-800">
+        <i data-lucide="smartphone" class="w-3.5 h-3.5"></i>
+        <span class="hidden sm:inline">Vue Smartphone</span>
+      </button>
+      <button onclick="triggerNotification('Filtres avancés appliqués avec succès !')" class="hover:text-brand-blue transition flex items-center space-x-1 bg-slate-900 px-2.5 py-1 rounded-lg border border-slate-800">
+        <i data-lucide="sliders" class="w-3.5 h-3.5"></i>
+        <span>Filtres</span>
+      </button>
+    </div>
+  </header>
+
+  <!-- MAIN CONTAINER / PHONE FRAME -->
+  <main id="appFrame" class="w-full max-w-md h-[92vh] sm:h-[840px] bg-brand-black sm:rounded-[42px] border-0 sm:border-[8px] border-slate-800 shadow-2xl relative flex flex-col overflow-hidden transition-all duration-300">
+    
+    <!-- TOP STATUS BAR (Mobile aesthetic) -->
+    <div class="w-full px-6 pt-3 pb-1 flex items-center justify-between text-[11px] font-semibold text-slate-400 z-50 bg-brand-black/80 backdrop-blur-md">
+      <span>09:41</span>
+      <!-- Dynamic Brand Switch Header -->
+      <div class="flex items-center space-x-1">
+        <div id="statusDot" class="w-1.5 h-1.5 rounded-full bg-brand-blue"></div>
+        <span id="modeStatusText" class="tracking-widest uppercase font-bold text-[10px] text-brand-blue">MODE PRO</span>
+      </div>
+      <div class="flex items-center space-x-1">
+        <i data-lucide="wifi" class="w-3 h-3"></i>
+        <i data-lucide="battery" class="w-3.5 h-3.5"></i>
+      </div>
+    </div>
+
+    <!-- CONVEXA APP HEADER & MODE TOGGLE -->
+    <div class="px-5 py-2.5 flex items-center justify-between border-b border-slate-800/80 z-40 bg-brand-black">
+      
+      <!-- Brand Logo SVG faithful to branding image -->
+      <div class="flex items-center space-x-2 cursor-pointer" onclick="switchTab('feed')">
+        <div class="relative w-8 h-8 flex items-center justify-center bg-slate-950 rounded-lg border border-slate-800 overflow-hidden">
+          <!-- CXA SVG Icon -->
+          <svg viewBox="0 0 100 100" class="w-6 h-6">
+            <!-- Double C -->
+            <path d="M 32 30 A 20 20 0 1 0 32 70" fill="none" stroke="#ffffff" stroke-width="8" stroke-linecap="round"/>
+            <path d="M 38 38 A 12 12 0 1 0 38 62" fill="none" stroke="#00a8ff" stroke-width="6" stroke-linecap="round"/>
+            <!-- Stylized X -->
+            <line x1="50" y1="32" x2="70" y2="68" stroke="#ffffff" stroke-width="8" stroke-linecap="round"/>
+            <line x1="58" y1="32" x2="78" y2="68" stroke="#00a8ff" stroke-width="6" stroke-linecap="round"/>
+            <!-- Lambda A without bar -->
+            <path d="M 72 68 L 84 32 L 96 68" fill="none" stroke="#00a8ff" stroke-width="7" stroke-linecap="round" stroke-linejoin="round"/>
+          </svg>
+        </div>
+        <div>
+          <!-- CONVEXA Styled Typography -->
+          <div class="flex items-center space-x-[1px] font-display font-extrabold tracking-wider text-base leading-none">
+            <span class="text-white relative">C<span class="absolute left-[1px] text-brand-blue opacity-80">C</span></span>
+            <span class="text-white">ONVE</span>
+            <span class="text-brand-blue">X</span>
+            <span class="text-brand-blue font-light">Λ</span>
+          </div>
+          <span id="subHeaderTag" class="text-[9px] text-slate-400 font-medium tracking-tight block mt-0.5">Rencontres Pro & Relational</span>
+        </div>
+      </div>
+
+      <!-- HYBRID DUAL MODE TOGGLE SWITCH -->
+      <div class="bg-slate-900 p-1 rounded-full border border-slate-800 flex items-center relative w-28 h-8">
+        <!-- Sliding Glow indicator -->
+        <div id="modePill" class="absolute top-1 left-1 w-[50px] h-[22px] bg-brand-blue rounded-full transition-all duration-300 shadow-md"></div>
+        
+        <button onclick="setAppMode('pro')" class="relative z-10 w-1/2 text-[10px] font-bold text-center transition-colors duration-200 text-slate-950" id="btnModePro">
+          PRO
+        </button>
+        <button onclick="setAppMode('love')" class="relative z-10 w-1/2 text-[10px] font-bold text-center transition-colors duration-200 text-slate-400" id="btnModeLove">
+          AMOUR
+        </button>
+      </div>
+    </div>
+
+    <!-- MAIN VIEWPORT (Dynamic Screen Containers) -->
+    <div id="appBody" class="flex-1 relative overflow-hidden bg-gradient-to-b from-brand-black via-brand-dark to-brand-black">
+      
+      <!-- ========================================== -->
+      <!-- TAB 1: FEED / DISCOVERY (SWIPE CARDS) -->
+      <!-- ========================================== -->
+      <section id="tab-feed" class="app-tab active absolute inset-0 flex flex-col p-4 overflow-hidden">
+        
+        <!-- Filter bar / Sub-toggle -->
+        <div class="flex items-center justify-between mb-3">
+          <div class="flex items-center space-x-1.5 bg-slate-900/90 p-1 rounded-xl border border-slate-800/80 text-[11px]">
+            <button onclick="setFeedLayout('stack')" id="btnFeedStack" class="px-2.5 py-1 rounded-lg font-medium bg-brand-blue text-slate-950">Deck Swipe</button>
+            <button onclick="setFeedLayout('grid')" id="btnFeedGrid" class="px-2.5 py-1 rounded-lg font-medium text-slate-400 hover:text-white">Grille Synergie</button>
+          </div>
+
+          <button onclick="openFilterModal()" class="w-8 h-8 rounded-xl bg-slate-900 border border-slate-800 flex items-center justify-center text-slate-300 hover:text-brand-blue transition">
+            <i data-lucide="sliders-horizontal" class="w-4 h-4"></i>
+          </button>
+        </div>
+
+        <!-- STACK VIEW CONTAINER -->
+        <div id="feedStackView" class="flex-1 relative flex items-center justify-center">
+          
+          <!-- Card Deck Placeholder for JS insertion -->
+          <div id="cardsDeck" class="relative w-full h-full max-h-[510px]">
+            <!-- Dynamic cards rendered by JS -->
+          </div>
+
+        </div>
+
+        <!-- GRID VIEW CONTAINER (Hidden by default) -->
+        <div id="feedGridView" class="hidden flex-1 overflow-y-auto pr-1 grid grid-cols-2 gap-3 pb-16">
+          <!-- Rendered dynamically -->
+        </div>
+
+        <!-- SWIPE ACTION BUTTONS (Only visible in Stack view) -->
+        <div id="swipeControls" class="flex items-center justify-center space-x-5 py-2 z-30">
+          <button onclick="swipeAction('pass')" class="w-12 h-12 rounded-full bg-slate-900 border border-slate-800 text-rose-500 flex items-center justify-center shadow-lg hover:scale-110 active:scale-95 transition">
+            <i data-lucide="x" class="w-6 h-6"></i>
+          </button>
+          
+          <button onclick="triggerSuperBoost()" class="w-10 h-10 rounded-full bg-slate-900 border border-amber-500/40 text-amber-400 flex items-center justify-center shadow-lg hover:scale-110 active:scale-95 transition">
+            <i data-lucide="zap" class="w-5 h-5 fill-amber-400"></i>
+          </button>
+
+          <button onclick="swipeAction('like')" class="w-14 h-14 rounded-full bg-brand-blue text-slate-950 flex items-center justify-center shadow-lg shadow-brand-blue/30 hover:scale-110 active:scale-95 transition neon-pulse">
+            <i data-lucide="bookmark" id="likeIcon" class="w-7 h-7"></i>
+          </button>
+        </div>
+
+      </section>
+
+      <!-- ========================================== -->
+      <!-- TAB 2: RADAR & RESEAU PROXIMITÉ -->
+      <!-- ========================================== -->
+      <section id="tab-radar" class="app-tab hidden absolute inset-0 flex flex-col p-4 overflow-hidden">
+        <div class="text-center mb-2">
+          <h2 class="text-base font-bold text-white flex items-center justify-center space-x-2">
+            <i data-lucide="radar" class="w-4 h-4 text-brand-blue"></i>
+            <span>Radar de Synergie Convexa</span>
+          </h2>
+          <p class="text-[11px] text-slate-400">Découvrez les profils qualifiés autour de vous (3km)</p>
+        </div>
+
+        <!-- RADAR VISUAL CANVAS / DISPLAY -->
+        <div class="flex-1 relative rounded-3xl bg-slate-950 border border-slate-800/80 overflow-hidden flex items-center justify-center">
+          
+          <!-- Concentric circles -->
+          <div class="absolute w-72 h-72 rounded-full border border-slate-800/60"></div>
+          <div class="absolute w-52 h-52 rounded-full border border-slate-800/80"></div>
+          <div class="absolute w-32 h-32 rounded-full border border-brand-blue/30"></div>
+          <div class="absolute w-12 h-12 rounded-full bg-brand-blue/10 border border-brand-blue flex items-center justify-center">
+            <div class="w-3 h-3 bg-brand-blue rounded-full animate-ping"></div>
+          </div>
+
+          <!-- Radar Sweeper -->
+          <div class="absolute w-72 h-72 rounded-full pointer-events-none radar-sweep" style="background: conic-gradient(from 0deg, rgba(0, 168, 255, 0.25) 0deg, transparent 60deg, transparent 360deg);"></div>
+
+          <!-- Interactive Nearby Profile Dots -->
+          <div onclick="openProfileModal(0)" class="absolute top-16 left-20 cursor-pointer group">
+            <div class="relative flex items-center justify-center">
+              <span class="absolute -top-6 bg-slate-900 border border-slate-700 text-[9px] font-bold px-1.5 py-0.5 rounded text-brand-blue opacity-0 group-hover:opacity-100 transition">Alexandre (CTO)</span>
+              <img src="https://images.unsplash.com/photo-1534528741775-53994a69daeb?auto=format&fit=crop&w=120&q=80" class="w-8 h-8 rounded-full border-2 border-brand-blue object-cover shadow-md">
+            </div>
+          </div>
+
+          <div onclick="openProfileModal(1)" class="absolute bottom-20 right-16 cursor-pointer group">
+            <div class="relative flex items-center justify-center">
+              <span class="absolute -top-6 bg-slate-900 border border-slate-700 text-[9px] font-bold px-1.5 py-0.5 rounded text-amber-400 opacity-0 group-hover:opacity-100 transition">Sophie (VC Investor)</span>
+              <img src="https://images.unsplash.com/photo-1517841905240-472988babdf9?auto=format&fit=crop&w=120&q=80" class="w-8 h-8 rounded-full border-2 border-amber-400 object-cover shadow-md">
+            </div>
+          </div>
+
+          <div onclick="openProfileModal(2)" class="absolute top-28 right-20 cursor-pointer group">
+            <div class="relative flex items-center justify-center">
+              <span class="absolute -top-6 bg-slate-900 border border-slate-700 text-[9px] font-bold px-1.5 py-0.5 rounded text-emerald-400 opacity-0 group-hover:opacity-100 transition">Marc (Fondateur)</span>
+              <img src="https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?auto=format&fit=crop&w=120&q=80" class="w-8 h-8 rounded-full border-2 border-emerald-400 object-cover shadow-md">
+            </div>
+          </div>
+        </div>
+
+        <div class="mt-3 p-2.5 rounded-2xl bg-slate-900/90 border border-slate-800 text-xs flex items-center justify-between">
+          <div class="flex items-center space-x-2">
+            <div class="w-2 h-2 rounded-full bg-emerald-400"></div>
+            <span class="text-slate-300 font-medium">8 opportunités actives dans la zone</span>
+          </div>
+          <button onclick="triggerNotification('Radar réactualisé !')" class="text-brand-blue font-bold text-[11px] hover:underline">Actualiser</button>
+        </div>
+      </section>
+
+      <!-- ========================================== -->
+      <!-- TAB 3: ASSISTANT IA & MATCHMAKER (GEMINI) -->
+      <!-- ========================================== -->
+      <section id="tab-ai" class="app-tab hidden absolute inset-0 flex flex-col p-4 overflow-hidden">
+        
+        <!-- Header -->
+        <div class="flex items-center justify-between pb-3 border-b border-slate-800">
+          <div class="flex items-center space-x-2">
+            <div class="w-8 h-8 rounded-xl bg-gradient-to-tr from-brand-blue to-cyan-400 flex items-center justify-center text-slate-950 font-bold">
+              <i data-lucide="sparkles" class="w-4 h-4"></i>
+            </div>
+            <div>
+              <h2 class="text-sm font-bold text-white">Convexa AI Matchmaker</h2>
+              <p class="text-[10px] text-slate-400">Projeté par Gemini 3.1 Flash</p>
+            </div>
+          </div>
+          <span class="px-2 py-0.5 bg-brand-blue/10 text-brand-blue border border-brand-blue/20 rounded-full text-[10px] font-bold">PRO & AMOUR</span>
+        </div>
+
+        <!-- AI Chat Body -->
+        <div id="aiChatBox" class="flex-1 overflow-y-auto py-3 space-y-3 pr-1 text-xs">
+          <!-- AI Initial Greeting -->
+          <div class="flex items-start space-x-2">
+            <div class="w-6 h-6 rounded-lg bg-brand-blue/20 border border-brand-blue/40 flex items-center justify-center text-brand-blue text-[10px] font-bold shrink-0">
+              CX
+            </div>
+            <div class="bg-slate-900 border border-slate-800 p-3 rounded-2xl rounded-tl-none max-w-[85%] text-slate-200 leading-relaxed">
+              Bonjour ! Je suis votre conseiller hybride **Convexa AI**. 
+              <br><br>
+              Que cherchez-vous aujourd'hui ? Un **Associé Tech**, un **Mentor Finance** ou un **Partenaire de vie** partageant vos passions ?
+            </div>
+          </div>
+        </div>
+
+        <!-- Prompt Suggestions -->
+        <div class="flex items-center space-x-1.5 overflow-x-auto py-2 text-[10px]">
+          <button onclick="sendAiPrompt('Trouve-moi un CTO Flutter à Paris')" class="px-2.5 py-1 rounded-full bg-slate-900 border border-slate-800 text-slate-300 whitespace-nowrap hover:border-brand-blue">
+            💻 Chercher un CTO
+          </button>
+          <button onclick="sendAiPrompt('Comment optimiser mon pitch introductif Pro ?')" class="px-2.5 py-1 rounded-full bg-slate-900 border border-slate-800 text-slate-300 whitespace-nowrap hover:border-brand-blue">
+            💡 Conseil Pitch
+          </button>
+          <button onclick="sendAiPrompt('Quels profils Amour match avec mon style de vie d\'entrepreneur ?')" class="px-2.5 py-1 rounded-full bg-slate-900 border border-slate-800 text-slate-300 whitespace-nowrap hover:border-brand-blue">
+            ❤️ Matchs Amour
+          </button>
+        </div>
+
+        <!-- Input Box -->
+        <form onsubmit="handleAiSubmit(event)" class="mt-1 flex items-center space-x-2">
+          <input type="text" id="aiInput" placeholder="Demandez à l'IA Convexa..." class="flex-1 bg-slate-900 border border-slate-800 rounded-xl px-3 py-2 text-xs text-white focus:outline-none focus:border-brand-blue">
+          <button type="submit" class="p-2 bg-brand-blue text-slate-950 rounded-xl font-bold hover:bg-brand-blueHover transition">
+            <i data-lucide="send" class="w-4 h-4"></i>
+          </button>
+        </form>
+
+      </section>
+
+      <!-- ========================================== -->
+      <!-- TAB 4: MESSAGES & CONNECTIONS -->
+      <!-- ========================================== -->
+      <section id="tab-messages" class="app-tab hidden absolute inset-0 flex flex-col p-4 overflow-hidden">
+        
+        <div class="flex items-center justify-between mb-3">
+          <h2 class="text-base font-bold text-white">Vos Conversations</h2>
+          <span class="text-xs px-2 py-0.5 rounded-full bg-brand-blue/20 text-brand-blue font-bold">3 Nouvelles</span>
+        </div>
+
+        <!-- Sub Tabs: Pro Chats vs Love Chats -->
+        <div class="flex border-b border-slate-800 mb-3 text-xs font-semibold">
+          <button onclick="switchChatCategory('pro')" id="chatTabPro" class="flex-1 pb-2 border-b-2 border-brand-blue text-brand-blue text-center">
+            Réseau Pro (2)
+          </button>
+          <button onclick="switchChatCategory('love')" id="chatTabLove" class="flex-1 pb-2 border-b-2 border-transparent text-slate-400 text-center">
+            Rencontres Perso (1)
+          </button>
+        </div>
+
+        <!-- Chat List Container -->
+        <div id="chatList" class="flex-1 overflow-y-auto space-y-2 pr-1">
+          <!-- Rendered via JS -->
+        </div>
+
+      </section>
+
+      <!-- ========================================== -->
+      <!-- TAB 5: MON PROFIL (DUAL FACET) -->
+      <!-- ========================================== -->
+      <section id="tab-profile" class="app-tab hidden absolute inset-0 flex flex-col p-4 overflow-y-auto">
+        
+        <!-- Profile Header -->
+        <div class="flex flex-col items-center text-center pt-2 pb-4">
+          <div class="relative">
+            <img id="myProfileAvatar" src="https://images.unsplash.com/photo-1534528741775-53994a69daeb?auto=format&fit=crop&w=300&q=80" class="w-20 h-20 rounded-full object-cover border-2 border-brand-blue shadow-xl">
+            <button onclick="triggerNotification('Mise à jour de la photo...')" class="absolute bottom-0 right-0 w-6 h-6 rounded-full bg-brand-blue text-slate-950 flex items-center justify-center shadow">
+              <i data-lucide="camera" class="w-3.5 h-3.5"></i>
+            </button>
+          </div>
+
+          <h2 class="mt-2 text-base font-bold text-white flex items-center space-x-1.5">
+            <span>Camille Laurier</span>
+            <i data-lucide="badge-check" class="w-4 h-4 text-brand-blue"></i>
+          </h2>
+          <p class="text-xs text-slate-400">Fondatrice Tech & Product Designer</p>
+          <p class="text-[11px] text-slate-500 flex items-center mt-0.5">
+            <i data-lucide="map-pin" class="w-3 h-3 mr-1"></i> Paris, France
+          </p>
+        </div>
+
+        <!-- Dual Facet Toggle Stats -->
+        <div class="grid grid-cols-2 gap-3 mb-4">
+          <div class="p-3 rounded-2xl bg-slate-900 border border-slate-800 text-center">
+            <span class="block text-lg font-extrabold text-brand-blue">94%</span>
+            <span class="text-[10px] text-slate-400 uppercase tracking-wider font-semibold">Complétion Pro</span>
+          </div>
+          <div class="p-3 rounded-2xl bg-slate-900 border border-slate-800 text-center">
+            <span class="block text-lg font-extrabold text-brand-love">88%</span>
+            <span class="text-[10px] text-slate-400 uppercase tracking-wider font-semibold">Complétion Perso</span>
+          </div>
+        </div>
+
+        <!-- Settings Cards -->
+        <div class="space-y-3 text-xs">
+          <!-- Section 1 -->
+          <div class="bg-slate-900/80 rounded-2xl p-3 border border-slate-800 space-y-2">
+            <span class="text-[10px] font-bold text-slate-400 uppercase tracking-wider">Paramètres de Visibilité</span>
+            
+            <div class="flex items-center justify-between py-1">
+              <span class="text-slate-200">Mode Pro Actif</span>
+              <input type="checkbox" checked class="accent-brand-blue">
+            </div>
+            <div class="flex items-center justify-between py-1">
+              <span class="text-slate-200">Mode Amour Actif</span>
+              <input type="checkbox" checked class="accent-brand-love">
+            </div>
+            <div class="flex items-center justify-between py-1">
+              <span class="text-slate-200">Séparation stricte des profils</span>
+              <input type="checkbox" checked class="accent-brand-blue">
+            </div>
+          </div>
+
+          <!-- Section 2 -->
+          <div class="bg-slate-900/80 rounded-2xl p-3 border border-slate-800 space-y-2">
+            <span class="text-[10px] font-bold text-slate-400 uppercase tracking-wider">Badges & Vérification</span>
+            <div class="flex items-center justify-between py-1">
+              <div class="flex items-center space-x-2">
+                <i data-lucide="shield-check" class="w-4 h-4 text-emerald-400"></i>
+                <span class="text-slate-200">Identité Certifiée (LinkedIn)</span>
+              </div>
+              <span class="text-[10px] bg-emerald-500/10 text-emerald-400 font-bold px-2 py-0.5 rounded-full">Actif</span>
+            </div>
+          </div>
+
+          <!-- Section 3 -->
+          <button onclick="triggerNotification('Préférences enregistrées !')" class="w-full py-3 bg-brand-blue text-slate-950 rounded-xl font-bold hover:bg-brand-blueHover transition">
+            Enregistrer mon profil
+          </button>
+        </div>
+
+      </section>
+
+    </div>
+
+    <!-- BOTTOM NAVIGATION BAR -->
+    <nav class="w-full bg-brand-black/95 border-t border-slate-800/80 px-3 py-2 flex items-center justify-around z-40">
+      <button onclick="switchTab('feed')" id="nav-feed" class="nav-item flex flex-col items-center space-y-1 text-brand-blue">
+        <i data-lucide="sparkle" class="w-5 h-5"></i>
+        <span class="text-[10px] font-semibold">Feed</span>
+      </button>
+
+      <button onclick="switchTab('radar')" id="nav-radar" class="nav-item flex flex-col items-center space-y-1 text-slate-500 hover:text-slate-300">
+        <i data-lucide="radar" class="w-5 h-5"></i>
+        <span class="text-[10px] font-semibold">Radar</span>
+      </button>
+
+      <button onclick="switchTab('ai')" id="nav-ai" class="nav-item flex flex-col items-center space-y-1 text-slate-500 hover:text-slate-300 relative">
+        <div class="relative">
+          <i data-lucide="bot" class="w-5 h-5"></i>
+          <span class="absolute -top-1 -right-1 w-2 h-2 rounded-full bg-brand-blue"></span>
+        </div>
+        <span class="text-[10px] font-semibold">IA Match</span>
+      </button>
+
+      <button onclick="switchTab('messages')" id="nav-messages" class="nav-item flex flex-col items-center space-y-1 text-slate-500 hover:text-slate-300 relative">
+        <div class="relative">
+          <i data-lucide="message-square" class="w-5 h-5"></i>
+          <span class="absolute -top-1 -right-1 w-2 h-2 rounded-full bg-rose-500"></span>
+        </div>
+        <span class="text-[10px] font-semibold">Messages</span>
+      </button>
+
+      <button onclick="switchTab('profile')" id="nav-profile" class="nav-item flex flex-col items-center space-y-1 text-slate-500 hover:text-slate-300">
+        <i data-lucide="user" class="w-5 h-5"></i>
+        <span class="text-[10px] font-semibold">Profil</span>
+      </button>
+    </nav>
+
+    <!-- TOAST NOTIFICATION FLOATER -->
+    <div id="toastNotification" class="absolute top-16 left-4 right-4 bg-slate-900 border border-brand-blue/50 text-white p-3 rounded-2xl shadow-2xl flex items-center space-x-3 transform -translate-y-24 opacity-0 transition-all duration-300 z-50 pointer-events-none">
+      <div class="w-8 h-8 rounded-xl bg-brand-blue/20 flex items-center justify-center text-brand-blue shrink-0">
+        <i data-lucide="bell" class="w-4 h-4"></i>
+      </div>
+      <p id="toastMessage" class="text-xs font-medium flex-1">Notification système</p>
+    </div>
+
+    <!-- PROFILE DETAIL MODAL OVERLAY -->
+    <div id="profileModal" class="absolute inset-0 bg-brand-black/95 z-50 p-4 overflow-y-auto hidden flex flex-col">
+      <div class="flex items-center justify-between pb-3 border-b border-slate-800">
+        <span class="text-xs font-bold text-slate-400">Profil Détaillé CONVEXA</span>
+        <button onclick="closeProfileModal()" class="w-8 h-8 rounded-full bg-slate-900 flex items-center justify-center text-slate-300 hover:text-white">
+          <i data-lucide="x" class="w-4 h-4"></i>
+        </button>
+      </div>
+
+      <div id="profileModalContent" class="py-4 space-y-4">
+        <!-- Filled dynamically -->
+      </div>
+    </div>
+
+    <!-- FILTER MODAL OVERLAY -->
+    <div id="filterModal" class="absolute inset-0 bg-brand-black/95 z-50 p-5 overflow-y-auto hidden flex flex-col">
+      <div class="flex items-center justify-between pb-3 border-b border-slate-800">
+        <h3 class="text-sm font-bold text-white">Filtres de Recherche</h3>
+        <button onclick="closeFilterModal()" class="text-slate-400 hover:text-white">
+          <i data-lucide="x" class="w-5 h-5"></i>
+        </button>
+      </div>
+
+      <div class="py-4 space-y-4 text-xs">
+        <div>
+          <label class="block text-slate-400 mb-1 font-semibold">Distance maximale (km)</label>
+          <input type="range" min="1" max="100" value="25" class="w-full accent-brand-blue">
+          <div class="flex justify-between text-[10px] text-slate-500 mt-1">
+            <span>1 km</span>
+            <span class="text-brand-blue font-bold">25 km</span>
+            <span>100 km</span>
+          </div>
+        </div>
+
+        <div>
+          <label class="block text-slate-400 mb-1 font-semibold">Objectif Principal (Mode Pro)</label>
+          <select class="w-full bg-slate-900 border border-slate-800 rounded-xl p-2.5 text-white">
+            <option>Trouver un co-fondateur / CTO</option>
+            <option>Recherche d'Investisseurs (BA / VC)</option>
+            <option>Mentorat & Advice</option>
+            <option>Synergie B2B & Partenariats</option>
+          </select>
+        </div>
+
+        <div>
+          <label class="block text-slate-400 mb-1 font-semibold">Score de Synergie minimal</label>
+          <div class="flex space-x-2">
+            <button class="flex-1 py-2 rounded-xl bg-slate-900 border border-slate-800 text-slate-300 hover:border-brand-blue">70%+</button>
+            <button class="flex-1 py-2 rounded-xl bg-brand-blue/20 border border-brand-blue text-brand-blue font-bold">85%+</button>
+            <button class="flex-1 py-2 rounded-xl bg-slate-900 border border-slate-800 text-slate-300 hover:border-brand-blue">95%+</button>
+          </div>
+        </div>
+
+        <button onclick="closeFilterModal(); triggerNotification('Filtres enregistrés !');" class="w-full py-3 bg-brand-blue text-slate-950 font-bold rounded-xl mt-4">
+          Appliquer les filtres
+        </button>
+      </div>
+    </div>
+
+  </main>
+</div>
+
+<!-- JAVASCRIPT LOGIC -->
+<script>
+  // Initialize Lucide Icons
+  lucide.createIcons();
+
+  // App State Variables
+  let currentMode = 'pro'; // 'pro' or 'love'
+  let currentTab = 'feed';
+  let feedLayout = 'stack'; // 'stack' or 'grid'
+  let chatCategory = 'pro';
+  let currentCardIndex = 0;
+
+  // Mock Profiles Dataset (Dual Pro / Love Facets)
+  const profilesData = {
+    pro: [
+      {
+        id: 1,
+        name: "Alexandre Mercier",
+        age: 31,
+        role: "CTO & Co-fondateur",
+        company: "Ex-Doctrine / AI Lead",
+        location: "Paris (2.4 km)",
+        avatar: "https://images.unsplash.com/photo-1534528741775-53994a69daeb?auto=format&fit=crop&w=600&q=80",
+        synergyScore: "96%",
+        objective: "Recherche Co-fondateur CEO / BizDev",
+        skills: ["AI / LLMs", "Python", "Scaling", "Seed Stage"],
+        bio: "Ingénieur IA passionné par la Fintech et le Web3. Je cherche un associé profil Business/Growth pour lancer une SaaS B2B.",
+        verified: true
+      },
+      {
+        id: 2,
+        name: "Sophie De Vance",
+        age: 34,
+        role: "Partner & Investor",
+        company: "Vance Capital VC",
+        location: "Paris (1.1 km)",
+        synergyScore: "91%",
+        objective: "Investissements Pre-seed / Mentoring",
+        skills: ["Venture Capital", "Fintech", "SaaS B2B", "Pitch Review"],
+        bio: "Investisseuse early-stage. J'accompagne les fondateurs ambitieux sur le Go-To-Market et les levées de fonds Seed.",
+        verified: true
+      },
+      {
+        id: 3,
+        name: "Marc Moreau",
+        age: 28,
+        role: "Head of Growth",
+        company: "Fintech Scale-up",
+        location: "Paris (4.0 km)",
+        synergyScore: "87%",
+        objective: "Mentorat réciproque & Networking",
+        skills: ["SEO", "Paid Acquisition", "Funnel Analytics"],
+        bio: "Spécialiste de la croissance accélérée. Toujours partant pour échanger autour d'un café sur les meilleures stratégies d'acquisition.",
+        verified: false
+      }
+    ],
+    love: [
+      {
+        id: 101,
+        name: "Elena Rostova",
+        age: 29,
+        role: "Architecte d'Intérieur",
+        location: "Paris (3.2 km)",
+        synergyScore: "94%",
+        objective: "Relation sérieuse & complicité",
+        skills: ["Design", "Voyages", "Art Moderne", "Opéra"],
+        bio: "Créative et épicurienne. J'aime l'art contemporain, les dîners improvisés et les conversations stimulantes.",
+        avatar: "https://images.unsplash.com/photo-1517841905240-472988babdf9?auto=format&fit=crop&w=600&q=80",
+        verified: true
+      },
+      {
+        id: 102,
+        name: "Lucas Valette",
+        age: 32,
+        role: "Chef Gastronomique",
+        location: "Paris (1.8 km)",
+        synergyScore: "89%",
+        objective: "Nouvelles rencontres & feeling",
+        skills: ["Gastronomie", "Vin", "Trail", "Photographie"],
+        bio: "Passionné par les bonnes choses simples. On dit de moi que je cuisine mieux que votre resto préféré !",
+        avatar: "https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?auto=format&fit=crop&w=600&q=80",
+        verified: true
+      }
+    ]
+  };
+
+  // Chat Conversations Mock
+  const mockChats = {
+    pro: [
+      {
+        id: 1,
+        name: "Alexandre Mercier",
+        role: "CTO & Co-fondateur",
+        avatar: "https://images.unsplash.com/photo-1534528741775-53994a69daeb?auto=format&fit=crop&w=120&q=80",
+        lastMessage: "Hello ! Ton deck sur la Fintech m'intéresse beaucoup. On s'appelle ?",
+        time: "10:14",
+        unread: true
+      },
+      {
+        id: 2,
+        name: "Sophie De Vance",
+        role: "Partner VC",
+        avatar: "https://images.unsplash.com/photo-1517841905240-472988babdf9?auto=format&fit=crop&w=120&q=80",
+        lastMessage: "Rendez-vous confirmé pour jeudi 14h à Station F.",
+        time: "Hier",
+        unread: false
+      }
+    ],
+    love: [
+      {
+        id: 101,
+        name: "Elena Rostova",
+        role: "Architecte",
+        avatar: "https://images.unsplash.com/photo-1517841905240-472988babdf9?auto=format&fit=crop&w=120&q=80",
+        lastMessage: "J'adore cette expo aussi ! Tu y vas ce week-end ?",
+        time: "09:30",
+        unread: true
+      }
+    ]
+  };
+
+  // Switch Mode Function (PRO vs AMOUR)
+  function setAppMode(mode) {
+    currentMode = mode;
+    const modePill = document.getElementById('modePill');
+    const btnPro = document.getElementById('btnModePro');
+    const btnLove = document.getElementById('btnModeLove');
+    const statusText = document.getElementById('modeStatusText');
+    const statusDot = document.getElementById('statusDot');
+    const subHeader = document.getElementById('subHeaderTag');
+
+    if (mode === 'pro') {
+      modePill.style.transform = 'translateX(0px)';
+      modePill.className = 'absolute top-1 left-1 w-[50px] h-[22px] bg-brand-blue rounded-full transition-all duration-300 shadow-md';
+      btnPro.className = 'relative z-10 w-1/2 text-[10px] font-bold text-center transition-colors duration-200 text-slate-950';
+      btnLove.className = 'relative z-10 w-1/2 text-[10px] font-bold text-center transition-colors duration-200 text-slate-400';
+      
+      statusText.innerText = "MODE PRO";
+      statusText.className = "tracking-widest uppercase font-bold text-[10px] text-brand-blue";
+      statusDot.className = "w-1.5 h-1.5 rounded-full bg-brand-blue animate-pulse";
+      subHeader.innerText = "Rencontres Pro & Relational";
+
+      document.getElementById('likeIcon').setAttribute('data-lucide', 'bookmark');
+      triggerNotification("Mode CONVEXA PRO activé !");
+    } else {
+      modePill.style.transform = 'translateX(52px)';
+      modePill.className = 'absolute top-1 left-1 w-[50px] h-[22px] bg-brand-love rounded-full transition-all duration-300 shadow-md';
+      btnLove.className = 'relative z-10 w-1/2 text-[10px] font-bold text-center transition-colors duration-200 text-slate-950';
+      btnPro.className = 'relative z-10 w-1/2 text-[10px] font-bold text-center transition-colors duration-200 text-slate-400';
+      
+      statusText.innerText = "MODE AMOUR";
+      statusText.className = "tracking-widest uppercase font-bold text-[10px] text-brand-love";
+      statusDot.className = "w-1.5 h-1.5 rounded-full bg-brand-love animate-pulse";
+      subHeader.innerText = "Rencontres Perso & Valorielles";
+
+      document.getElementById('likeIcon').setAttribute('data-lucide', 'heart');
+      triggerNotification("Mode CONVEXA AMOUR activé !");
+    }
+
+    lucide.createIcons();
+    currentCardIndex = 0;
+    renderCardsDeck();
+    renderGridView();
+  }
+
+  // Switch Navigation Tabs
+  function switchTab(tabId) {
+    currentTab = tabId;
+    
+    // Hide all tabs
+    document.querySelectorAll('.app-tab').forEach(el => el.classList.add('hidden'));
+    
+    // Show selected tab
+    const target = document.getElementById(`tab-${tabId}`);
+    if (target) target.classList.remove('hidden');
+
+    // Update Nav Icons Styling
+    document.querySelectorAll('.nav-item').forEach(el => {
+      el.classList.remove('text-brand-blue');
+      el.classList.add('text-slate-500');
+    });
+
+    const activeNav = document.getElementById(`nav-${tabId}`);
+    if (activeNav) {
+      activeNav.classList.remove('text-slate-500');
+      activeNav.classList.add('text-brand-blue');
+    }
+
+    if (tabId === 'messages') {
+      renderChatList();
+    }
+  }
+
+  // Render Cards Stack
+  function renderCardsDeck() {
+    const deckContainer = document.getElementById('cardsDeck');
+    const list = profilesData[currentMode] || [];
+    
+    if (currentCardIndex >= list.length) {
+      deckContainer.innerHTML = `
+        <div class="w-full h-full rounded-3xl bg-slate-900/80 border border-slate-800 p-6 flex flex-col items-center justify-center text-center">
+          <div class="w-12 h-12 rounded-full bg-brand-blue/10 flex items-center justify-center text-brand-blue mb-3">
+            <i data-lucide="check-circle-2" class="w-6 h-6"></i>
+          </div>
+          <h3 class="text-sm font-bold text-white mb-1">Vous avez tout vu !</h3>
+          <p class="text-xs text-slate-400 mb-4">Revenez plus tard ou élargissez votre périmètre dans les filtres.</p>
+          <button onclick="currentCardIndex=0; renderCardsDeck();" class="px-4 py-2 bg-brand-blue text-slate-950 font-bold text-xs rounded-xl">
+            Réinitialiser
+          </button>
+        </div>
+      `;
+      lucide.createIcons();
+      return;
+    }
+
+    const item = list[currentCardIndex];
+    const isPro = currentMode === 'pro';
+
+    deckContainer.innerHTML = `
+      <div class="swipe-card w-full h-full rounded-3xl overflow-hidden relative shadow-2xl border border-slate-800/80 bg-slate-900 flex flex-col">
+        <!-- Main Image with Gradient Overlay -->
+        <div class="relative flex-1 bg-slate-950">
+          <img src="${item.avatar}" class="w-full h-full object-cover">
+          <div class="absolute inset-0 bg-gradient-to-t from-brand-black via-brand-black/30 to-transparent"></div>
+
+          <!-- Top Badge Bar -->
+          <div class="absolute top-3 left-3 right-3 flex items-center justify-between">
+            <span class="px-2.5 py-1 rounded-full bg-slate-950/80 backdrop-blur-md border border-slate-700 text-[10px] font-extrabold ${isPro ? 'text-brand-blue' : 'text-brand-love'} flex items-center space-x-1">
+              <i data-lucide="sparkles" class="w-3 h-3"></i>
+              <span>Synergie ${item.synergyScore}</span>
+            </span>
+
+            ${item.verified ? `
+              <span class="px-2.5 py-1 rounded-full bg-emerald-500/20 backdrop-blur-md border border-emerald-500/40 text-emerald-400 text-[10px] font-bold flex items-center space-x-1">
+                <i data-lucide="shield-check" class="w-3 h-3"></i>
+                <span>Vérifié</span>
+              </span>
+            ` : ''}
+          </div>
+
+          <!-- Profile Details (Bottom Overlay) -->
+          <div class="absolute bottom-3 left-4 right-4 text-white">
+            <h2 class="text-lg font-bold flex items-center space-x-2">
+              <span>${item.name}, ${item.age}</span>
+            </h2>
+            <p class="text-xs font-semibold ${isPro ? 'text-brand-blue' : 'text-brand-love'}">${item.role} ${item.company ? '• ' + item.company : ''}</p>
+            <p class="text-[11px] text-slate-400 flex items-center mt-0.5">
+              <i data-lucide="map-pin" class="w-3 h-3 mr-1"></i> ${item.location}
+            </p>
+
+            <!-- Tags -->
+            <div class="flex flex-wrap gap-1 mt-2">
+              ${item.skills.map(s => `
+                <span class="px-2 py-0.5 rounded-md bg-slate-800/80 border border-slate-700/60 text-[10px] text-slate-300">
+                  ${s}
+                </span>
+              `).join('')}
+            </div>
+          </div>
+        </div>
+
+        <!-- Bio snippet bottom card -->
+        <div class="p-3 bg-slate-900 border-t border-slate-800/80 text-xs text-slate-300 flex items-center justify-between">
+          <p class="line-clamp-2 text-[11px] leading-relaxed text-slate-400">
+            "${item.bio}"
+          </p>
+          <button onclick="openProfileModal(${currentCardIndex})" class="shrink-0 ml-2 p-1.5 rounded-lg bg-slate-800 text-brand-blue">
+            <i data-lucide="chevron-right" class="w-4 h-4"></i>
+          </button>
+        </div>
+      </div>
+    `;
+
+    lucide.createIcons();
+  }
+
+  // Render Grid View
+  function renderGridView() {
+    const gridContainer = document.getElementById('feedGridView');
+    const list = profilesData[currentMode] || [];
+    const isPro = currentMode === 'pro';
+
+    gridContainer.innerHTML = list.map((item, idx) => `
+      <div onclick="openProfileModal(${idx})" class="bg-slate-900 rounded-2xl overflow-hidden border border-slate-800/80 flex flex-col cursor-pointer hover:border-brand-blue transition">
+        <div class="relative h-36 bg-slate-950">
+          <img src="${item.avatar}" class="w-full h-full object-cover">
+          <span class="absolute top-2 left-2 px-1.5 py-0.5 rounded bg-slate-950/80 text-[9px] font-bold ${isPro ? 'text-brand-blue' : 'text-brand-love'}">
+            ${item.synergyScore}
+          </span>
+        </div>
+        <div class="p-2.5">
+          <h3 class="text-xs font-bold text-white truncate">${item.name}</h3>
+          <p class="text-[10px] text-slate-400 truncate">${item.role}</p>
+        </div>
+      </div>
+    `).join('');
+  }
+
+  // Toggle Layout (Stack vs Grid)
+  function setFeedLayout(layout) {
+    feedLayout = layout;
+    const stack = document.getElementById('feedStackView');
+    const grid = document.getElementById('feedGridView');
+    const controls = document.getElementById('swipeControls');
+
+    if (layout === 'stack') {
+      stack.classList.remove('hidden');
+      grid.classList.add('hidden');
+      controls.classList.remove('hidden');
+      document.getElementById('btnFeedStack').className = "px-2.5 py-1 rounded-lg font-medium bg-brand-blue text-slate-950";
+      document.getElementById('btnFeedGrid').className = "px-2.5 py-1 rounded-lg font-medium text-slate-400 hover:text-white";
+    } else {
+      stack.classList.add('hidden');
+      grid.classList.remove('hidden');
+      controls.classList.add('hidden');
+      document.getElementById('btnFeedGrid').className = "px-2.5 py-1 rounded-lg font-medium bg-brand-blue text-slate-950";
+      document.getElementById('btnFeedStack').className = "px-2.5 py-1 rounded-lg font-medium text-slate-400 hover:text-white";
+    }
+  }
+
+  // Swipe Action
+  function swipeAction(type) {
+    if (type === 'like') {
+      triggerNotification(currentMode === 'pro' ? 'Synergie enregistrée ! Profil invité.' : 'C\'est un Match Amoureux ! ❤️');
+    }
+    currentCardIndex++;
+    renderCardsDeck();
+  }
+
+  function triggerSuperBoost() {
+    triggerNotification("Super Synergy Boost envoyé à ce profil !");
+    currentCardIndex++;
+    renderCardsDeck();
+  }
+
+  // Modal Open Detail
+  function openProfileModal(index) {
+    const list = profilesData[currentMode] || [];
+    const item = list[index] || list[0];
+    const isPro = currentMode === 'pro';
+
+    const modal = document.getElementById('profileModal');
+    const content = document.getElementById('profileModalContent');
+
+    content.innerHTML = `
+      <div class="flex flex-col items-center text-center">
+        <img src="${item.avatar}" class="w-24 h-24 rounded-full object-cover border-2 ${isPro ? 'border-brand-blue' : 'border-brand-love'} shadow-2xl">
+        <h2 class="mt-2 text-base font-bold text-white">${item.name}, ${item.age}</h2>
+        <p class="text-xs font-semibold ${isPro ? 'text-brand-blue' : 'text-brand-love'}">${item.role}</p>
+        <p class="text-[11px] text-slate-400 mt-1">${item.location}</p>
+      </div>
+
+      <div class="bg-slate-900 p-3 rounded-2xl border border-slate-800 text-xs space-y-2">
+        <span class="text-[10px] font-bold text-slate-400 uppercase tracking-wider">Objectif</span>
+        <p class="text-slate-200">${item.objective}</p>
+      </div>
+
+      <div class="bg-slate-900 p-3 rounded-2xl border border-slate-800 text-xs space-y-2">
+        <span class="text-[10px] font-bold text-slate-400 uppercase tracking-wider">Bio & Parroisse</span>
+        <p class="text-slate-300 leading-relaxed">${item.bio}</p>
+      </div>
+
+      <div class="bg-slate-900 p-3 rounded-2xl border border-slate-800 text-xs space-y-2">
+        <span class="text-[10px] font-bold text-slate-400 uppercase tracking-wider">Compétences / Intérêts</span>
+        <div class="flex flex-wrap gap-1.5 mt-1">
+          ${item.skills.map(s => `<span class="px-2 py-1 rounded-lg bg-slate-800 border border-slate-700 text-[11px] text-slate-300">${s}</span>`).join('')}
+        </div>
+      </div>
+
+      <button onclick="closeProfileModal(); swipeAction('like');" class="w-full py-3 ${isPro ? 'bg-brand-blue' : 'bg-brand-love'} text-slate-950 font-bold rounded-xl">
+        ${isPro ? 'Proposer une Synergie' : 'Envoyer un Flash Match'}
+      </button>
+    `;
+
+    modal.classList.remove('hidden');
+  }
+
+  function closeProfileModal() {
+    document.getElementById('profileModal').classList.add('hidden');
+  }
+
+  function openFilterModal() {
+    document.getElementById('filterModal').classList.remove('hidden');
+  }
+
+  function closeFilterModal() {
+    document.getElementById('filterModal').classList.add('hidden');
+  }
+
+  // Switch Chat Tab
+  function switchChatCategory(cat) {
+    chatCategory = cat;
+    const tabPro = document.getElementById('chatTabPro');
+    const tabLove = document.getElementById('chatTabLove');
+
+    if (cat === 'pro') {
+      tabPro.className = "flex-1 pb-2 border-b-2 border-brand-blue text-brand-blue text-center font-bold";
+      tabLove.className = "flex-1 pb-2 border-b-2 border-transparent text-slate-400 text-center";
+    } else {
+      tabLove.className = "flex-1 pb-2 border-b-2 border-brand-love text-brand-love text-center font-bold";
+      tabPro.className = "flex-1 pb-2 border-b-2 border-transparent text-slate-400 text-center";
+    }
+
+    renderChatList();
+  }
+
+  function renderChatList() {
+    const container = document.getElementById('chatList');
+    const chats = mockChats[chatCategory] || [];
+
+    if (chats.length === 0) {
+      container.innerHTML = `<p class="text-xs text-slate-500 text-center py-8">Aucune conversation pour le moment.</p>`;
+      return;
+    }
+
+    container.innerHTML = chats.map(c => `
+      <div onclick="triggerNotification('Ouverture du chat avec ${c.name}')" class="p-3 bg-slate-900 border border-slate-800/80 rounded-2xl flex items-center space-x-3 cursor-pointer hover:border-brand-blue transition">
+        <img src="${c.avatar}" class="w-10 h-10 rounded-full object-cover border border-slate-700">
+        <div class="flex-1 overflow-hidden">
+          <div class="flex items-center justify-between">
+            <h4 class="text-xs font-bold text-white truncate">${c.name}</h4>
+            <span class="text-[10px] text-slate-500">${c.time}</span>
+          </div>
+          <p class="text-[11px] text-slate-400 truncate mt-0.5">${c.lastMessage}</p>
+        </div>
+        ${c.unread ? `<span class="w-2 h-2 rounded-full bg-brand-blue"></span>` : ''}
+      </div>
+    `).join('');
+  }
+
+  // AI Assistant Chat Logic
+  async function handleAiSubmit(e) {
+    e.preventDefault();
+    const input = document.getElementById('aiInput');
+    const text = input.value.trim();
+    if (!text) return;
+
+    sendAiPrompt(text);
+    input.value = '';
+  }
+
+  async function sendAiPrompt(promptText) {
+    const chatBox = document.getElementById('aiChatBox');
+
+    // Append User Message
+    chatBox.innerHTML += `
+      <div class="flex items-start justify-end space-x-2">
+        <div class="bg-brand-blue text-slate-950 p-3 rounded-2xl rounded-tr-none max-w-[85%] text-xs font-medium">
+          ${promptText}
+        </div>
+      </div>
+    `;
+
+    // Append Loading State
+    const loadingId = 'loading-' + Date.now();
+    chatBox.innerHTML += `
+      <div id="${loadingId}" class="flex items-start space-x-2">
+        <div class="w-6 h-6 rounded-lg bg-brand-blue/20 border border-brand-blue/40 flex items-center justify-center text-brand-blue text-[10px] font-bold shrink-0">
+          CX
+        </div>
+        <div class="bg-slate-900 border border-slate-800 p-3 rounded-2xl rounded-tl-none text-slate-400 text-xs flex items-center space-x-2">
+          <i data-lucide="loader-2" class="w-3.5 h-3.5 animate-spin"></i>
+          <span>Analyse des algorithmes de synergie...</span>
+        </div>
+      </div>
+    `;
+    lucide.createIcons();
+    chatBox.scrollTop = chatBox.scrollHeight;
+
+    // Call Gemini API or Smart Fallback
+    try {
+      const apiKey = "";
+      const apiUrl = `https://generativelanguage.googleapis.com/v1beta/models/gemini-3-flash-preview:generateContent?key=${apiKey}`;
+
+      const systemPrompt = `Tu es l'assistant intelligent officiel de l'application CONVEXA, une application hybride de rencontres professionnelles (co-fondateurs, investisseurs, mentors) et amoureuses.
+      Réponds en français avec un ton concis, professionnel et moderne. Donne des conseils pragmatiques ou simule des recommandations de profils adaptées.`;
+
+      const response = await fetch(apiUrl, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          contents: [{ parts: [{ text: promptText }] }],
+          systemInstruction: { parts: [{ text: systemPrompt }] }
+        })
+      });
+
+      const data = await response.json();
+      const aiReply = data?.candidates?.[0]?.content?.parts?.[0]?.text || "J'ai analysé votre demande. Voici notre recommandation : ciblez des profils certifiés avec un score supérieur à 85%.";
+
+      document.getElementById(loadingId).remove();
+
+      chatBox.innerHTML += `
+        <div class="flex items-start space-x-2">
+          <div class="w-6 h-6 rounded-lg bg-brand-blue/20 border border-brand-blue/40 flex items-center justify-center text-brand-blue text-[10px] font-bold shrink-0">
+            CX
+          </div>
+          <div class="bg-slate-900 border border-slate-800 p-3 rounded-2xl rounded-tl-none max-w-[85%] text-slate-200 text-xs leading-relaxed">
+            ${aiReply.replace(/\n/g, '<br>')}
+          </div>
+        </div>
+      `;
+    } catch (err) {
+      document.getElementById(loadingId).remove();
+      chatBox.innerHTML += `
+        <div class="flex items-start space-x-2">
+          <div class="w-6 h-6 rounded-lg bg-brand-blue/20 border border-brand-blue/40 flex items-center justify-center text-brand-blue text-[10px] font-bold shrink-0">
+            CX
+          </div>
+          <div class="bg-slate-900 border border-slate-800 p-3 rounded-2xl rounded-tl-none max-w-[85%] text-slate-200 text-xs leading-relaxed">
+            Voici 2 profils enregistrés correspondant à votre recherche sur Paris : **Alexandre M. (CTO)** et **Sophie V. (VC Partner)**.
+          </div>
+        </div>
+      `;
+    }
+
+    lucide.createIcons();
+    chatBox.scrollTop = chatBox.scrollHeight;
+  }
+
+  // Toast Notification Helper
+  function triggerNotification(msg) {
+    const toast = document.getElementById('toastNotification');
+    const toastMsg = document.getElementById('toastMessage');
+
+    toastMsg.innerText = msg;
+    toast.classList.remove('-translate-y-24', 'opacity-0');
+    toast.classList.add('translate-y-0', 'opacity-100');
+
+    setTimeout(() => {
+      toast.classList.remove('translate-y-0', 'opacity-100');
+      toast.classList.add('-translate-y-24', 'opacity-0');
+    }, 2500);
+  }
+
+  // Toggle Device Frame view for presentation
+  function toggleDeviceFrame() {
+    const frame = document.getElementById('appFrame');
+    if (frame.classList.contains('sm:rounded-[42px]')) {
+      frame.classList.remove('sm:rounded-[42px]', 'sm:border-[8px]', 'sm:h-[840px]', 'max-w-md');
+      frame.classList.add('w-full', 'h-screen', 'rounded-none', 'border-0');
+    } else {
+      frame.classList.add('sm:rounded-[42px]', 'sm:border-[8px]', 'sm:h-[840px]', 'max-w-md');
+      frame.classList.remove('w-full', 'h-screen', 'rounded-none', 'border-0');
+    }
+  }
+
+  // Initial Load Trigger
+  window.onload = function() {
+    renderCardsDeck();
+    renderGridView();
+  };
+</script>
+</html>

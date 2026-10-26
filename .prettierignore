@@ -1,0 +1,13 @@
+# Documentation de pilotage : mise en forme manuelle (tableaux, blocs de prompt)
+*.md
+docs/
+agents/
+tasks/
+
+# Fichiers générés / tiers
+pnpm-lock.yaml
+dist/
+.next/
+coverage/
+.turbo/
+node_modules/

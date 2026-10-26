@@ -1,0 +1,213 @@
+# Propriété des chemins : source de vérité unique, lue par tools/check-ownership (F0.3).
+# Règles :
+#  1. Un chemin n'appartient qu'à un seul agent (aucun recouvrement).
+#  2. Un agent n'écrit que dans ses chemins. Seule exception : le fichier de sa propre tâche
+#     (tasks/T-xxxx-*.md), limité aux champs status, branch, pr, notes.
+#  3. Tout chemin absent de ce fichier n'est modifiable que par platform ou orchestrator,
+#     avec une tâche qui le déclare explicitement.
+version: 1
+
+agents:
+  orchestrator:
+    owns:
+      - README.md
+      - AGENTS.md
+      - CLAUDE.md
+      - agents/**
+      - tasks/**
+      - docs/ROADMAP.md
+      - docs/STATUS.md
+
+  architect:
+    owns:
+      - packages/contracts/src/common/**
+      - packages/events/src/common/**
+      - packages/messaging/**
+      - packages/errors/**
+      - services/_template/**
+      - docs/STACK.md
+      - docs/product/**
+      - docs/decisions/**
+
+  platform:
+    owns:
+      - .github/**
+      - deploy/**
+      - tools/**
+      - services/_runtimes/**
+      - packages/config/**
+      - docs/runbooks/**
+      - turbo.json
+      - pnpm-workspace.yaml
+      - pnpm-lock.yaml
+      - package.json
+      - .npmrc
+      - .nvmrc
+      - .editorconfig
+      - .gitignore
+      - .env.example
+
+  gateway:
+    owns:
+      - services/gateway/**
+      - docs/domain/gateway.md
+
+  web-core:
+    owns:
+      - packages/ui/**
+      - apps/*/src/shell/**
+      - apps/*/src/app/layout.tsx
+      - apps/*/src/app/globals.css
+      - apps/*/src/app/page.tsx
+      - apps/*/public/**
+      - apps/*/next.config.*
+      - apps/*/tailwind.config.*
+      - apps/*/postcss.config.*
+      - apps/*/tsconfig.json
+      - apps/*/package.json
+      - apps/*/scripts/**
+      - docs/domain/web-core.md
+
+  identity:
+    owns:
+      - services/identity/**
+      - db/migrations/identity/**
+      - packages/contracts/src/identity/**
+      - packages/events/src/identity/**
+      - apps/web/src/app/(auth)/**
+      - apps/web/src/app/(app)/identity/**
+      - apps/web/src/features/identity/**
+      - apps/backoffice/src/app/(admin)/identity/**
+      - apps/backoffice/src/features/identity/**
+      - docs/domain/identity.md
+
+  football:
+    owns:
+      - services/football/**
+      - db/migrations/football/**
+      - packages/contracts/src/football/**
+      - packages/events/src/football/**
+      - apps/web/src/app/(app)/football/**
+      - apps/web/src/features/football/**
+      - apps/backoffice/src/app/(admin)/football/**
+      - apps/backoffice/src/features/football/**
+      - docs/domain/football.md
+
+  dating:
+    owns:
+      - services/dating/**
+      - db/migrations/dating/**
+      - packages/contracts/src/dating/**
+      - packages/events/src/dating/**
+      - apps/web/src/app/(app)/dating/**
+      - apps/web/src/features/dating/**
+      - apps/backoffice/src/app/(admin)/dating/**
+      - apps/backoffice/src/features/dating/**
+      - docs/domain/dating.md
+
+  talents:
+    owns:
+      - services/talents/**
+      - db/migrations/talents/**
+      - packages/contracts/src/talents/**
+      - packages/events/src/talents/**
+      - apps/web/src/app/(app)/community/**
+      - apps/web/src/features/talents/**
+      - apps/backoffice/src/app/(admin)/talents/**
+      - apps/backoffice/src/features/talents/**
+      - docs/domain/talents.md
+
+  marketplace:
+    owns:
+      - services/marketplace/**
+      - db/migrations/marketplace/**
+      - packages/contracts/src/marketplace/**
+      - packages/events/src/marketplace/**
+      - apps/web/src/app/(app)/services/**
+      - apps/web/src/features/marketplace/**
+      - apps/backoffice/src/app/(admin)/marketplace/**
+      - apps/backoffice/src/features/marketplace/**
+      - docs/domain/marketplace.md
+
+  partners:
+    owns:
+      - services/partners/**
+      - db/migrations/partners/**
+      - packages/contracts/src/partners/**
+      - packages/events/src/partners/**
+      - apps/web/src/app/(app)/offers/**
+      - apps/web/src/app/(app)/partners/**
+      - apps/web/src/features/partners/**
+      - apps/partner-portal/src/app/(portal)/**
+      - apps/partner-portal/src/features/**
+      - apps/backoffice/src/app/(admin)/partners/**
+      - apps/backoffice/src/features/partners/**
+      - docs/domain/partners.md
+
+  money:
+    owns:
+      - services/payments/**
+      - services/billing/**
+      - db/migrations/payments/**
+      - db/migrations/billing/**
+      - packages/contracts/src/payments/**
+      - packages/contracts/src/billing/**
+      - packages/events/src/payments/**
+      - packages/events/src/billing/**
+      - packages/entitlements/**
+      - apps/web/src/app/(app)/billing/**
+      - apps/web/src/features/money/**
+      - apps/backoffice/src/app/(admin)/money/**
+      - apps/backoffice/src/features/money/**
+      - docs/domain/money.md
+
+  realtime:
+    owns:
+      - services/realtime/**
+      - db/migrations/messaging/**
+      - packages/contracts/src/messaging/**
+      - packages/events/src/messaging/**
+      - apps/web/src/app/(app)/messages/**
+      - apps/web/src/app/(app)/notifications/**
+      - apps/web/src/features/realtime/**
+      - docs/domain/realtime.md
+
+  ai:
+    owns:
+      - services/ai-worker/**
+      - packages/events/src/ai/**
+      - docs/domain/ai.md
+
+  qa:
+    owns:
+      - tests/**
+      - packages/testing/**
+      - docs/domain/qa.md
+
+  security:
+    owns:
+      - docs/security/**
+
+# Revues obligatoires avant fusion (étiquettes posées par l'agent relecteur ou l'humain).
+review_rules:
+  architect_required:
+    - packages/contracts/**
+    - packages/events/**
+    - db/migrations/**
+    - services/_template/**
+  security_required:
+    - services/payments/**
+    - services/billing/**
+    - services/identity/**
+    - services/realtime/src/chat-filter/**
+    - services/dating/src/contact-reveal/**
+    - services/partners/src/vouchers/**
+    - services/marketplace/src/escrow/**
+  human_required:
+    - services/payments/**
+    - services/billing/**
+    - services/identity/src/auth/**
+    - services/dating/src/contact-reveal/**
+    - deploy/**
+    - .github/**
+    - agents/ownership.yaml
