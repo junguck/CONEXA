@@ -1,6 +1,15 @@
-# Infrastructure de développement Convexa.
-#   docker compose -f deploy/compose.dev.yaml up -d
-# Profil « pgvector » chaque service déploie son propre schéma ; aucun accès croisé.
+# Infrastructure de développement Convexa (F0.2).
+#
+#   pnpm dev:infra     démarre tout et attend que ce soit sain
+#   pnpm dev:down      arrête sans supprimer les volumes
+#   pnpm dev:reset     supprime les volumes et repart d'une base vide
+#
+# Un service = un domaine = un schéma PostgreSQL, avec un rôle dédié.
+# Aucune donnée hors des volumes nommés ; aucun secret réel dans ce fichier.
+#
+# `docker compose -f deploy/compose.dev.yaml up -d` (commandes v1) démarre le
+# socle : PostgreSQL, Redis, RabbitMQ. MinIO et le collecteur OTel sont derrière
+# les profils `storage` et `observability`, activés par `pnpm dev:infra`.
 name: conexa-dev
 
 services:
@@ -8,18 +17,22 @@ services:
     image: pgvector/pgvector:pg17
     container_name: conexa-postgres
     environment:
-      POSTGRES_USER: conexa
-      POSTGRES_PASSWORD: conexa_dev
-      POSTGRES_DB: conexa
+      POSTGRES_USER: ${POSTGRES_USER:-conexa}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-conexa_dev}
+      POSTGRES_DB: ${POSTGRES_DB:-conexa}
+      # Mot de passe des rôles de service, créés par le script d'initialisation.
+      CONEXA_DEV_DB_PASSWORD: ${CONEXA_DEV_DB_PASSWORD:-conexa_dev}
     ports:
-      - '5432:5432'
+      - '${POSTGRES_PORT:-5432}:5432'
     volumes:
       - postgres-data:/var/lib/postgresql/data
+      - ./postgres/init:/docker-entrypoint-initdb.d:ro
     healthcheck:
-      test: ['CMD-SHELL', 'pg_isready -U conexa -d conexa']
+      test: ['CMD-SHELL', 'pg_isready -U "$$POSTGRES_USER" -d "$$POSTGRES_DB"']
       interval: 5s
       timeout: 5s
       retries: 20
+      start_period: 10s
     restart: unless-stopped
 
   redis:
@@ -27,7 +40,7 @@ services:
     container_name: conexa-redis
     command: ['redis-server', '--appendonly', 'yes']
     ports:
-      - '6379:6379'
+      - '${REDIS_PORT:-6379}:6379'
     volumes:
       - redis-data:/data
     healthcheck:
@@ -41,11 +54,11 @@ services:
     image: rabbitmq:4-management-alpine
     container_name: conexa-rabbitmq
     environment:
-      RABBITMQ_DEFAULT_USER: conexa
-      RABBITMQ_DEFAULT_PASS: conexa_dev
+      RABBITMQ_DEFAULT_USER: ${RABBITMQ_USER:-conexa}
+      RABBITMQ_DEFAULT_PASS: ${RABBITMQ_PASSWORD:-conexa_dev}
     ports:
-      - '5672:5672'
-      - '15672:15672'
+      - '${RABBITMQ_PORT:-5672}:5672'
+      - '${RABBITMQ_MANAGEMENT_PORT:-15672}:15672'
     volumes:
       - rabbitmq-data:/var/lib/rabbitmq
     healthcheck:
@@ -53,9 +66,44 @@ services:
       interval: 10s
       timeout: 10s
       retries: 20
+      start_period: 20s
+    restart: unless-stopped
+
+  minio:
+    profiles: [storage]
+    image: minio/minio:latest
+    container_name: conexa-minio
+    command: server /data --console-address ":9001"
+    environment:
+      MINIO_ROOT_USER: ${MINIO_ROOT_USER:-conexa}
+      MINIO_ROOT_PASSWORD: ${MINIO_ROOT_PASSWORD:-conexa_dev}
+    ports:
+      - '${MINIO_PORT:-9000}:9000'
+      - '${MINIO_CONSOLE_PORT:-9001}:9001'
+    volumes:
+      - minio-data:/data
+    healthcheck:
+      test: ['CMD', 'curl', '-f', 'http://localhost:9000/minio/health/live']
+      interval: 5s
+      timeout: 5s
+      retries: 20
+    restart: unless-stopped
+
+  otel-collector:
+    profiles: [observability]
+    image: otel/opentelemetry-collector-contrib:0.111.0
+    container_name: conexa-otel-collector
+    command: ['--config=/etc/otel-collector.yaml']
+    volumes:
+      - ./otel-collector.yaml:/etc/otel-collector.yaml:ro
+    ports:
+      - '${OTEL_GRPC_PORT:-4317}:4317'
+      - '${OTEL_HTTP_PORT:-4318}:4318'
+      - '${OTEL_HEALTH_PORT:-13133}:13133'
     restart: unless-stopped
 
 volumes:
   postgres-data:
   redis-data:
   rabbitmq-data:
+  minio-data:
