@@ -1,0 +1,158 @@
+{
+  "service": "marketplace",
+  "base_path": "/",
+  "upstream": "http://localhost:3014",
+  "internal": false,
+  "routes": [
+    {
+      "method": "GET",
+      "path": "/services/categories",
+      "auth": true
+    },
+    {
+      "method": "GET",
+      "path": "/services",
+      "auth": true
+    },
+    {
+      "method": "POST",
+      "path": "/services",
+      "auth": true
+    },
+    {
+      "method": "GET",
+      "path": "/services/:id",
+      "auth": true
+    },
+    {
+      "method": "PATCH",
+      "path": "/services/:id",
+      "auth": true
+    },
+    {
+      "method": "PUT",
+      "path": "/services/:id/packages",
+      "auth": true
+    },
+    {
+      "method": "PUT",
+      "path": "/services/:id/availability",
+      "auth": true
+    },
+    {
+      "method": "GET",
+      "path": "/services/:id/availability",
+      "auth": true
+    },
+    {
+      "method": "POST",
+      "path": "/services/:id/submit",
+      "auth": true
+    },
+    {
+      "method": "POST",
+      "path": "/services/:id/pause",
+      "auth": true
+    },
+    {
+      "method": "POST",
+      "path": "/services/:id/resume",
+      "auth": true
+    },
+    {
+      "method": "DELETE",
+      "path": "/services/:id",
+      "auth": true
+    },
+    {
+      "method": "POST",
+      "path": "/services/:id/favorite",
+      "auth": true
+    },
+    {
+      "method": "DELETE",
+      "path": "/services/:id/favorite",
+      "auth": true
+    },
+    {
+      "method": "GET",
+      "path": "/me/favorites",
+      "auth": true
+    },
+    {
+      "method": "GET",
+      "path": "/services/:id/reviews",
+      "auth": true
+    },
+    {
+      "method": "GET",
+      "path": "/me/seller-dashboard",
+      "auth": true
+    },
+    {
+      "method": "POST",
+      "path": "/service-orders",
+      "auth": true
+    },
+    {
+      "method": "GET",
+      "path": "/service-orders",
+      "auth": true
+    },
+    {
+      "method": "GET",
+      "path": "/service-orders/:id",
+      "auth": true
+    },
+    {
+      "method": "GET",
+      "path": "/service-orders/:id/events",
+      "auth": true
+    },
+    {
+      "method": "POST",
+      "path": "/service-orders/:id/accept",
+      "auth": true
+    },
+    {
+      "method": "POST",
+      "path": "/service-orders/:id/pay",
+      "auth": true
+    },
+    {
+      "method": "POST",
+      "path": "/service-orders/:id/start",
+      "auth": true
+    },
+    {
+      "method": "POST",
+      "path": "/service-orders/:id/deliver",
+      "auth": true
+    },
+    {
+      "method": "POST",
+      "path": "/service-orders/:id/request-revision",
+      "auth": true
+    },
+    {
+      "method": "POST",
+      "path": "/service-orders/:id/complete",
+      "auth": true
+    },
+    {
+      "method": "POST",
+      "path": "/service-orders/:id/cancel",
+      "auth": true
+    },
+    {
+      "method": "POST",
+      "path": "/service-orders/:id/dispute",
+      "auth": true
+    },
+    {
+      "method": "POST",
+      "path": "/service-orders/:id/review",
+      "auth": true
+    }
+  ]
+}
