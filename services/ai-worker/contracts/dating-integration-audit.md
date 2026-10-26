@@ -44,10 +44,14 @@ catalogue v1, puis traité par `python3 -m conexa_ai_worker` (trois vecteurs,
 
 ## 4. Points à corriger avant de considérer F4.3 terminée
 
-1. **Travail non commité / hors procédure** : `dating` a modifié `v1/dating`
-   directement, sans tâche `tasks/T-xxxx`, sans branche
-   `agent/dating/T-xxxx-…` depuis `origin/main`, sans commit ni PR. Rien n'est
-   reviewable ni mergeable en l'état ; c'est le blocage principal.
+1. **Travail non commité et hors périmètre de T-0014** : la tâche `dating`
+   existante (`tasks/T-0014-dating-v1.md`, branche `v1/dating`, statut `review`)
+   exclut explicitement « embeddings et worker IA ». Le producteur a pourtant été
+   écrit directement dans ce worktree, sans commit ni PR. Il faut une tâche
+   dédiée (F4.3, côté `dating`) et une branche `agent/dating/T-xxxx-…` depuis
+   `origin/main`. Bonne nouvelle : pour les chemins `dating`, la base de
+   `v1/dating` est identique à `origin/main` (`git diff` vide), donc le patch
+   peut être rejoué proprement sur une branche dédiée.
 2. **Concurrence non traitée** : `putProfile` lit le profil existant, décide
    d'émettre, puis upsert dans une transaction. Deux `PUT` simultanés peuvent
    produire des événements incohérents avec l'état final (écrasement perdu,
@@ -58,8 +62,9 @@ catalogue v1, puis traité par `python3 -m conexa_ai_worker` (trois vecteurs,
    est `skipIf` sans `DATING_TEST_DATABASE_URL`. Le rollback et le rejeu ne sont
    donc pas prouvés par défaut ; prévoir un PostgreSQL de CI.
 4. **Relais non planifié** : `relayDatingOutbox` existe mais aucun ordonnanceur
-   ne l'appelle, et le bus F0.4 n'existe pas encore. Pas de métrique, de plafond
-   de tentatives ni de backoff.
+   ne l'appelle. Le socle F0.4 fournit désormais l'enveloppe commune et un bus en
+   mémoire (`packages/events`), mais pas encore de broker durable ; le relais
+   n'a ni métrique, ni plafond de tentatives, ni backoff.
 5. **Cycle de vie** : pause, suppression de compte et retrait de consentement ne
    changent pas l'émission ; la rétention des vecteurs reste à définir côté
    `dating`.
@@ -68,9 +73,10 @@ catalogue v1, puis traité par `python3 -m conexa_ai_worker` (trois vecteurs,
 
 ## 5. Recommandation
 
-`dating` doit d'abord régulariser son travail (tâche, branche depuis
-`origin/main`, commit, PR avec `review:architect-ok`), puis traiter la
-concurrence et le test d'outbox en CI. Le relais et la consommation de
-`embedding.computed` suivront avec F0.4/F4.4. Côté `ai`, aucune action n'est
-nécessaire : la fixture `valid/dating-catalogue.json` protège la compatibilité
-contre toute régression future.
+`dating` doit d'abord régulariser son travail : nouvelle tâche F4.3 (T-0014
+exclut les embeddings), branche depuis `origin/main`, commit et PR avec
+`review:architect-ok`. Puis traiter la concurrence et le test d'outbox en CI. Le
+relais durable et la consommation de `embedding.computed` suivront avec
+l'infrastructure de bus et F4.4. Côté `ai`, aucune action n'est nécessaire : la
+fixture `valid/dating-catalogue.json` protège la compatibilité contre toute
+régression future.
