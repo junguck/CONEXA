@@ -9,6 +9,7 @@ export * from './identity/index.js';
 export * from './marketplace/index.js';
 export * from './messaging/index.js';
 export * from './notifications/index.js';
+export * from './ai/index.js';
 export * from './partners/index.js';
 export * from './payments/index.js';
 export * from './talents/index.js';
