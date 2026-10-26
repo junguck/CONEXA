@@ -3,7 +3,7 @@ id: T-0006
 title: "Observabilité de base"
 feature: F0.6
 agent: platform
-status: todo
+status: in_progress
 depends_on: [T-0002, T-0005]
 size: M
 owned_paths:
@@ -18,8 +18,8 @@ contracts_touched: []
 deps_request: []
 human_gate: true
 reviewers: [security]
-branch: ""
-worktree: ""
+branch: "agent/platform/T-0006-observability"
+worktree: "C:\\Users\\EG\\Desktop\\Conexa\\worktrees\\T-0006"
 pr: ""
 notes: "Validation humaine obligatoire : deploy/. Aucune PII dans les logs, métriques ni libellés (le test de masquage est bloquant)."
 ---
