@@ -31,6 +31,16 @@ function Frame({
   children: ReactNode;
 }) {
   const { theme, toggleTheme } = useTheme();
+  const pathname = usePathname();
+  const immersive = pathname === '/meet/match';
+
+  if (immersive) {
+    return (
+      <div className={`${universeClassName} ${theme} flex min-h-dvh flex-col bg-bg text-ink`}>
+        <main className="mx-auto flex w-full max-w-lg flex-1 flex-col px-5 pb-8">{children}</main>
+      </div>
+    );
+  }
 
   return (
     <div className={`${universeClassName} ${theme} flex min-h-dvh flex-col bg-bg text-ink`}>

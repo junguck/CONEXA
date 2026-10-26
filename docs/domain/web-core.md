@@ -31,6 +31,25 @@ Le script racine `pnpm gen:registry` demandé par `AGENTS.md` n'existe pas encor
 
 Aucun fichier partagé n'est modifié à la main : l'accueil liste la nouvelle entrée et la barre basse reste inchangée. Les routes inconnues des quatre univers affichent un écran d'attente (`(app)/[...universe]`), qui s'efface dès qu'une route statique existe.
 
+## Maquettes mobiles (2026-10-26)
+
+Les 23 écrans mobiles de `docs/product/design/` sont rendus avec les données fictives de
+`apps/web/src/shell/maquettes/data.ts`. Le thème clair/sombre est celui de la coquille, pas un
+doublon de page.
+
+| Univers | Routes |
+|---|---|
+| Chargement et compte | `/splash`, `/login`, `/signup`, `/pending` (sans barre basse) |
+| Core | `/`, `/me`, `/me/notifications` |
+| Foot | `/football`, `/football/match`, `/football/classement`, `/football/equipe` |
+| Meet | `/meet`, `/meet/match` (plein cadre), `/meet/dates`, `/meet/lieu`, `/meet/paiement`, `/meet/jour`, `/meet/profil` |
+| Pro | `/pro`, `/pro/reseau`, `/pro/emplois`, `/pro/profil`, `/pro/premium` |
+
+Les écrans lisent uniquement des constantes locales : aucun appel réseau, aucun prix ni règle
+d’accès recalculé côté client. Les agents de domaine remplaceront les données par leurs contrats
+et pourront réutiliser `shell/maquettes/kit.tsx` (en-tête, écussons, lignes de match, photos
+fictives). Les portails desktop (partenaire, back-office) restent hors de ce périmètre (T-0009).
+
 ## Règles de design appliquées
 
 - Un univers par section d'URL (`football`, `meet`, `pro`, sinon Core), thème par défaut de la maquette, choix de thème mémorisé dans `localStorage`.
