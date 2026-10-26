@@ -98,7 +98,15 @@ class OwnershipTest(unittest.TestCase):
         app = self.repo.root / "apps/web/src/features/football"
         app.mkdir(parents=True)
         (app / "screen.tsx").write_text("export {};\n", encoding="utf-8")
+        (self.repo.root / "pnpm-lock.yaml").write_text("lockfileVersion: '9.0'\n", encoding="utf-8")
         self.repo.commit("feat: elo")
+        result = run(self.repo.root, "--base", "origin/main", "--branch", "agent/football/T-0042-elo")
+        self.assertEqual(result.returncode, 0, result.stderr)
+        self.assertIn("propriété OK", result.stdout)
+
+    def test_generated_lockfile_is_always_allowed(self) -> None:
+        (self.repo.root / "pnpm-lock.yaml").write_text("lockfileVersion: '9.0'\n", encoding="utf-8")
+        self.repo.commit("build: lockfile")
         result = run(self.repo.root, "--base", "origin/main", "--branch", "agent/football/T-0042-elo")
         self.assertEqual(result.returncode, 0, result.stderr)
         self.assertIn("propriété OK", result.stdout)
