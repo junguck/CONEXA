@@ -20,7 +20,9 @@ Contrat **consommateur** de `dating.embedding_requested` :
 [`contracts/dating.embedding_requested.v1.md`](contracts/dating.embedding_requested.v1.md).
 Il fixe l'enveloppe, les trois blocs, la grammaire des réponses et la matrice de
 rejet ; le corpus exécutable est dans `tests/fixtures/consumer/`. Le schéma
-producteur canonique reste à publier par `dating`.
+producteur canonique reste à publier par `dating` : la demande qui lui est
+adressée est dans
+[`contracts/dating.embedding_requested.handoff.md`](contracts/dating.embedding_requested.handoff.md).
 
 ## Commandes
 

@@ -44,7 +44,7 @@ Démarrer la partie IA du domaine rencontres : transformer des réponses de ques
 3. Contrats des événements produits : `embedding.computed` v1, `dating.vectors_updated` v1.
 4. Tests : déterminisme, dimensions, ordinalité des échelles, ordre des choix multiples, rejeu idempotent, cas Rocchio calculés à la main, absence de PII dans les journaux.
 5. `docs/domain/ai.md` : pipeline, contrats, exploitation, limites.
-6. Contrat consommateur `dating.embedding_requested` v1 : document `services/ai-worker/contracts/`, corpus `tests/fixtures/consumer/` (3 valides, 19 refus) et matrice de rejet ; durcissements associés (version d'enveloppe 1, fuseau obligatoire, trois blocs requis, options distinctes).
+6. Contrat consommateur `dating.embedding_requested` v1 et handoff vers `dating` (`contracts/dating.embedding_requested.handoff.md`) : document `services/ai-worker/contracts/`, corpus `tests/fixtures/consumer/` (3 valides, 19 refus) et matrice de rejet ; durcissements associés (version d'enveloppe 1, fuseau obligatoire, trois blocs requis, options distinctes).
 7. Extension (même branche, avant fusion) : `runtime.py` — boucle pilotée par un `Delivery` avec `ack`/`reject`, publication avant acquittement, rejet sans boucle, lot vide acquitté sans publication. `idempotency.py` — protocole `IdempotencyStore` et adaptateur `RedisIdempotencyStore` (JSON, `SET EX`, espace de clés, erreur sur entrée corrompue), sans ajouter de dépendance.
 
 ## Critères d'acceptation
