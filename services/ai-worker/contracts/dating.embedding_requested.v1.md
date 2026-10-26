@@ -99,9 +99,11 @@ rejoue pas indéfiniment.
 | Choix multiple vide | `must not be empty` | `invalid/empty-multi-choice.json` |
 | Type de réponse non supporté | `unsupported answer type` | `invalid/unsupported-answer-type.json` |
 
-Les cas valides sont `valid/full.json`, `valid/empty-blocks.json` et
-`valid/multi-choice-reordered.json` ; ce dernier doit produire exactement les
-mêmes vecteurs que `valid/full.json`.
+Les cas valides sont `valid/full.json`, `valid/empty-blocks.json`,
+`valid/multi-choice-reordered.json` et `valid/dating-catalogue.json` ; le dernier
+est un événement réellement produit par `dating` (catalogue v1), et le cas
+réordonné doit produire exactement les mêmes vecteurs que `valid/full.json`.
+Producteur audité : [`dating-integration-audit.md`](dating-integration-audit.md).
 
 ## 6. Compatibilité et évolution
 

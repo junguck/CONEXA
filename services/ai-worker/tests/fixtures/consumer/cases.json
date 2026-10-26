@@ -11,6 +11,9 @@
     },
     {
       "fixture": "valid/multi-choice-reordered.json"
+    },
+    {
+      "fixture": "valid/dating-catalogue.json"
     }
   ],
   "invalid": [

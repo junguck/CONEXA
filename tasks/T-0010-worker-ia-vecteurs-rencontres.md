@@ -45,7 +45,8 @@ Démarrer la partie IA du domaine rencontres : transformer des réponses de ques
 4. Tests : déterminisme, dimensions, ordinalité des échelles, ordre des choix multiples, rejeu idempotent, cas Rocchio calculés à la main, absence de PII dans les journaux.
 5. `docs/domain/ai.md` : pipeline, contrats, exploitation, limites.
 6. Contrat consommateur `dating.embedding_requested` v1 et handoff vers `dating` (`contracts/dating.embedding_requested.handoff.md`) : document `services/ai-worker/contracts/`, corpus `tests/fixtures/consumer/` (3 valides, 19 refus) et matrice de rejet ; durcissements associés (version d'enveloppe 1, fuseau obligatoire, trois blocs requis, options distinctes).
-7. Extension (même branche, avant fusion) : `runtime.py` — boucle pilotée par un `Delivery` avec `ack`/`reject`, publication avant acquittement, rejet sans boucle, lot vide acquitté sans publication. `idempotency.py` — protocole `IdempotencyStore` et adaptateur `RedisIdempotencyStore` (JSON, `SET EX`, espace de clés, erreur sur entrée corrompue), sans ajouter de dépendance.
+7. Audit d'intégration du producteur `dating` : événement réellement émis (catalogue v1) accepté par le worker, fixture `valid/dating-catalogue.json`, écarts compatibles et blocages restants documentés dans `contracts/dating-integration-audit.md`.
+8. Extension (même branche, avant fusion) : `runtime.py` — boucle pilotée par un `Delivery` avec `ack`/`reject`, publication avant acquittement, rejet sans boucle, lot vide acquitté sans publication. `idempotency.py` — protocole `IdempotencyStore` et adaptateur `RedisIdempotencyStore` (JSON, `SET EX`, espace de clés, erreur sur entrée corrompue), sans ajouter de dépendance.
 
 ## Critères d'acceptation
 
@@ -57,6 +58,7 @@ Démarrer la partie IA du domaine rencontres : transformer des réponses de ques
 - [x] boucle : publication avant `ack`, événement invalide rejeté et consigné, panne du sink non acquittée
 - [x] rejeu via Redis sans recalcul, entrée corrompue refusée (`IdempotencyError`)
 - [x] contrat consommateur : chaque fixture valide est acceptée, chaque refus l'est pour la raison documentée, aucun fichier orphelin
+- [x] audit producteur : événement réel `dating` accepté (3 vecteurs), écarts restrictifs documentés
 - [x] `python3 -m unittest discover -s tests -v` vert (59 tests)
 
 ## Hors périmètre

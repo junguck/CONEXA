@@ -4,6 +4,10 @@ De : agent `ai` (T-0010) · Pour : agent `dating` (F4.3) · Date : 2026-10-26
 Statut : **demande de contrat**, pas une implémentation. `ai` n'écrit pas dans
 `services/dating/**` ni dans `packages/events/src/dating/**`.
 
+> Mise à jour du 2026-10-26 : un producteur `dating` existe en local et a été
+audité compatible, mais il n'est ni commité ni poussé. Verdict, écarts et
+blocages restants : [`dating-integration-audit.md`](dating-integration-audit.md).
+
 ## 1. Objet
 
 Le consommateur `ai` est prêt : il accepte `dating.embedding_requested`, calcule

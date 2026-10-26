@@ -95,7 +95,7 @@ workspace sans dépendance n'obtient pas d'importateur dans `pnpm-lock.yaml`, do
 
 ## 5. Limites et suite
 
-1. **Contrat producteur manquant** : le contrat consommateur v1 est gelé et testé (enveloppe, blocs, grammaire, rejets), mais `dating` doit encore publier le schéma canonique de `dating.embedding_requested` avant l'intégration de bout en bout. Demande de handoff : [`services/ai-worker/contracts/dating.embedding_requested.handoff.md`](../../services/ai-worker/contracts/dating.embedding_requested.handoff.md).
+1. **Contrat producteur manquant** : le contrat consommateur v1 est gelé et testé (enveloppe, blocs, grammaire, rejets), mais `dating` doit encore publier le schéma canonique de `dating.embedding_requested` avant l'intégration de bout en bout. Demande de handoff : [`services/ai-worker/contracts/dating.embedding_requested.handoff.md`](../../services/ai-worker/contracts/dating.embedding_requested.handoff.md). Audit : un producteur local a été vérifié compatible, mais son travail n'est ni commité ni poussé ; voir [`dating-integration-audit.md`](../../services/ai-worker/contracts/dating-integration-audit.md).
 2. **F0.4** : les schémas de `packages/events/src/ai/` ne sont pas encore compilés par le générateur commun.
 3. **Stockage** : la migration pgvector de `dating_profiles` (schema.sql absent, ADR 0002) reste chez dating.
 4. **Idempotence durable** : l'adaptateur Redis est prêt ; il reste à injecter le client réel fourni par platform (F0.2) et à choisir la politique de file d'échecs.
