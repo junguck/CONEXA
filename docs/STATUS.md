@@ -1,10 +1,10 @@
 # État du projet
 
-Mis à jour : **2026-10-26** (vague v1 des services). Tenu par l'orchestrateur ; toute instance le lit avant de choisir une tâche.
+Mis à jour : **2026-10-26** (intégration v1). Tenu par l'orchestrateur ; toute instance le lit avant de choisir une tâche.
 
 ## En un mot
 
-Le cadre de pilotage et le monorepo sont en place, et la **vague v1 des services** est livrée en branches séparées : socle partagé, puis Gateway, Identity, Football, Dating, Talents, Marketplace. Les migrations sont reconstituées faute de `schema.sql` (ADR 0003, à valider). Rien n'est encore fusionné : l'humain fusionne branche par branche.
+Le cadre de pilotage, le monorepo et la **vague v1 des services** sont intégrés sur la branche `v1/integration` : socle partagé, Gateway, Identity, Football, Dating, Talents, Marketplace, plus un service **uploads** qui débloque les `upload_id` déjà présents dans les contrats. Les sept branches d'origine sont fusionnées et vérifiées ensemble. Les migrations restent reconstituées faute de `schema.sql` (ADR 0003, à valider).
 
 ## Ce qui est en place
 
@@ -42,15 +42,36 @@ Chaque branche part de `v1/socle`. **Fusionner `v1/socle` en premier**, puis les
 
 | Branche | Contenu | Tâche | Statut |
 |---|---|---|---|
-| `v1/socle` | Contrats, erreurs, événements, kit de service, gabarit, runner de migrations, compose dev | T-0010 | review |
-| `v1/gateway` | Routage par manifestes, JWT/JWKS, limites de débit, `/internal/*` bloqué | T-0011 | à pousser |
-| `v1/identity` | OTP haché, JWT RS256 + rotation, profil, validation admin, fiabilité | T-0012 | à pousser |
-| `v1/football` | Équipes, défis, matchs, Elo, classements | T-0013 | à pousser |
-| `v1/dating` | Profil, picks, quotas, dates par cartes, annulation 3 h, révélation du contact | T-0014 | à pousser |
-| `v1/talents` | Compétences, publications, missions, avis, événements | T-0015 | à pousser |
-| `v1/marketplace` | Offres à formules, commandes et machine à états, révisions, litiges | T-0016 | à pousser |
+| `v1/socle` | Contrats, erreurs, événements, kit de service, gabarit, runner de migrations, compose dev | T-0010 | fusionné dans `v1/integration` |
+| `v1/gateway` | Routage par manifestes, JWT/JWKS, limites de débit, `/internal/*` bloqué | T-0011 | fusionné dans `v1/integration` |
+| `v1/identity` | OTP haché, JWT RS256 + rotation, profil, validation admin, fiabilité, contact interne | T-0012 | fusionné dans `v1/integration` |
+| `v1/football` | Équipes, défis, matchs, Elo, classements | T-0013 | fusionné dans `v1/integration` |
+| `v1/dating` | Profil, picks, quotas, dates par cartes, annulation 3 h, révélation du contact | T-0014 | fusionné dans `v1/integration` |
+| `v1/talents` | Compétences, publications, missions, avis, événements | T-0015 | fusionné dans `v1/integration` |
+| `v1/marketplace` | Offres à formules, commandes et machine à états, révisions, litiges | T-0016 | fusionné dans `v1/integration` |
+| `v1/integration` | Service **uploads** (photos, logos, preuves, portfolios), seed de démo, parcours e2e | T-0017 | review |
 
 **Non couvert en v1** (assumé, voir ADR 0003) : paiements et séquestre réels, facturation, temps réel et chat, worker IA et `pgvector`, portail partenaire, écrans. Les services concernés passent par des interfaces (`PaymentsGateway`, `EntitlementsGateway`) avec des doubles.
+
+## Intégration v1 : ce qui a été vérifié ensemble
+
+La fusion des sept branches a révélé trois défauts qu'aucune branche seule ne pouvait voir ; ils sont corrigés et couverts :
+
+1. **Identity ne démarrait pas.** `IdentityService` déclarait ses dépendances en paramètres de constructeur avec valeur par défaut ; Nest les traitait comme des providers inexistants et sortait en code 1 sans message (journalisation Nest désactivée). Les dépendances sont devenues des champs.
+2. **Gateway ne retirait pas le préfixe public.** `/football/teams` était transmis tel quel au service monté sur `/teams` → 404. `upstreamPathFor()` retire `base_path` et est testé.
+3. **`birth_date` sortait en objet `Date`.** `GET /me` échouait à la validation du contrat (`expected string, received Date`) ; la date est désormais sérialisée en ISO.
+
+Vérifications faites sur un PostgreSQL 18 réel, six services et Gateway démarrés :
+
+| Preuve | Commande |
+|---|---|
+| Lint, types, tests, build, docs | `pnpm verify` (vert) |
+| Migrations des six schémas | `node tools/db-migrate.mjs <schéma>` |
+| Données de démo (3 comptes, 1 équipe, 1 offre) | `node tools/seed-demo.mjs` |
+| OTP → JWT → Gateway → Football, upload complet, contact interne | `node tests/e2e/v1-smoke.mjs` (18 vérifications) |
+| Toutes les routes protégées des six services | appel réel par la Gateway avec un jeton |
+
+**Reste à faire pour un pilote** : payer réellement (Payments/Campay, Billing), messagerie et notifications, crons de clôture (validation 72 h, contestation 48 h, vote MVP), back-office des litiges et validations, pilote de stockage S3 pour les uploads, écrans branchés sur les contrats.
 
 ## Blocages et décisions attendues (ne pas coder autour)
 
@@ -63,7 +84,9 @@ Chaque branche part de `v1/socle`. **Fusionner `v1/socle` en premier**, puis les
 7. **OTP WhatsApp** : fournisseur non choisi — ADR avant F1.1 en production.
 8. **Grand livre à simple écriture** dans le schéma d'origine : ADR « double écriture » validée par un humain avant F3.1.
 9. **Protection de `main` sur GitHub** : à activer par l'humain (PR obligatoire, CI verte, squash). Tant qu'elle est absente, la discipline est humaine : ne pas pousser sur `main` hors bootstrap.
-10. **`schema_extension.sql` n'a jamais tourné** sur un vrai PostgreSQL : premier travail d'intégration dès que F0.2 existe.
+10. **`schema_extension.sql` n'a jamais tourné** sur un vrai PostgreSQL : premier travail d'intégration dès que F0.2 existe. _(Fait pour les six schémas v1 : les migrations ont été appliquées sur un PostgreSQL 18 réel ; le fichier d'origine reste attendu pour comparer.)_
+11. **Stockage des fichiers** : le service uploads écrit sur disque local en développement ; le fournisseur S3-compatible (R2, Scaleway, MinIO) et la sauvegarde restent à choisir avant toute mise en ligne.
+12. **Argent réel** : `FakePaymentsGateway` et `FixedEntitlementsGateway` sont des doubles assumés ; aucun encaissement, séquestre, remboursement ni abonnement n'est réellement possible avant F3.1 à F3.4.
 
 ## Protocole multi-instances (à lire avant de coder)
 
@@ -90,7 +113,8 @@ pnpm install --frozen-lockfile
 
 ## Prochaines étapes
 
-1. Fusionner `v1/socle`, puis `v1/gateway`, `v1/identity`, `v1/football`, `v1/dating`, `v1/talents`, `v1/marketplace`.
-2. Brancher le front sur les contrats publiés (`@conexa/contracts`) : ils sont la seule interface stable.
-3. Décider de `pgvector` et du service de fichiers ; déposer `schema.sql` pour comparer les migrations.
-4. Vague 0 restante : Docker/CI (T-0002, T-0003), observabilité (T-0006), design system (T-0007).
+1. Brancher le front sur les contrats publiés (`@conexa/contracts`) : ils sont la seule interface stable.
+2. Argent : Payments (grand livre à double écriture), Campay, séquestre et Billing — chemin critique des rencontres (F3.1 à F3.4).
+3. Messagerie temps réel, notifications, crons de clôture et back-office (litiges, modération, validations).
+4. Uploads en production : choisir le stockage S3-compatible et la politique de sauvegarde.
+5. Vague 0 restante : Docker/CI (T-0002, T-0003), observabilité (T-0006), design system (T-0007) ; `schema.sql` attendu pour valider l'ADR 0003.

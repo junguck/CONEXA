@@ -36,6 +36,10 @@ agents:
       - deploy/**
       - tools/**
       - services/_runtimes/**
+      - services/uploads/**
+      - db/migrations/uploads/**
+      - packages/contracts/src/uploads/**
+      - docs/domain/uploads.md
       - packages/config/**
       - docs/runbooks/**
       - turbo.json
