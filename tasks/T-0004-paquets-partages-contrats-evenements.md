@@ -3,7 +3,7 @@ id: T-0004
 title: "Paquets partagés : contrats, événements, messagerie, erreurs"
 feature: F0.4
 agent: architect
-status: todo
+status: in_progress
 depends_on: [T-0001]
 size: M
 owned_paths:
@@ -24,8 +24,8 @@ contracts_touched:
 deps_request: []
 human_gate: false
 reviewers: [architect, security]
-branch: ""
-worktree: ""
+branch: "agent/architect/T-0004-shared-packages"
+worktree: "C:\Users\EG\Desktop\Conexa\worktrees\T-0004"
 pr: ""
 notes: "Contrat d'abord : cette tâche produit le langage commun dont dépendent TOUS les services. Rien ne doit être codé contre ces contrats avant leur fusion. ADR obligatoire pour le format d'événement."
 ---
