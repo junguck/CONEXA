@@ -25,6 +25,23 @@ export default function FootScoresPage() {
         <Link href="/football/defi">Lancer un défi</Link>
       </Button>
 
+      <div className="grid grid-cols-2 gap-1.5">
+        {[
+          { label: 'Mon équipe', href: '/football/equipe' },
+          { label: 'Statistiques', href: '/football/stats' },
+          { label: 'Compétitions', href: '/football/competitions' },
+          { label: 'Chat capitaines', href: '/football/chat' },
+        ].map((item) => (
+          <Link
+            key={item.href}
+            href={item.href}
+            className="flex min-h-11 items-center justify-center rounded-token border border-line px-2 text-xs font-semibold text-ink"
+          >
+            {item.label}
+          </Link>
+        ))}
+      </div>
+
       <div className="grid grid-cols-5 gap-1.5" aria-label="Jours">
         {days.map((day) => (
           <div

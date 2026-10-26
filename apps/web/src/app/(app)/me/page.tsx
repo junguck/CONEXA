@@ -14,7 +14,10 @@ const universes = [
 
 const account = [
   { label: 'Mes paiements', href: '/me/paiements' },
+  { label: 'Notifications', href: '/me/notifications' },
+  { label: 'Sécurité et signalements', href: '/me/securite' },
   { label: 'Confidentialité et données', href: '/me/confidentialite' },
+  { label: 'Aide et charte', href: '/aide' },
 ];
 
 export default function ProfilePage() {

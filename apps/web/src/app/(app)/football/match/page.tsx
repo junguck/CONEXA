@@ -63,8 +63,11 @@ export default function FootMatchPage() {
         <Button block size="sm" asChild>
           <Link href="/football/score">Déclarer le score</Link>
         </Button>
-        <Button block size="sm" variant="outline">
-          Signaler un désaccord
+        <Button block size="sm" variant="outline" asChild>
+          <Link href="/football/litige">Signaler un désaccord</Link>
+        </Button>
+        <Button block size="sm" variant="ghost" asChild>
+          <Link href="/football/chat">Ouvrir le chat des capitaines</Link>
         </Button>
       </Card>
     </div>

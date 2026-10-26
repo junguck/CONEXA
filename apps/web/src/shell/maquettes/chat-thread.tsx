@@ -7,7 +7,7 @@ import { useEffect, useRef, useState } from 'react';
 import { chatSeed } from './data';
 import { filterMessage, rejectionMessage } from './chat-filter';
 
-interface Message {
+export interface Message {
   id: string;
   from: 'me' | 'peer' | 'system';
   text: string;
@@ -20,8 +20,20 @@ const QUICK_CARDS = ['J’arrive', 'Je suis en retard', 'Je suis devant l’entr
  * Fil de démonstration : l'envoi est local, le filtre imite la règle serveur
  * (chiffres, liens, pseudos, demandes de contact). Aucune persistance.
  */
-export function ChatThread({ peer }: { peer: string }) {
-  const [messages, setMessages] = useState<Message[]>(chatSeed);
+export function ChatThread({
+  peer,
+  seed = chatSeed,
+  quickCards = QUICK_CARDS,
+  reply = 'D’accord, à dimanche alors !',
+  notice,
+}: {
+  peer: string;
+  seed?: readonly Message[];
+  quickCards?: readonly string[];
+  reply?: string;
+  notice?: string;
+}) {
+  const [messages, setMessages] = useState<Message[]>([...seed]);
   const [draft, setDraft] = useState('');
   const [error, setError] = useState('');
   const end = useRef<HTMLDivElement>(null);
@@ -50,7 +62,7 @@ export function ChatThread({ peer }: { peer: string }) {
         {
           id: `m${current.length + 1}`,
           from: 'peer',
-          text: 'D’accord, à dimanche alors !',
+          text: reply,
           at: now(),
         },
       ]);
@@ -89,7 +101,7 @@ export function ChatThread({ peer }: { peer: string }) {
       </div>
 
       <div className="flex gap-1.5 overflow-x-auto pb-1 [scrollbar-width:none]">
-        {QUICK_CARDS.map((card) => (
+        {quickCards.map((card) => (
           <button
             key={card}
             type="button"
@@ -131,8 +143,8 @@ export function ChatThread({ peer }: { peer: string }) {
         </p>
       ) : (
         <p className="text-xs text-muted">
-          Les numéros, liens et demandes de contact sont bloqués : les horaires se fixent avec les
-          cartes.
+          {notice ??
+            'Les numéros, liens et demandes de contact sont bloqués : les horaires se fixent avec les cartes.'}
         </p>
       )}
     </div>
