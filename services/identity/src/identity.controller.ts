@@ -14,6 +14,7 @@ import { CurrentUser, JwtAuthGuard, Public, Roles } from '@conexa/service-kit';
 import type { z } from 'zod';
 
 import { IdentityService } from './identity.service.js';
+import { ServiceTokenGuard } from './service-token.guard.js';
 
 @Controller()
 export class IdentityController {
@@ -92,6 +93,17 @@ export class IdentityController {
   @Get('users/:id')
   user(@Param('id') id: string) {
     return this.identity.publicUser(id);
+  }
+
+  /**
+   * Contact brut pour les autres services (Dating après deux « oui »). Jamais
+   * routé par la Gateway : appel direct du service à service avec x-service-token.
+   */
+  @Public()
+  @UseGuards(ServiceTokenGuard)
+  @Get('internal/users/:id/contact')
+  internalContact(@Param('id') id: string) {
+    return this.identity.internalContact(id);
   }
 
   @UseGuards(JwtAuthGuard)

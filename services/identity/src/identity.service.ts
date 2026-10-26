@@ -35,10 +35,10 @@ export class ConsoleOtpSender implements OtpSender {
 
 @Injectable()
 export class IdentityService {
-  constructor(
-    private readonly sender: OtpSender = new ConsoleOtpSender(),
-    private readonly now: () => Date = () => new Date(),
-  ) {}
+  // Champs et non paramètres de constructeur : Nest les prendrait pour des
+  // dépendances à injecter (il n'existe aucun provider `OtpSender`).
+  private readonly sender: OtpSender = new ConsoleOtpSender();
+  private readonly now: () => Date = () => new Date();
 
   async requestOtp(whatsapp: string): Promise<void> {
     const code = generateOtpCode();
@@ -228,7 +228,7 @@ export class IdentityService {
       study_level: profile.study_level,
       team: null,
       reliability_band: band(profile.reliability),
-      birth_date: profile.birth_date,
+      birth_date: toIsoDate(profile.birth_date),
       gender: profile.gender,
       status: profile.status,
       role: profile.role,
@@ -336,6 +336,24 @@ export class IdentityService {
     };
   }
 
+  /**
+   * Contact brut, réservé aux services internes : Dating ne stocke jamais le
+   * numéro et le demande seulement après un accord mutuel (F4.6).
+   */
+  async internalContact(userId: string) {
+    const profile = await db
+      .selectFrom('profiles')
+      .select(['id', 'whatsapp', 'status'])
+      .where('id', '=', userId)
+      .executeTakeFirst();
+
+    if (!profile || profile.status === 'deleted') {
+      throw notFound('Étudiant');
+    }
+
+    return { user_id: profile.id, whatsapp: profile.whatsapp, status: profile.status };
+  }
+
   async report(
     reporterId: string,
     input: { target_type: string; target_id: string; reason: string; details?: string },
@@ -418,6 +436,14 @@ export class IdentityService {
       is_new_user: isNewUser,
     };
   }
+}
+
+/** `date` revient en Date depuis `pg` : le contrat expose une date ISO, pas un objet. */
+function toIsoDate(value: Date | string | null): string | null {
+  if (value === null) {
+    return null;
+  }
+  return typeof value === 'string' ? value.slice(0, 10) : value.toISOString().slice(0, 10);
 }
 
 function band(score: number): 'high' | 'medium' | 'low' {

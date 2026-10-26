@@ -9,6 +9,11 @@ export const EnvSchema = BaseEnvSchema.extend({
   ACCESS_TOKEN_TTL_SECONDS: z.coerce.number().int().positive().default(900),
   REFRESH_TOKEN_TTL_DAYS: z.coerce.number().int().positive().default(30),
   OTP_HASH_SECRET: z.string().min(16).default('dev-otp-secret-change-me'),
+  /**
+   * Jeton partagé attendu sur `/internal/*` (x-service-token). Absent en dev, les
+   * routes internes répondent une erreur explicite au lieu d'un faux contact.
+   */
+  SERVICE_TOKEN: z.string().min(16).optional(),
 });
 
 export type Env = z.infer<typeof EnvSchema>;

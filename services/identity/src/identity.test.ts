@@ -20,6 +20,7 @@ import {
   isExpired,
 } from './otp.js';
 import { assessRefresh, generateRefreshToken, hashToken } from './tokens.js';
+import { assertServiceToken, serviceTokenMatches } from './service-token.js';
 
 const SECRET = 'secret-de-test';
 
@@ -115,6 +116,22 @@ describe('jetons de rafraîchissement', () => {
     expect(token.length).toBeGreaterThan(30);
     expect(hashToken(token)).toHaveLength(64);
     expect(hashToken(token)).not.toBe(token);
+  });
+});
+describe('jeton de service interne', () => {
+  const EXPECTED = 'jeton-de-service-de-test';
+
+  it('accepte un jeton identique et refuse tout le reste', () => {
+    expect(serviceTokenMatches(EXPECTED, EXPECTED)).toBe(true);
+    expect(serviceTokenMatches('jeton-de-service-de-tes', EXPECTED)).toBe(false);
+    expect(serviceTokenMatches(undefined, EXPECTED)).toBe(false);
+    expect(serviceTokenMatches(EXPECTED, undefined)).toBe(false);
+  });
+
+  it('répond une erreur explicite quand le service n’est pas configuré', () => {
+    expect(() => assertServiceToken('peu-importe', undefined)).toThrow(/SERVICE_TOKEN/);
+    expect(() => assertServiceToken('mauvais', EXPECTED)).toThrow(AppError);
+    expect(() => assertServiceToken(EXPECTED, EXPECTED)).not.toThrow();
   });
 });
 
