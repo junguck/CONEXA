@@ -3,7 +3,7 @@ id: T-0011
 title: "Gateway v1 : routage par manifestes, JWT, limites de débit"
 feature: F0.8
 agent: gateway
-status: todo
+status: review
 depends_on: [T-0010]
 size: M
 owned_paths:
@@ -18,8 +18,8 @@ contracts_touched: []
 deps_request: []
 human_gate: false
 reviewers: [architect, security]
-branch: ""
-worktree: ""
+branch: "v1/gateway"
+worktree: "../worktrees/v1-gateway"
 pr: ""
 notes: "Branche v1/gateway, dérivée de v1/socle. Le rate limit utilise Redis quand REDIS_URL est présent, sinon un compteur en mémoire (tests)."
 ---
