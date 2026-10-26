@@ -1,0 +1,94 @@
+{
+  "event": "dating.embedding_requested",
+  "version": 1,
+  "producer": "dating",
+  "valid": [
+    {
+      "fixture": "valid/full.json"
+    },
+    {
+      "fixture": "valid/empty-blocks.json"
+    },
+    {
+      "fixture": "valid/multi-choice-reordered.json"
+    }
+  ],
+  "invalid": [
+    {
+      "fixture": "invalid/missing-envelope-field.json",
+      "reason": "missing envelope fields"
+    },
+    {
+      "fixture": "invalid/unsupported-envelope-version.json",
+      "reason": "unsupported event version"
+    },
+    {
+      "fixture": "invalid/unknown-producer.json",
+      "reason": "only the dating service"
+    },
+    {
+      "fixture": "invalid/unknown-type.json",
+      "reason": "unsupported event type"
+    },
+    {
+      "fixture": "invalid/invalid-occurred-at.json",
+      "reason": "valid ISO-8601"
+    },
+    {
+      "fixture": "invalid/naive-occurred-at.json",
+      "reason": "include a timezone"
+    },
+    {
+      "fixture": "invalid/missing-user-id.json",
+      "reason": "user_id"
+    },
+    {
+      "fixture": "invalid/blank-profile-id.json",
+      "reason": "profile_id"
+    },
+    {
+      "fixture": "invalid/bad-questionnaire-version.json",
+      "reason": "questionnaire_version"
+    },
+    {
+      "fixture": "invalid/missing-answers.json",
+      "reason": "answers is required"
+    },
+    {
+      "fixture": "invalid/answers-not-object.json",
+      "reason": "answers must be an object"
+    },
+    {
+      "fixture": "invalid/missing-block.json",
+      "reason": "missing answer blocks"
+    },
+    {
+      "fixture": "invalid/unknown-block.json",
+      "reason": "unknown answer blocks"
+    },
+    {
+      "fixture": "invalid/free-text-answer.json",
+      "reason": "never free text"
+    },
+    {
+      "fixture": "invalid/scale-out-of-range.json",
+      "reason": "scale answers"
+    },
+    {
+      "fixture": "invalid/boolean-answer.json",
+      "reason": "boolean answers"
+    },
+    {
+      "fixture": "invalid/duplicate-option.json",
+      "reason": "must not repeat"
+    },
+    {
+      "fixture": "invalid/empty-multi-choice.json",
+      "reason": "must not be empty"
+    },
+    {
+      "fixture": "invalid/unsupported-answer-type.json",
+      "reason": "unsupported answer type"
+    }
+  ]
+}

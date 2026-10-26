@@ -45,6 +45,8 @@ def validate_envelope(event: Any) -> None:
     version = event["version"]
     if isinstance(version, bool) or not isinstance(version, int) or version < 1:
         raise InvalidEvent("version must be a positive integer")
+    if version != 1:
+        raise InvalidEvent(f"unsupported event version: {version}")
     if not isinstance(event["occurred_at"], str):
         raise InvalidEvent("occurred_at must be an ISO-8601 string")
     _parse_datetime(event["occurred_at"])
@@ -138,8 +140,14 @@ class DatingWorker:
             raise InvalidEvent("questionnaire_version must be a positive integer")
         if "answers" not in payload:
             raise InvalidEvent("answers is required")
+        answers = payload["answers"]
+        if not isinstance(answers, Mapping):
+            raise InvalidEvent("answers must be an object grouped by block")
+        missing = set(BLOCKS) - set(answers)
+        if missing:
+            raise InvalidEvent(f"missing answer blocks: {sorted(missing)}")
 
-        vectors = encode_profile(payload["answers"])
+        vectors = encode_profile(answers)
         return [
             build_event(
                 EMBEDDING_COMPUTED,
@@ -229,8 +237,11 @@ def _block_vectors(value: Any, field: str) -> dict[str, list[float]]:
     return vectors
 
 
-def _parse_datetime(value: str) -> None:
+def _parse_datetime(value: str) -> datetime:
     try:
-        datetime.fromisoformat(value.replace("Z", "+00:00"))
+        moment = datetime.fromisoformat(value.replace("Z", "+00:00"))
     except ValueError:
         raise InvalidEvent("occurred_at must be a valid ISO-8601 datetime") from None
+    if moment.tzinfo is None or moment.utcoffset() is None:
+        raise InvalidEvent("occurred_at must include a timezone")
+    return moment

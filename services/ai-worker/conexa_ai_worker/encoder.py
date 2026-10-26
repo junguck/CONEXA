@@ -76,9 +76,11 @@ def _answer_tokens(question: str, answer: Any) -> list[tuple[str, float]]:
     if isinstance(answer, (list, tuple)):
         if not answer:
             raise InvalidAnswers("multiple-choice answers must not be empty")
+        options = [_validated_option(option) for option in answer]
+        if len(set(options)) != len(options):
+            raise InvalidAnswers("multiple-choice answers must not repeat options")
         return [
-            (f"{question}{_ANSWER_SEPARATOR}{_validated_option(option)}", 1.0)
-            for option in answer
+            (f"{question}{_ANSWER_SEPARATOR}{option}", 1.0) for option in options
         ]
     raise InvalidAnswers(f"unsupported answer type: {type(answer).__name__}")
 

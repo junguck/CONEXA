@@ -1,0 +1,28 @@
+{
+  "id": "6f1c5f2e-3f0e-4a5a-9b4a-2f2f0c1d9e36",
+  "type": "dating.embedding_requested",
+  "version": 1,
+  "occurred_at": "2026-10-26T09:00:00Z",
+  "producer": "dating",
+  "traceparent": "00-4bf92f3577b34da6a3ce929d0e0e4736-00f067aa0ba902b7-01",
+  "payload": {
+    "user_id": "3d2b1f44-9c2a-4e8f-5b7a-1d2c3b4e5f60",
+    "profile_id": "a1b2c3d4-e5f6-4a7b-8c9d-0e1f2a3b4c5d",
+    "questionnaire_version": 1,
+    "answers": {
+      "values": {
+        "q_family": "important",
+        "q_honesty": "always",
+        "q_money": "save"
+      },
+      "personality": {
+        "q_humor": ["dry", "dry"],
+        "q_outgoing": 4
+      },
+      "lifestyle": {
+        "q_night": "rare",
+        "q_sport": 2
+      }
+    }
+  }
+}

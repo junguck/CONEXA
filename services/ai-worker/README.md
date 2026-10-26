@@ -9,18 +9,25 @@ et applique la mise à jour Rocchio après un date. Décision d'encodage :
 
 | Sens | Événement | Producteur |
 |---|---|---|
-| consomme | `dating.embedding_requested` | `dating` (contrat à publier, voir ADR 0003) |
+| consomme | `dating.embedding_requested` | `dating` (contrat consommateur gelé ci-dessous, schéma producteur à publier) |
 | produit | `embedding.computed` | `ai` |
 | consomme | `date.completed` | `dating` |
 | produit | `dating.vectors_updated` | `ai` |
 
 Schémas des événements produits : [`packages/events/src/ai/`](../../packages/events/src/ai/).
 
+Contrat **consommateur** de `dating.embedding_requested` :
+[`contracts/dating.embedding_requested.v1.md`](contracts/dating.embedding_requested.v1.md).
+Il fixe l'enveloppe, les trois blocs, la grammaire des réponses et la matrice de
+rejet ; le corpus exécutable est dans `tests/fixtures/consumer/`. Le schéma
+producteur canonique reste à publier par `dating`.
+
 ## Commandes
 
 ```bash
 cd services/ai-worker
 python3 -m unittest discover -s tests -v
+python3 -m unittest tests.test_consumer_contract -v
 python3 -m conexa_ai_worker < tests/fixtures/dating.embedding_requested.v1.json
 ```
 
@@ -64,8 +71,9 @@ consommateurs dédupliquent sur l'identifiant.
 
 ## Limites connues
 
-- Le producteur de `dating.embedding_requested` n'existe pas encore : la forme
-  attendue est décrite dans l'ADR 0003 et testée avec des fixtures.
+- Le producteur de `dating.embedding_requested` n'existe pas encore : le contrat
+  consommateur v1 est gelé et testé, mais le schéma producteur canonique doit
+  être publié par `dating`.
 - Le client Redis (`redis-py` ou équivalent) et le bus réel restent à fournir par
   platform (F0.2/F0.4) ; l'adaptateur et la boucle sont prêts et testés avec des
   doublures.

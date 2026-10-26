@@ -31,7 +31,7 @@ dating ──date.completed──► ai
 dating ◄──dating.vectors_updated── ai
 ```
 
-### Entrée `dating.embedding_requested` (forme proposée, producteur dating)
+### Entrée `dating.embedding_requested` (contrat consommateur v1 gelé, schéma producteur à publier)
 
 ```json
 {
@@ -46,9 +46,11 @@ dating ◄──dating.vectors_updated── ai
 }
 ```
 
-- Réponses = identifiants de choix (`[a-z0-9][a-z0-9_-]*`) ou entiers 1–5. Tout texte libre est refusé.
-- Les trois blocs sont attendus ; un bloc vide produit un vecteur nul de 64 dimensions.
+- Enveloppe : `version` exactement `1`, producteur `dating`, `occurred_at` ISO-8601 **avec fuseau**. Une version inconnue est refusée, jamais réinterprétée.
+- Réponses = identifiants de choix (`[a-z0-9][a-z0-9_-]*`) ou entiers 1–5. Tout texte libre est refusé ; les choix multiples sont non vides et sans doublon.
+- Les trois blocs (`values`, `personality`, `lifestyle`) sont obligatoires ; un bloc vide produit un vecteur nul de 64 dimensions.
 - Aucun libellé français ne circule : le hash porte sur l'identifiant.
+- Contrat complet et matrice de rejet : [`services/ai-worker/contracts/dating.embedding_requested.v1.md`](../../services/ai-worker/contracts/dating.embedding_requested.v1.md) ; corpus exécutable dans `services/ai-worker/tests/fixtures/consumer/`.
 
 ### Sortie `embedding.computed`
 
@@ -76,7 +78,8 @@ dating ◄──dating.vectors_updated── ai
 
 ```bash
 cd services/ai-worker
-python3 -m unittest discover -s tests -v          # 36 tests
+python3 -m unittest discover -s tests -v          # 59 tests
+python3 -m unittest tests.test_consumer_contract -v
 python3 -m conexa_ai_worker < tests/fixtures/dating.embedding_requested.v1.json
 ```
 
@@ -92,7 +95,7 @@ workspace sans dépendance n'obtient pas d'importateur dans `pnpm-lock.yaml`, do
 
 ## 5. Limites et suite
 
-1. **Contrat manquant** : `dating.embedding_requested` doit être publié par l'agent `dating` avant l'intégration de bout en bout (ADR 0003).
+1. **Contrat producteur manquant** : le contrat consommateur v1 est gelé et testé (enveloppe, blocs, grammaire, rejets), mais `dating` doit encore publier le schéma canonique de `dating.embedding_requested` avant l'intégration de bout en bout.
 2. **F0.4** : les schémas de `packages/events/src/ai/` ne sont pas encore compilés par le générateur commun.
 3. **Stockage** : la migration pgvector de `dating_profiles` (schema.sql absent, ADR 0002) reste chez dating.
 4. **Idempotence durable** : l'adaptateur Redis est prêt ; il reste à injecter le client réel fourni par platform (F0.2) et à choisir la politique de file d'échecs.

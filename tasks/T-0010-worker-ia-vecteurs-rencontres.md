@@ -26,7 +26,7 @@ reviewers: [architect, security]
 branch: "agent/ai/T-0010-dating-embeddings"
 worktree: "../worktrees/T-0010"
 pr: ""
-notes: "Périmètre IA de F4.3 (+ fonction Rocchio de F4.6) : le questionnaire, l'éligibilité et la persistance restent chez dating. L'ADR 0003 est exigé par F4.3 mais docs/decisions appartient à architect → review:architect-ok. Le producteur dating.embedding_requested n'existe pas encore : forme consommateur décrite dans l'ADR, à publier par dating avant l'intégration de bout en bout. Les schémas d'événements sont posés en JSON dans packages/events/src/ai/ en attendant le générateur de F0.4. Pas de package.json : un paquet de workspace sans dépendance casse pnpm --frozen-lockfile ; tâche platform à créer pour l'intégration Turborepo/CI. Extension : boucle d'événements et adaptateur Redis inclus dans la même branche avant fusion, sans dépendance ajoutée ; le client Redis réel reste à fournir par platform (F0.2)."
+notes: "Périmètre IA de F4.3 (+ fonction Rocchio de F4.6) : le questionnaire, l'éligibilité et la persistance restent chez dating. L'ADR 0003 est exigé par F4.3 mais docs/decisions appartient à architect → review:architect-ok. Le producteur dating.embedding_requested n'existe pas encore : forme consommateur décrite dans l'ADR, à publier par dating avant l'intégration de bout en bout. Les schémas d'événements sont posés en JSON dans packages/events/src/ai/ en attendant le générateur de F0.4. Pas de package.json : un paquet de workspace sans dépendance casse pnpm --frozen-lockfile ; tâche platform à créer pour l'intégration Turborepo/CI. Extension : boucle d'événements, adaptateur Redis et contrat consommateur v1 (document + corpus de 22 fixtures) inclus dans la même branche avant fusion, sans dépendance ajoutée ; le client Redis réel reste à fournir par platform (F0.2) et le schéma producteur canonique par dating."
 ---
 
 ## Objectif
@@ -44,7 +44,8 @@ Démarrer la partie IA du domaine rencontres : transformer des réponses de ques
 3. Contrats des événements produits : `embedding.computed` v1, `dating.vectors_updated` v1.
 4. Tests : déterminisme, dimensions, ordinalité des échelles, ordre des choix multiples, rejeu idempotent, cas Rocchio calculés à la main, absence de PII dans les journaux.
 5. `docs/domain/ai.md` : pipeline, contrats, exploitation, limites.
-6. Extension (même branche, avant fusion) : `runtime.py` — boucle pilotée par un `Delivery` avec `ack`/`reject`, publication avant acquittement, rejet sans boucle, lot vide acquitté sans publication. `idempotency.py` — protocole `IdempotencyStore` et adaptateur `RedisIdempotencyStore` (JSON, `SET EX`, espace de clés, erreur sur entrée corrompue), sans ajouter de dépendance.
+6. Contrat consommateur `dating.embedding_requested` v1 : document `services/ai-worker/contracts/`, corpus `tests/fixtures/consumer/` (3 valides, 19 refus) et matrice de rejet ; durcissements associés (version d'enveloppe 1, fuseau obligatoire, trois blocs requis, options distinctes).
+7. Extension (même branche, avant fusion) : `runtime.py` — boucle pilotée par un `Delivery` avec `ack`/`reject`, publication avant acquittement, rejet sans boucle, lot vide acquitté sans publication. `idempotency.py` — protocole `IdempotencyStore` et adaptateur `RedisIdempotencyStore` (JSON, `SET EX`, espace de clés, erreur sur entrée corrompue), sans ajouter de dépendance.
 
 ## Critères d'acceptation
 
@@ -55,7 +56,8 @@ Démarrer la partie IA du domaine rencontres : transformer des réponses de ques
 - [x] aucune réponse, aucun vecteur dans les journaux
 - [x] boucle : publication avant `ack`, événement invalide rejeté et consigné, panne du sink non acquittée
 - [x] rejeu via Redis sans recalcul, entrée corrompue refusée (`IdempotencyError`)
-- [x] `python3 -m unittest discover -s tests -v` vert (53 tests)
+- [x] contrat consommateur : chaque fixture valide est acceptée, chaque refus l'est pour la raison documentée, aucun fichier orphelin
+- [x] `python3 -m unittest discover -s tests -v` vert (59 tests)
 
 ## Hors périmètre
 
