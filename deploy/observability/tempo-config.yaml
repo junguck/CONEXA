@@ -1,0 +1,51 @@
+# Tempo de développement (F0.6) : mono-instance, stockage local.
+# Le générateur de métriques produit les span metrics et le service graph,
+# poussés dans Prometheus par remote write (pas d'instrumentation requise
+# côté service pour la latence et les erreurs par route).
+server:
+  http_listen_port: 3200
+  log_level: warn
+
+distributor:
+  receivers:
+    otlp:
+      protocols:
+        grpc:
+          endpoint: 0.0.0.0:4317
+        http:
+          endpoint: 0.0.0.0:4318
+
+ingester:
+  # Bloc court pour un poste de développement : la trace est interrogeable vite.
+  complete_block_timeout: 1m
+
+compactor:
+  compaction:
+    block_retention: 24h
+
+metrics_generator:
+  registry:
+    external_labels:
+      source: tempo
+      environment: development
+  storage:
+    path: /var/tempo/generator/wal
+    remote_write:
+      - url: http://prometheus:9090/api/v1/write
+        send_exemplars: true
+
+storage:
+  trace:
+    backend: local
+    local:
+      path: /var/tempo/traces
+    wal:
+      path: /var/tempo/wal
+
+overrides:
+  defaults:
+    metrics_generator:
+      processors: [service-graphs, span-metrics]
+
+usage_report:
+  reporting_enabled: false

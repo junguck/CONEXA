@@ -1,0 +1,124 @@
+# Alertes de base (F0.6). À calibrer avec les vraies données.
+# Les métriques `conexa_*` sont un contrat avec les services : elles n'existent
+# pas encore et ne déclenchent donc rien tant que money/realtime ne les émettent.
+groups:
+  - name: disponibilite
+    rules:
+      - alert: TargetDown
+        expr: up == 0
+        for: 2m
+        labels:
+          severity: critical
+        annotations:
+          summary: 'Cible Prometheus indisponible'
+          description: '{{ $labels.job }} ({{ $labels.instance }}) ne répond plus.'
+
+  - name: api
+    rules:
+      - alert: HighErrorRatio
+        expr: |
+          sum by (service) (rate(traces_spanmetrics_calls_total{status_code="STATUS_CODE_ERROR"}[5m]))
+          /
+          clamp_min(sum by (service) (rate(traces_spanmetrics_calls_total[5m])), 0.001)
+          > 0.05
+        for: 10m
+        labels:
+          severity: warning
+        annotations:
+          summary: "Taux d'erreur élevé sur {{ $labels.service }}"
+          description: 'Plus de 5 % des requêtes échouent depuis 10 minutes.'
+
+      - alert: HighLatencyP95
+        expr: |
+          histogram_quantile(
+            0.95,
+            sum by (le, service) (rate(traces_spanmetrics_latency_bucket[5m]))
+          ) > 500
+        for: 10m
+        labels:
+          severity: warning
+        annotations:
+          summary: 'Latence p95 élevée sur {{ $labels.service }}'
+          description: 'Le p95 dépasse 500 ms depuis 10 minutes.'
+
+  - name: files
+    rules:
+      - alert: QueueBacklog
+        expr: sum by (queue) (rabbitmq_queue_messages_ready) > 1000
+        for: 5m
+        labels:
+          severity: warning
+        annotations:
+          summary: 'File en retard : {{ $labels.queue }}'
+          description: 'Plus de 1 000 messages prêts à être consommés.'
+
+      - alert: QueueWithoutConsumer
+        expr: sum by (queue) (rabbitmq_queue_messages_ready) > 0 and sum by (queue) (rabbitmq_queue_consumers) == 0
+        for: 10m
+        labels:
+          severity: critical
+        annotations:
+          summary: 'File sans consommateur : {{ $labels.queue }}'
+          description: 'Des messages attendent alors que plus aucun consommateur n’est connecté.'
+
+      - alert: DeadLetterQueueNotEmpty
+        expr: sum by (queue) (rabbitmq_queue_messages_ready{queue=~".*dlq.*|.*dead.*"}) > 0
+        for: 5m
+        labels:
+          severity: critical
+        annotations:
+          summary: 'File de rebut non vide : {{ $labels.queue }}'
+          description: 'Un message a épuisé ses tentatives.'
+
+  - name: argent
+    rules:
+      - alert: PaymentFailures
+        expr: increase(conexa_payments_failed_total[15m]) > 0
+        for: 1m
+        labels:
+          severity: critical
+        annotations:
+          summary: 'Échec de paiement Campay'
+          description: 'Au moins un paiement a échoué sur les 15 dernières minutes.'
+
+      - alert: PaymentSuccessRate
+        expr: |
+          sum(rate(conexa_payments_succeeded_total[15m]))
+          /
+          clamp_min(sum(rate(conexa_payments_created_total[15m])), 0.001)
+          < 0.9
+        for: 15m
+        labels:
+          severity: critical
+        annotations:
+          summary: 'Taux de réussite des paiements sous 90 %'
+          description: 'Vérifier Campay et le rapprochement avant de continuer.'
+
+      - alert: ReconciliationGap
+        expr: conexa_payments_reconciliation_gap != 0
+        for: 5m
+        labels:
+          severity: critical
+        annotations:
+          summary: 'Écart de rapprochement non nul'
+          description: 'Le grand livre et le fournisseur de paiement divergent.'
+
+  - name: notifications
+    rules:
+      - alert: NotificationFailures
+        expr: increase(conexa_notifications_failed_total[15m]) > 0
+        for: 5m
+        labels:
+          severity: warning
+        annotations:
+          summary: 'Échec de notification'
+          description: 'Des notifications n’ont pas pu être envoyées.'
+
+      - alert: SosWithoutAcknowledgement
+        expr: conexa_dating_sos_unacknowledged > 0
+        for: 1m
+        labels:
+          severity: critical
+        annotations:
+          summary: 'Alerte SOS sans accusé de réception'
+          description: 'Une alerte de sécurité est en attente : escalade immédiate.'

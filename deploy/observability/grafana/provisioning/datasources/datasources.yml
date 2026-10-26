@@ -1,0 +1,53 @@
+apiVersion: 1
+
+datasources:
+  - name: Prometheus
+    uid: prometheus
+    type: prometheus
+    access: proxy
+    url: http://prometheus:9090
+    isDefault: true
+    jsonData:
+      timeInterval: 15s
+
+  - name: Loki
+    uid: loki
+    type: loki
+    access: proxy
+    url: http://loki:3100
+    jsonData:
+      maxLines: 5000
+      # Lien journal -> trace : le champ `trace_id` des logs pino ouvre Tempo.
+      derivedFields:
+        - name: TraceID
+          matcherRegex: '"trace_id":"([a-f0-9]+)"'
+          url: '${__value.raw}'
+          datasourceUid: tempo
+
+  - name: Tempo
+    uid: tempo
+    type: tempo
+    access: proxy
+    url: http://tempo:3200
+    jsonData:
+      # Lien trace -> journaux de la même requête.
+      tracesToLogsV2:
+        datasourceUid: loki
+        filterByTraceID: true
+        filterBySpanID: false
+        spanStartTimeShift: -5m
+        spanEndTimeShift: 5m
+        tags:
+          # Loki nomme le label `service_name` pour l'attribut OTLP `service.name`.
+          - key: service.name
+            value: service_name
+      # Lien trace -> métriques (span metrics et service graph).
+      tracesToMetrics:
+        datasourceUid: prometheus
+        tags:
+          - key: service.name
+            value: service
+      nodeGraph:
+        enabled: true
+      serviceMap:
+        datasourceUid: prometheus
