@@ -11,3 +11,4 @@ engineStrict: true
 # Scripts d'installation autorisés (pnpm 12 bloque les build scripts par défaut).
 allowBuilds:
   lefthook: true
+  sharp: true

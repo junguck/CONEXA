@@ -3,7 +3,7 @@ id: T-0007
 title: "Design system et coquille de l'app web (PWA)"
 feature: F0.7
 agent: web-core
-status: in_progress
+status: review
 depends_on: [T-0001]
 size: M
 owned_paths:
