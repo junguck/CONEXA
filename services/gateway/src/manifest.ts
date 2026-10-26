@@ -64,6 +64,19 @@ function patternToRegExp(pattern: string): RegExp {
   return new RegExp(`^${escaped}/?$`);
 }
 
+/**
+ * Chemin envoyé au service : le préfixe public du manifeste est retiré, car
+ * chaque service monte ses routes à sa racine (`/football/teams` → `/teams`).
+ */
+export function upstreamPathFor(pathname: string, basePath: string): string {
+  const prefix = basePath.replace(/\/$/, '');
+  if (prefix === '') {
+    return pathname;
+  }
+  const stripped = pathname.slice(prefix.length);
+  return stripped === '' ? '/' : stripped;
+}
+
 export function matchRoute(
   manifests: ServiceManifest[],
   method: string,

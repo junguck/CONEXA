@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 
-import { matchRoute, type ServiceManifest } from './manifest.js';
+import { matchRoute, upstreamPathFor, type ServiceManifest } from './manifest.js';
 import { FixedWindowLimiter } from './rate-limit.js';
 
 const manifests: ServiceManifest[] = [
@@ -38,6 +38,13 @@ describe('routage par manifeste', () => {
   it('respecte le préfixe du service', () => {
     expect(matchRoute(manifests, 'GET', '/football/teams/abc')?.manifest.service).toBe('football');
     expect(matchRoute(manifests, 'GET', '/teams/abc')).toBeNull();
+  });
+
+  it('retire le préfixe public avant d’appeler le service', () => {
+    expect(upstreamPathFor('/football/teams/abc', '/football')).toBe('/teams/abc');
+    expect(upstreamPathFor('/football/teams', '/football/')).toBe('/teams');
+    expect(upstreamPathFor('/football', '/football')).toBe('/');
+    expect(upstreamPathFor('/me', '')).toBe('/me');
   });
 
   it('ne route ni mauvaise méthode ni route inconnue', () => {

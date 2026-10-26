@@ -2,7 +2,7 @@ import { AppError } from '@conexa/errors';
 import type { TokenVerifier } from '@conexa/service-kit';
 import type { NextFunction, Request, RequestHandler, Response } from 'express';
 
-import { matchRoute, type ServiceManifest } from './manifest.js';
+import { matchRoute, upstreamPathFor, type ServiceManifest } from './manifest.js';
 import { proxyRequest } from './proxy.js';
 import { FixedWindowLimiter } from './rate-limit.js';
 
@@ -67,7 +67,7 @@ export function createGatewayMiddleware(options: GatewayOptions): RequestHandler
         request,
         response,
         match.manifest.upstream,
-        pathname + querySuffix(request),
+        upstreamPathFor(pathname, match.manifest.base_path) + querySuffix(request),
         extraHeaders,
       );
     })().catch(next);
