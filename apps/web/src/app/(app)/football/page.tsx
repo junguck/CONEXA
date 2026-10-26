@@ -1,4 +1,5 @@
-import { Badge } from '@conexa/ui';
+import { Badge, Button } from '@conexa/ui';
+import Link from 'next/link';
 
 import { matches } from '../../../shell/maquettes/data';
 import { Hint, MatchRow, TopBar } from '../../../shell/maquettes/kit';
@@ -19,6 +20,10 @@ export default function FootScoresPage() {
         eyebrow="Ligue Inter-filières"
         right={<Badge tone="live">Direct</Badge>}
       />
+
+      <Button asChild size="sm" variant="outline" block>
+        <Link href="/football/defi">Lancer un défi</Link>
+      </Button>
 
       <div className="grid grid-cols-5 gap-1.5" aria-label="Jours">
         {days.map((day) => (
@@ -52,7 +57,9 @@ export default function FootScoresPage() {
           <span className="h-4 w-4 rounded-[3px] bg-accent" aria-hidden /> Poule A
         </div>
         {matches.map((match) => (
-          <MatchRow key={`${match.home}-${match.away}`} {...match} />
+          <Link key={`${match.home}-${match.away}`} href="/football/match" className="block">
+            <MatchRow {...match} />
+          </Link>
         ))}
       </section>
 

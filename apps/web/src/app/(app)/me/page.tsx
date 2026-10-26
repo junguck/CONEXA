@@ -12,6 +12,11 @@ const universes = [
   { label: 'Mon profil Pro', href: '/pro/profil' },
 ];
 
+const account = [
+  { label: 'Mes paiements', href: '/me/paiements' },
+  { label: 'Confidentialité et données', href: '/me/confidentialite' },
+];
+
 export default function ProfilePage() {
   return (
     <div className="flex flex-col gap-4 pb-4">
@@ -68,19 +73,23 @@ export default function ProfilePage() {
 
       <section className="flex flex-col gap-2">
         <h2 className="font-display text-xs font-bold uppercase tracking-[.08em] text-muted">
-          Données
+          Compte
         </h2>
-        <div className="flex flex-col gap-2">
-          <Button variant="outline" block>
-            Exporter mes données
-          </Button>
-          <Button variant="danger" block>
-            Supprimer mon compte
-          </Button>
-        </div>
+        <Card className="flex flex-col p-0">
+          {account.map((entry) => (
+            <Link
+              key={entry.href}
+              href={entry.href}
+              className="flex min-h-12 items-center justify-between gap-3 border-b border-line px-3.5 text-sm font-semibold last:border-0"
+            >
+              {entry.label}
+              <ChevronRight className="h-4 w-4 text-muted" aria-hidden />
+            </Link>
+          ))}
+        </Card>
         <p className="text-xs text-muted">
-          La suppression efface le profil, les dates et les messages. Les données de paiement sont
-          conservées selon la loi.
+          Mes paiements garde l’historique du séquestre ; Confidentialité permet d’exporter ou de
+          supprimer les données.
         </p>
       </section>
 

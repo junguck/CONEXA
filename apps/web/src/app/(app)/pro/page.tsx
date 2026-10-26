@@ -1,5 +1,6 @@
 import { Avatar, Badge, Card } from '@conexa/ui';
 import { MessageCircle, Search, Share2, ThumbsUp } from 'lucide-react';
+import Link from 'next/link';
 
 import { posts } from '../../../shell/maquettes/data';
 import { TopBar } from '../../../shell/maquettes/kit';
@@ -13,10 +14,12 @@ export default function ProFeedPage() {
         <Search className="h-4 w-4" aria-hidden /> Rechercher un étudiant, une compétence…
       </div>
 
-      <Card className="flex items-center gap-3 border-dashed">
-        <Avatar name="Brice Junguck" size="sm" />
-        <span className="text-sm text-muted">Partager un projet, une idée…</span>
-      </Card>
+      <Link href="/pro/publier" aria-label="Publier sur le réseau Pro">
+        <Card className="flex items-center gap-3 border-dashed">
+          <Avatar name="Brice Junguck" size="sm" />
+          <span className="text-sm text-muted">Partager un projet, une idée…</span>
+        </Card>
+      </Link>
 
       {posts.map((post) => (
         <article

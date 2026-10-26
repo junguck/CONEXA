@@ -1,5 +1,6 @@
 import { Badge, Button, Card } from '@conexa/ui';
 import { Clock, MapPin, MessageCircle } from 'lucide-react';
+import Link from 'next/link';
 
 import { Field, Hint, Photo, TopBar } from '../../../../shell/maquettes/kit';
 
@@ -42,7 +43,8 @@ export default function MeetDayPage() {
           <MessageCircle className="h-4 w-4 text-accent-text" aria-hidden /> Cartes du date
         </div>
         <p className="text-sm text-muted">
-          Aucun texte libre : choisissez une carte (arrivée, retard, prêt).
+          Cartes rapides ou conversation : les numéros, liens et demandes de contact restent
+          bloqués.
         </p>
         <div className="flex flex-wrap gap-1.5">
           {['J’arrive', 'Retard 5 min', 'Je suis prêt'].map((card) => (
@@ -54,6 +56,9 @@ export default function MeetDayPage() {
             </span>
           ))}
         </div>
+        <Button asChild variant="outline" size="sm" block>
+          <Link href="/meet/chat">Ouvrir la conversation</Link>
+        </Button>
       </Card>
 
       <div className="flex flex-col gap-1">

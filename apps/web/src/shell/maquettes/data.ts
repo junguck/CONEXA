@@ -123,6 +123,82 @@ export const picks = [
     compatibility: '87 % compatibles',
     variant: 1 as const,
   },
+  {
+    name: 'Aïcha',
+    age: 22,
+    filiere: 'Design',
+    level: 'L2',
+    distance: '1,2 km',
+    traits: ['Illustration', 'Café', 'Musique'],
+    compatibility: '81 % compatibles',
+    variant: 3 as const,
+  },
+  {
+    name: 'Nadia',
+    age: 20,
+    filiere: 'Droit',
+    level: 'L1',
+    distance: '2 km',
+    traits: ['Lecture', 'Bénévolat', 'Cuisine'],
+    compatibility: '76 % compatibles',
+    variant: 2 as const,
+  },
+];
+
+export const chatSeed = [
+  {
+    id: 'm1',
+    from: 'peer' as const,
+    text: 'Salut ! Ravie qu’on se soit trouvés. Tu connais déjà le restaurant ?',
+    at: '18:02',
+  },
+  {
+    id: 'm2',
+    from: 'me' as const,
+    text: 'Pas encore, mais le menu du bistrot a l’air bien. On se retrouve devant l’entrée ?',
+    at: '18:04',
+  },
+  {
+    id: 'm3',
+    from: 'peer' as const,
+    text: 'Parfait. Je serai là un peu avant, avec une veste verte.',
+    at: '18:05',
+  },
+];
+
+export const payments = [
+  {
+    id: 'pay-4821',
+    reference: 'CVX-4821',
+    label: 'Date · Le Bistrot du Campus',
+    when: 'Dimanche 16:00',
+    amount: '8 000 FCFA',
+    state: 'En séquestre' as const,
+    detail: 'Libéré après le date, ou remboursé si annulation à plus de 3 h.',
+  },
+  {
+    id: 'pay-4790',
+    reference: 'CVX-4790',
+    label: 'Service · Soutien analyse',
+    when: '23 oct.',
+    amount: '2 100 FCFA',
+    state: 'Versé' as const,
+    detail: 'Prestation confirmée par les deux parties.',
+  },
+  {
+    id: 'pay-4742',
+    reference: 'CVX-4742',
+    label: 'Date · Chez Tantie',
+    when: '21 oct.',
+    amount: '15 000 FCFA',
+    state: 'Remboursé' as const,
+    detail: 'Annulation par le restaurant, remboursement sous 48 h.',
+  },
+];
+
+export const operators = [
+  { id: 'mtn', label: 'MTN MoMo', hint: 'Code de confirmation sur ton téléphone' },
+  { id: 'orange', label: 'Orange Money', hint: 'Validation dans l’application Orange' },
 ];
 
 export const dates = [

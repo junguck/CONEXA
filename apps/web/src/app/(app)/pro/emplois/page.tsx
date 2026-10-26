@@ -1,4 +1,5 @@
 import { Badge, Button, Card } from '@conexa/ui';
+import Link from 'next/link';
 
 import { jobs } from '../../../../shell/maquettes/data';
 import { Hint, TopBar } from '../../../../shell/maquettes/kit';
@@ -41,8 +42,8 @@ export default function ProJobsPage() {
               </span>
             ))}
           </div>
-          <Button size="sm" variant="outline">
-            Voir la mission
+          <Button size="sm" variant="outline" asChild>
+            <Link href="/pro/offre">Voir la mission</Link>
           </Button>
         </Card>
       ))}

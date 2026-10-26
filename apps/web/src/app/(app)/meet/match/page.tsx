@@ -1,12 +1,12 @@
 import { Button } from '@conexa/ui';
-import { Heart } from 'lucide-react';
+import { Heart, MessageCircle } from 'lucide-react';
 import Link from 'next/link';
 
 export default function MeetMatchPage() {
   return (
     <div className="flex min-h-[75dvh] flex-col items-center justify-center gap-5 py-10 text-center">
       <span
-        className="flex h-20 w-20 items-center justify-center rounded-full text-white shadow-lg"
+        className="flex h-20 w-20 animate-pop items-center justify-center rounded-full text-white shadow-lg"
         style={{ background: 'var(--grad)' }}
       >
         <Heart className="h-9 w-9" aria-hidden />
@@ -26,6 +26,11 @@ export default function MeetMatchPage() {
           <Link href="/meet/lieu">Choisir un restaurant</Link>
         </Button>
         <Button asChild block variant="outline">
+          <Link href="/meet/chat">
+            <MessageCircle className="h-4 w-4" aria-hidden /> Discuter avec Mireille
+          </Link>
+        </Button>
+        <Button asChild block variant="ghost">
           <Link href="/meet/dates">Voir mes dates</Link>
         </Button>
       </div>

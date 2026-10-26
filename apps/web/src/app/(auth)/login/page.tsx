@@ -23,18 +23,12 @@ export default function LoginPage() {
           inputMode="tel"
           autoComplete="tel"
         />
-        <Input
-          label="Code reçu par WhatsApp"
-          placeholder="4 8 2 1"
-          inputMode="numeric"
-          autoComplete="one-time-code"
-          maxLength={4}
-          hint="Code valable 5 minutes."
-        />
         <Button block asChild>
-          <Link href="/">Continuer</Link>
+          <Link href="/verifier">Recevoir le code</Link>
         </Button>
-        <p className="text-center text-xs text-muted">Renvoyer dans 0:42</p>
+        <p className="text-center text-xs text-muted">
+          Code à 6 chiffres, valable 5 minutes. Renvoi possible à tout moment.
+        </p>
       </div>
 
       <p className="text-xs leading-relaxed text-muted">

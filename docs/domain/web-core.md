@@ -50,6 +50,24 @@ d’accès recalculé côté client. Les agents de domaine remplaceront les donn
 et pourront réutiliser `shell/maquettes/kit.tsx` (en-tête, écussons, lignes de match, photos
 fictives). Les portails desktop (partenaire, back-office) restent hors de ce périmètre (T-0009).
 
+## Compléments hors maquette (2026-10-26)
+
+Les maquettes ne couvraient ni le chat, ni le parcours de paiement complet, ni l'OTP, ni plusieurs gestes métier. Ils sont ajoutés en maquette interactive, toujours avec des données fictives :
+
+| Parcours | Routes | Interaction |
+|---|---|---|
+| Vérification WhatsApp | `/verifier` | Code à 6 chiffres, collage, renvoi ; `login` ne saisit plus que le numéro |
+| Meet | `/meet` | Glisser à droite = inviter, à gauche = passer ; boutons et flèches clavier équivalents, respect de `prefers-reduced-motion` |
+| Date | `/meet/match`, `/meet/chat`, `/meet/jour` | Animation de match, fil de discussion, cartes rapides |
+| Paiement | `/meet/paiement`, `.../attente`, `.../recu`, `.../echec` | Opérateur, numéro validé, séquestre, reçu, échec et nouvelle tentative |
+| Football | `/football/defi`, `/football/score` | Défi (équipe, terrain, date), déclaration de score marquée « non confirmé » |
+| Pro | `/pro/publier`, `/pro/offre` | Composer un post, détail d'une mission et candidature |
+| Moi | `/me/paiements`, `/me/confidentialite` | Séquestre/remboursement, préférences, export, suppression confirmée |
+
+- **Chat** : `shell/maquettes/chat-filter.ts` imite la règle serveur de `API.md` §3 — chiffres (y compris Unicode), nombres en lettres, liens, pseudos et demandes de contact refusés, avec explication. Testé dans `chat-filter.test.ts`.
+- **Paiement** : aucun montant n'est débité ; l'étape d'attente annonce qu'elle est simulée. Les écrans `attente`/`recu`/`echec` servent à valider la copie et les états, pas la logique Campay.
+- **Aucun minuteur artificiel** : le renvoi du code est immédiat et la maquette ne fabrique pas d'urgence. Les cartes rapides du chat évitent les chiffres (« en retard » au lieu de « retard 5 min »).
+
 ## Règles de design appliquées
 
 - Un univers par section d'URL (`football`, `meet`, `pro`, sinon Core), thème par défaut de la maquette, choix de thème mémorisé dans `localStorage`.

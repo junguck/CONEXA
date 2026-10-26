@@ -1,5 +1,6 @@
 import { Badge, Button, Card } from '@conexa/ui';
 import { Check } from 'lucide-react';
+import Link from 'next/link';
 
 import { Crest, Hint, TopBar } from '../../../../shell/maquettes/kit';
 
@@ -59,8 +60,8 @@ export default function FootMatchPage() {
           <Check className="h-4 w-4" aria-hidden /> Ton capitaine a déclaré : 2 – 1
         </div>
         <Hint>Le classement ne bouge qu’après validation des deux capitaines.</Hint>
-        <Button block size="sm">
-          Confirmer le score
+        <Button block size="sm" asChild>
+          <Link href="/football/score">Déclarer le score</Link>
         </Button>
         <Button block size="sm" variant="outline">
           Signaler un désaccord
