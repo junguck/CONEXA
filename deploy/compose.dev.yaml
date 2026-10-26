@@ -5,6 +5,8 @@
 #   pnpm dev:reset     supprime les volumes et repart d'une base vide
 #
 # Un service = un domaine = un schéma PostgreSQL, avec un rôle dédié.
+# Profils : core (PostgreSQL, Redis, RabbitMQ), storage (MinIO),
+# observability (collecteur OTel, Prometheus, Loki, Tempo, Grafana).
 # Aucune donnée hors des volumes nommés ; aucun secret réel dans ce fichier.
 name: conexa-dev
 
@@ -93,12 +95,110 @@ services:
     image: otel/opentelemetry-collector-contrib:0.111.0
     container_name: conexa-otel-collector
     command: ['--config=/etc/otel-collector.yaml']
+    depends_on:
+      tempo: { condition: service_started }
+      loki: { condition: service_started }
     volumes:
-      - ./otel-collector.yaml:/etc/otel-collector.yaml:ro
+      - ./observability/otel-collector.yaml:/etc/otel-collector.yaml:ro
     ports:
       - '${OTEL_GRPC_PORT:-4317}:4317'
       - '${OTEL_HTTP_PORT:-4318}:4318'
       - '${OTEL_HEALTH_PORT:-13133}:13133'
+      - '${OTEL_METRICS_PORT:-8889}:8889'
+    restart: unless-stopped
+
+  prometheus:
+    profiles: [observability]
+    image: prom/prometheus:v2.55.1
+    container_name: conexa-prometheus
+    command:
+      - '--config.file=/etc/prometheus/prometheus.yml'
+      - '--storage.tsdb.path=/prometheus'
+      - '--storage.tsdb.retention.time=7d'
+      # Tempo pousse ses métriques de traces (span metrics, service graph).
+      - '--web.enable-remote-write-receiver'
+      - '--web.enable-lifecycle'
+    volumes:
+      - ./observability/prometheus.yml:/etc/prometheus/prometheus.yml:ro
+      - ./observability/alerts.yml:/etc/prometheus/alerts.yml:ro
+      - prometheus-data:/prometheus
+    ports:
+      - '${PROMETHEUS_PORT:-9090}:9090'
+    healthcheck:
+      test: ['CMD', 'wget', '--spider', '-q', 'http://localhost:9090/-/healthy']
+      interval: 10s
+      timeout: 5s
+      retries: 12
+    restart: unless-stopped
+
+  loki:
+    profiles: [observability]
+    image: grafana/loki:3.3.2
+    container_name: conexa-loki
+    command: ['-config.file=/etc/loki/config.yaml']
+    volumes:
+      - ./observability/loki-config.yaml:/etc/loki/config.yaml:ro
+      - loki-data:/loki
+    ports:
+      - '${LOKI_PORT:-3100}:3100'
+    healthcheck:
+      test: ['CMD', 'wget', '--spider', '-q', 'http://localhost:3100/ready']
+      interval: 10s
+      timeout: 5s
+      retries: 12
+    restart: unless-stopped
+
+  tempo:
+    profiles: [observability]
+    image: grafana/tempo:2.6.1
+    container_name: conexa-tempo
+    command: ['-config.file=/etc/tempo/config.yaml']
+    volumes:
+      - ./observability/tempo-config.yaml:/etc/tempo/config.yaml:ro
+      - tempo-data:/var/tempo
+    ports:
+      - '${TEMPO_PORT:-3200}:3200'
+    restart: unless-stopped
+
+  grafana:
+    profiles: [observability]
+    image: grafana/grafana:11.4.0
+    container_name: conexa-grafana
+    depends_on:
+      prometheus: { condition: service_started }
+      loki: { condition: service_started }
+      tempo: { condition: service_started }
+    environment:
+      GF_SECURITY_ADMIN_USER: ${GRAFANA_ADMIN_USER:-conexa}
+      GF_SECURITY_ADMIN_PASSWORD: ${GRAFANA_ADMIN_PASSWORD:-conexa_dev}
+      GF_USERS_ALLOW_SIGN_UP: 'false'
+      GF_AUTH_ANONYMOUS_ENABLED: 'false'
+    volumes:
+      - ./observability/grafana/provisioning:/etc/grafana/provisioning:ro
+      - ./observability/grafana/dashboards:/var/lib/grafana/dashboards:ro
+      - grafana-data:/var/lib/grafana
+    ports:
+      - '${GRAFANA_PORT:-3000}:3000'
+    healthcheck:
+      test: ['CMD', 'wget', '--spider', '-q', 'http://localhost:3000/api/health']
+      interval: 10s
+      timeout: 5s
+      retries: 12
+    restart: unless-stopped
+
+  rabbitmq-exporter:
+    profiles: [observability]
+    image: kbudde/rabbitmq-exporter:1.0.0
+    container_name: conexa-rabbitmq-exporter
+    depends_on:
+      rabbitmq: { condition: service_healthy }
+    environment:
+      RABBIT_URL: http://rabbitmq:15672
+      RABBIT_USER: ${RABBITMQ_USER:-conexa}
+      RABBIT_PASSWORD: ${RABBITMQ_PASSWORD:-conexa_dev}
+      PUBLISH_PORT: '9419'
+    ports:
+      - '${RABBITMQ_EXPORTER_PORT:-9419}:9419'
     restart: unless-stopped
 
 volumes:
@@ -106,3 +206,7 @@ volumes:
   redis-data:
   rabbitmq-data:
   minio-data:
+  prometheus-data:
+  loki-data:
+  tempo-data:
+  grafana-data:
