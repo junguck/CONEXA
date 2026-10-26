@@ -1,0 +1,36 @@
+{
+  "name": "@conexa/events",
+  "version": "0.0.0",
+  "private": true,
+  "description": "Enveloppe d'événement partagée, garde-fou PII et JSON Schema versionné des événements Convexa",
+  "license": "MIT",
+  "type": "module",
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "default": "./dist/index.js"
+    },
+    "./schemas/*": "./src/common/schemas/*"
+  },
+  "files": [
+    "dist",
+    "src/common/schemas"
+  ],
+  "scripts": {
+    "build": "tsc -p tsconfig.build.json",
+    "lint": "eslint .",
+    "typecheck": "tsc -p tsconfig.json",
+    "test": "vitest run",
+    "gen:contracts": "pnpm build && node scripts/gen-schemas.mjs"
+  },
+  "dependencies": {
+    "zod": "4.6.7"
+  },
+  "devDependencies": {
+    "@conexa/config": "workspace:*",
+    "@types/node": "26.6.5",
+    "eslint": "10.13.0",
+    "typescript": "5.9.3",
+    "vitest": "5.0.5"
+  }
+}

@@ -1,0 +1,35 @@
+{
+  "name": "@conexa/messaging",
+  "version": "0.0.0",
+  "private": true,
+  "description": "Outbox transactionnelle, inbox idempotente, politiques de reprise et topologie RabbitMQ de Convexa",
+  "license": "MIT",
+  "type": "module",
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "default": "./dist/index.js"
+    },
+    "./sql": "./sql/outbox-inbox.sql"
+  },
+  "files": [
+    "dist",
+    "sql"
+  ],
+  "scripts": {
+    "build": "tsc -p tsconfig.build.json",
+    "lint": "eslint .",
+    "typecheck": "tsc -p tsconfig.json",
+    "test": "vitest run"
+  },
+  "dependencies": {
+    "@conexa/events": "workspace:*"
+  },
+  "devDependencies": {
+    "@conexa/config": "workspace:*",
+    "@types/node": "26.6.5",
+    "eslint": "10.13.0",
+    "typescript": "5.9.3",
+    "vitest": "5.0.5"
+  }
+}

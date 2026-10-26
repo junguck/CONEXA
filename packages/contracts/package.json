@@ -1,0 +1,37 @@
+{
+  "name": "@conexa/contracts",
+  "version": "0.0.0",
+  "private": true,
+  "description": "Primitives et schémas Zod partagés de l'API Convexa : identifiants, montants FCFA, pagination par curseur, enveloppe d'erreur",
+  "license": "MIT",
+  "type": "module",
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "default": "./dist/index.js"
+    },
+    "./openapi": "./openapi/common.json"
+  },
+  "files": [
+    "dist",
+    "openapi"
+  ],
+  "scripts": {
+    "build": "tsc -p tsconfig.build.json",
+    "lint": "eslint .",
+    "typecheck": "tsc -p tsconfig.json",
+    "test": "vitest run",
+    "gen:contracts": "pnpm build && node scripts/gen-contracts.mjs"
+  },
+  "dependencies": {
+    "@conexa/errors": "workspace:*",
+    "zod": "4.6.7"
+  },
+  "devDependencies": {
+    "@conexa/config": "workspace:*",
+    "@types/node": "26.6.5",
+    "eslint": "10.13.0",
+    "typescript": "5.9.3",
+    "vitest": "5.0.5"
+  }
+}
