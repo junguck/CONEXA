@@ -35,6 +35,12 @@ from check_common import (  # noqa: E402
 
 TASK_EDITABLE_FIELDS = {"status", "branch", "worktree", "pr", "notes"}
 
+# Fichiers générés partagés : le lockfile est régénéré par `pnpm install`, jamais
+# édité à la main (AGENTS.md règle 6). Il accompagne toute dépendance ajoutée,
+# même quand le manifeste concerné appartient à l'agent (ce que le contrôle
+# vérifie déjà). Les autres fichiers racine restent protégés.
+GENERATED_SHARED_FILES = {"pnpm-lock.yaml"}
+
 
 def main() -> int:
     parser = argparse.ArgumentParser(description=__doc__)
@@ -102,6 +108,8 @@ def main() -> int:
     for status, raw_path in changes:
         path = raw_path.replace("\\", "/")
         checked += 1
+        if path in GENERATED_SHARED_FILES:
+            continue
         if task_path is not None and path == task_path:
             if not args.working_tree and task_status != "A":
                 illegal = changed_frontmatter_keys(args.base, args.head, path) - TASK_EDITABLE_FIELDS
