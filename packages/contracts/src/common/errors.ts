@@ -50,6 +50,9 @@ export const ERROR_STATUS = {
   VOUCHER_EXPIRED: 409,
   PARTNER_NOT_ACTIVE: 403,
   ASSET_NOT_APPROVED: 409,
+  /** Extension uploads : fichier trop lourd ou type MIME refusé. */
+  UPLOAD_TOO_LARGE: 413,
+  UPLOAD_TYPE_NOT_ALLOWED: 415,
   /** Extension opérationnelle : erreur non prévue (jamais exposée en détail). */
   INTERNAL_ERROR: 500,
 } as const;

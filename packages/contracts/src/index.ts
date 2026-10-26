@@ -7,3 +7,4 @@ export * from './football/index.js';
 export * from './identity/index.js';
 export * from './marketplace/index.js';
 export * from './talents/index.js';
+export * from './uploads/index.js';
