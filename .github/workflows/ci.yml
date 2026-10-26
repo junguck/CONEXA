@@ -1,0 +1,104 @@
+name: CI
+
+on:
+  pull_request:
+  push:
+    branches: [main]
+  merge_group:
+
+permissions:
+  contents: read
+  pull-requests: read
+  issues: write
+
+concurrency:
+  group: ci-${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+env:
+  PYTHONIOENCODING: utf-8
+  PYTHONUTF8: '1'
+  TURBO_TELEMETRY_DISABLED: '1'
+
+jobs:
+  quality:
+    name: Qualité (lint, types, tests, build)
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - uses: pnpm/action-setup@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version-file: .nvmrc
+          cache: pnpm
+      - run: pnpm install --frozen-lockfile
+      - run: pnpm format:check
+      - run: pnpm docs:verify
+      - name: Commits conventionnels
+        if: github.event_name == 'pull_request'
+        run: pnpm exec commitlint --from "origin/${{ github.base_ref }}" --to HEAD --verbose
+      - name: Lint, types, tests, build
+        run: |
+          if [ "${{ github.event_name }}" = "pull_request" ]; then
+            pnpm turbo run lint typecheck test build --filter=...[origin/main]
+          else
+            pnpm turbo run lint typecheck test build
+          fi
+      - name: Tests d'intégration (si le dépôt en définit)
+        run: pnpm run --if-present test:integration
+      - name: Audit des dépendances
+        run: pnpm audit --audit-level=high
+
+  guards:
+    name: Garde-fous (propriété, migrations, contrats)
+    if: github.event_name == 'pull_request'
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - run: python3 -m pip install --quiet 'pyyaml>=6'
+      - name: Tests des outils
+        run: python3 -m unittest discover -s tools/tests -v
+      - name: Propriété des chemins
+        run: python3 tools/check-ownership.py --base "origin/${{ github.base_ref }}" --branch "${{ github.head_ref }}"
+      - name: Migrations
+        env:
+          ALLOW_DESTRUCTIVE: ${{ contains(github.event.pull_request.labels.*.name, 'human-ok') && '1' || '0' }}
+        run: python3 tools/check-migrations.py --base "origin/${{ github.base_ref }}"
+      - name: Contrats
+        run: python3 tools/check-contracts.py --base "origin/${{ github.base_ref }}"
+
+  privacy:
+    name: PII et secrets
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - run: python3 -m pip install --quiet 'pyyaml>=6'
+      - name: PII dans les journaux
+        run: python3 tools/check-pii-logs.py
+      - name: Secrets (arbre de travail)
+        run: python3 tools/check-secrets.py
+      - name: gitleaks (historique git)
+        uses: gitleaks/gitleaks-action@v2
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          GITLEAKS_LICENSE: ${{ secrets.GITLEAKS_LICENSE }}
+
+  python-services:
+    name: Services Python (worker IA)
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Tests du worker IA
+        if: hashFiles('services/ai-worker/pyproject.toml') != ''
+        working-directory: services/ai-worker
+        run: python3 -m unittest discover -s tests -v
