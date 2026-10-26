@@ -20,7 +20,9 @@ import {
   isExpired,
 } from './otp.js';
 import { assessRefresh, generateRefreshToken, hashToken } from './tokens.js';
-import { assertServiceToken, serviceTokenMatches } from './service-token.js';
+import { assertServiceToken, serviceTokenMatches } from '@conexa/service-kit';
+
+import { ConsoleOtpSender, buildWhatsappPayload, createOtpSender } from './otp-sender.js';
 
 const SECRET = 'secret-de-test';
 
@@ -144,5 +146,36 @@ describe('PII et états de compte', () => {
     expect(() => assertCanUseApp('active')).not.toThrow();
     expect(() => assertCanUseApp('pending')).toThrow(AppError);
     expect(() => assertCanUseApp('banned')).toThrow(/suspendu/);
+  });
+});
+
+describe('fournisseur OTP', () => {
+  it('utilise le mode console par défaut, sans aucun appel réseau', () => {
+    const sender = createOtpSender({ provider: 'console' });
+    expect(sender).toBeInstanceOf(ConsoleOtpSender);
+  });
+
+  it('refuse de démarrer en mode WhatsApp sans URL ni jeton', () => {
+    expect(() => createOtpSender({ provider: 'whatsapp', templateName: 'convexa_otp' })).toThrow(
+      /WHATSAPP_OTP_URL/,
+    );
+    expect(() =>
+      createOtpSender({
+        provider: 'whatsapp',
+        baseUrl: 'https://graph.example.test/v1',
+        token: 'jeton-de-test',
+        templateName: 'convexa_otp',
+      }),
+    ).not.toThrow();
+  });
+
+  it('construit une charge utile de gabarit WhatsApp fermée', () => {
+    const payload = buildWhatsappPayload('+237655443312', '123456', 'convexa_otp');
+    expect(payload).toMatchObject({
+      messaging_product: 'whatsapp',
+      to: '+237655443312',
+      type: 'template',
+      template: { name: 'convexa_otp', language: { code: 'fr' } },
+    });
   });
 });

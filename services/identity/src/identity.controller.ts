@@ -10,11 +10,19 @@ import {
   type JwtClaims,
 } from '@conexa/contracts';
 import { validationError } from '@conexa/errors';
-import { CurrentUser, JwtAuthGuard, Public, Roles } from '@conexa/service-kit';
+import {
+  CurrentUser,
+  JwtAuthGuard,
+  Public,
+  Roles,
+  createServiceTokenGuard,
+} from '@conexa/service-kit';
 import type { z } from 'zod';
 
+import { env } from './config.js';
 import { IdentityService } from './identity.service.js';
-import { ServiceTokenGuard } from './service-token.guard.js';
+
+const ServiceTokenGuard = createServiceTokenGuard(env.SERVICE_TOKEN);
 
 @Controller()
 export class IdentityController {

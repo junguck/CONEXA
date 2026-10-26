@@ -1,0 +1,16 @@
+{
+  "service": "messaging",
+  "base_path": "",
+  "upstream": "http://localhost:3017",
+  "internal": false,
+  "routes": [
+    { "method": "GET", "path": "/health", "auth": false },
+    { "method": "GET", "path": "/ready", "auth": false },
+    { "method": "GET", "path": "/messaging/threads", "auth": true },
+    { "method": "GET", "path": "/messaging/threads/:id/messages", "auth": true },
+    { "method": "POST", "path": "/messaging/threads/:id/messages", "auth": true },
+    { "method": "POST", "path": "/messaging/threads/:id/read", "auth": true },
+    { "method": "GET", "path": "/notifications", "auth": true },
+    { "method": "POST", "path": "/notifications/read", "auth": true }
+  ]
+}

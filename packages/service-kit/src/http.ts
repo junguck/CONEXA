@@ -127,7 +127,9 @@ export async function createServiceApp(options: {
   module: Type<unknown>;
 }): Promise<INestApplication> {
   const logger = createLogger(options.name);
-  const app = await NestFactory.create(options.module, { logger: false });
+  // `rawBody` garde les octets d'origine : nécessaire pour vérifier la signature
+  // d'un webhook de paiement sans re-sérialiser le JSON.
+  const app = await NestFactory.create(options.module, { logger: false, rawBody: true });
 
   app.use(requestIdMiddleware);
   app.use(

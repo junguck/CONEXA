@@ -14,6 +14,11 @@ export const EnvSchema = BaseEnvSchema.extend({
    * routes internes répondent une erreur explicite au lieu d'un faux contact.
    */
   SERVICE_TOKEN: z.string().min(16).optional(),
+  /** Fournisseur d'OTP : `console` en développement, `whatsapp` en production. */
+  OTP_PROVIDER: z.enum(['console', 'whatsapp']).default('console'),
+  WHATSAPP_OTP_URL: z.string().url().optional(),
+  WHATSAPP_OTP_TOKEN: z.string().min(8).optional(),
+  WHATSAPP_OTP_TEMPLATE: z.string().min(2).default('convexa_otp'),
 });
 
 export type Env = z.infer<typeof EnvSchema>;

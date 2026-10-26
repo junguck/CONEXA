@@ -6,6 +6,8 @@ import type { AccountStatus, JwtClaims } from '@conexa/contracts';
 import { AppError, forbidden, notFound } from '@conexa/errors';
 import { maskPhone } from '@conexa/service-kit';
 
+import { createOtpSender, type OtpSender } from './otp-sender.js';
+
 import { env } from './config.js';
 import { db } from './db.js';
 import {
@@ -20,24 +22,16 @@ import type { RegisterInput } from '@conexa/contracts';
 import { assessRefresh, generateRefreshToken, hashToken, signAccessToken } from './tokens.js';
 import type { TokenPair } from '@conexa/contracts';
 
-export interface OtpSender {
-  send(whatsapp: string, code: string): Promise<void>;
-}
-
-/** Développement : le code n'est jamais envoyé, seulement journalisé masqué. */
-export class ConsoleOtpSender implements OtpSender {
-  constructor(private readonly log: (message: string) => void = () => undefined) {}
-
-  async send(whatsapp: string, code: string): Promise<void> {
-    this.log(`OTP pour ${maskPhone(whatsapp)} : ${code}`);
-  }
-}
-
 @Injectable()
 export class IdentityService {
   // Champs et non paramètres de constructeur : Nest les prendrait pour des
   // dépendances à injecter (il n'existe aucun provider `OtpSender`).
-  private readonly sender: OtpSender = new ConsoleOtpSender();
+  private readonly sender: OtpSender = createOtpSender({
+    provider: env.OTP_PROVIDER,
+    baseUrl: env.WHATSAPP_OTP_URL,
+    token: env.WHATSAPP_OTP_TOKEN,
+    templateName: env.WHATSAPP_OTP_TEMPLATE,
+  });
   private readonly now: () => Date = () => new Date();
 
   async requestOtp(whatsapp: string): Promise<void> {
