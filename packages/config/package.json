@@ -12,7 +12,8 @@
     },
     "./eslint/base": "./eslint/base.mjs",
     "./tsconfig/base.json": "./tsconfig/base.json",
-    "./tsconfig/library.json": "./tsconfig/library.json"
+    "./tsconfig/library.json": "./tsconfig/library.json",
+    "./tsconfig/nest.json": "./tsconfig/nest.json"
   },
   "files": [
     "dist",
