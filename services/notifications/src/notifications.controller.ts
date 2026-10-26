@@ -1,18 +1,5 @@
-import {
-  Body,
-  Controller,
-  Delete,
-  Get,
-  HttpCode,
-  Param,
-  Post,
-  UseGuards,
-} from '@nestjs/common';
-import {
-  DispatchPushSchema,
-  RegisterSubscriptionSchema,
-  type JwtClaims,
-} from '@conexa/contracts';
+import { Body, Controller, Delete, Get, HttpCode, Param, Post, UseGuards } from '@nestjs/common';
+import { DispatchPushSchema, RegisterSubscriptionSchema, type JwtClaims } from '@conexa/contracts';
 import { CurrentUser, JwtAuthGuard, createServiceTokenGuard } from '@conexa/service-kit';
 
 import { env } from './config.js';

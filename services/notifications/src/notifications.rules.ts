@@ -28,14 +28,20 @@ export function nextFailureCount(current: number, outcome: PushOutcome): number 
  * quelques échecs réseau avant d'oublier l'abonnement, pour ne pas déconnecter
  * un téléphone qui a simplement perdu le réseau.
  */
-export function shouldPrune(outcome: PushOutcome, failureCount: number, maxFailures: number): boolean {
+export function shouldPrune(
+  outcome: PushOutcome,
+  failureCount: number,
+  maxFailures: number,
+): boolean {
   if (outcome.status === 'sent') return false;
   if (outcome.errorCode === 'SUBSCRIPTION_GONE') return true;
   return failureCount >= maxFailures;
 }
 
 /** Un abonnement déjà en échec ne doit pas bloquer l'envoi aux autres. */
-export function partitionTargets<T extends { endpoint: string }>(targets: T[]): {
+export function partitionTargets<T extends { endpoint: string }>(
+  targets: T[],
+): {
   unique: T[];
   duplicates: number;
 } {

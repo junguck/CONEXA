@@ -83,6 +83,5 @@ export const FILTERED_PATTERNS = {
   /** Une suite de 5 chiffres ou plus ressemble à un numéro. */
   digits: /\d[\s.-]?\d[\s.-]?\d[\s.-]?\d[\s.-]?\d/,
   /** Canaux externes, liens de contact et poignées sociales. */
-  contact:
-    /(wa\.me|whatsapp|t\.me|telegram|instagram|snapchat|@[a-z0-9._]{3,})|(\+?237[\s.-]?\d)/i,
+  contact: /(wa\.me|whatsapp|t\.me|telegram|instagram|snapchat|@[a-z0-9._]{3,})|(\+?237[\s.-]?\d)/i,
 } as const;

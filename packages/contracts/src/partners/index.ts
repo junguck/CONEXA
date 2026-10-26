@@ -21,9 +21,7 @@ export const CreateOrganisationSchema = z.object({
   kind: OrganisationKindSchema,
   /** Ville affichée ; elle est stockée normalisée (minuscules, sans accents). */
   city: z.string().min(2).max(80),
-  contact_whatsapp: z
-    .string()
-    .regex(/^\+2376\d{8}$/, 'Numéro camerounais attendu (+2376XXXXXXXX)'),
+  contact_whatsapp: z.string().regex(/^\+2376\d{8}$/, 'Numéro camerounais attendu (+2376XXXXXXXX)'),
   /** Taux négocié au contrat, lu par Billing pour les reversements. */
   commission_pct: z.number().int().min(0).max(30).default(10),
 });

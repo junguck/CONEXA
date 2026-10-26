@@ -41,10 +41,7 @@ export class NotificationsService {
    * Un endpoint identifie un navigateur : réenregistrer le même remplace les
    * clés et rattache l'abonnement à l'utilisateur courant (jamais l'inverse).
    */
-  async register(
-    userId: string,
-    input: RegisterSubscriptionInput,
-  ): Promise<PushSubscription> {
+  async register(userId: string, input: RegisterSubscriptionInput): Promise<PushSubscription> {
     const row = await db
       .insertInto('push_subscriptions')
       .values({
@@ -66,14 +63,7 @@ export class NotificationsService {
           failure_count: 0,
         }),
       )
-      .returning([
-        'id',
-        'endpoint',
-        'platform',
-        'failure_count',
-        'last_success_at',
-        'created_at',
-      ])
+      .returning(['id', 'endpoint', 'platform', 'failure_count', 'last_success_at', 'created_at'])
       .executeTakeFirstOrThrow();
 
     return toSubscription(row);

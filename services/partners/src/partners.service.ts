@@ -36,10 +36,7 @@ import {
 export class PartnersService {
   private readonly now = () => new Date();
 
-  async createOrganisation(
-    userId: string,
-    input: CreateOrganisationInput,
-  ): Promise<Organisation> {
+  async createOrganisation(userId: string, input: CreateOrganisationInput): Promise<Organisation> {
     const row = await db
       .insertInto('organisations')
       .values({
@@ -53,15 +50,7 @@ export class PartnersService {
         status: 'pending',
         commission_pct: input.commission_pct,
       })
-      .returning([
-        'id',
-        'name',
-        'kind',
-        'city',
-        'status',
-        'commission_pct',
-        'created_at',
-      ])
+      .returning(['id', 'name', 'kind', 'city', 'status', 'commission_pct', 'created_at'])
       .executeTakeFirstOrThrow();
     return toOrganisation(row);
   }
@@ -184,11 +173,7 @@ export class PartnersService {
   }
 
   async venueDetail(id: string): Promise<VenueDetail> {
-    const venue = await db
-      .selectFrom('venues')
-      .selectAll()
-      .where('id', '=', id)
-      .executeTakeFirst();
+    const venue = await db.selectFrom('venues').selectAll().where('id', '=', id).executeTakeFirst();
     if (!venue) throw notFound('Lieu');
 
     const [menu, formulas, slots] = await Promise.all([
@@ -233,10 +218,7 @@ export class PartnersService {
       builder = builder.where('starts_at', '>=', start).where('starts_at', '<', end);
     }
 
-    const rows = await builder
-      .orderBy('starts_at', 'asc')
-      .limit(env.PARTNERS_NEXT_SLOTS)
-      .execute();
+    const rows = await builder.orderBy('starts_at', 'asc').limit(env.PARTNERS_NEXT_SLOTS).execute();
     return rows.map(toSlot);
   }
 
@@ -250,7 +232,7 @@ export class PartnersService {
       .executeTakeFirst();
     if (!row) throw notFound('Lieu');
     if (row.owner_user_id !== userId) {
-      throw forbidden("Ce lieu appartient à un autre partenaire");
+      throw forbidden('Ce lieu appartient à un autre partenaire');
     }
     return row;
   }
@@ -263,7 +245,7 @@ export class PartnersService {
       .executeTakeFirst();
     if (!row) throw notFound('Organisation');
     if (row.owner_user_id !== userId) {
-      throw forbidden("Cette organisation appartient à un autre partenaire");
+      throw forbidden('Cette organisation appartient à un autre partenaire');
     }
     return row;
   }
@@ -289,11 +271,7 @@ export class PartnersService {
     return toMenuItem(row);
   }
 
-  async addFormula(
-    userId: string,
-    venueId: string,
-    input: CreateFormulaInput,
-  ): Promise<Formula> {
+  async addFormula(userId: string, venueId: string, input: CreateFormulaInput): Promise<Formula> {
     await this.ownedVenue(userId, venueId);
     const row = await db
       .insertInto('formulas')
@@ -326,10 +304,7 @@ export class PartnersService {
       .where('ends_at', '>', startsAt)
       .execute();
     const clash = siblings.some((slot) =>
-      overlaps(
-        { startsAt, endsAt },
-        { startsAt: slot.starts_at, endsAt: slot.ends_at },
-      ),
+      overlaps({ startsAt, endsAt }, { startsAt: slot.starts_at, endsAt: slot.ends_at }),
     );
     if (clash) throw invalidState('Un créneau existe déjà sur cette plage');
 
@@ -434,12 +409,7 @@ export class PartnersService {
         .updateTable('offers')
         .set((eb) => ({ redeemed_count: eb('redeemed_count', '+', 1) }))
         .where('id', '=', offerId)
-        .where((eb) =>
-          eb.or([
-            eb('quota', 'is', null),
-            eb('redeemed_count', '<', eb.ref('quota')),
-          ]),
-        )
+        .where((eb) => eb.or([eb('quota', 'is', null), eb('redeemed_count', '<', eb.ref('quota'))]))
         .returning(OFFER_COLUMNS)
         .executeTakeFirst();
       if (!updated) throw invalidState('Offre épuisée');

@@ -14,11 +14,7 @@ export interface SubscriptionTarget {
 }
 
 export type PushErrorCode =
-  | 'SUBSCRIPTION_GONE'
-  | 'VAPID_REJECTED'
-  | 'PAYLOAD_TOO_LARGE'
-  | 'RATE_LIMITED'
-  | 'PROVIDER_ERROR';
+  'SUBSCRIPTION_GONE' | 'VAPID_REJECTED' | 'PAYLOAD_TOO_LARGE' | 'RATE_LIMITED' | 'PROVIDER_ERROR';
 
 export interface PushOutcome {
   status: 'sent' | 'failed';

@@ -92,9 +92,9 @@ describe('disponibilité d’une offre', () => {
   });
 
   it('expire à la date limite', () => {
-    expect(
-      offerBlockedReason({ ...base, valid_until: '2026-10-26T09:00:00.000Z' }, now),
-    ).toBe('expired');
+    expect(offerBlockedReason({ ...base, valid_until: '2026-10-26T09:00:00.000Z' }, now)).toBe(
+      'expired',
+    );
   });
 
   it('s’épuise au quota', () => {

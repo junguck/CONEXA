@@ -48,11 +48,7 @@ function decryptForTest(
       'sha256',
       shared,
       authSecret,
-      Buffer.concat([
-        Buffer.from('WebPush: info\0', 'utf8'),
-        receiver.publicKey,
-        senderPublic,
-      ]),
+      Buffer.concat([Buffer.from('WebPush: info\0', 'utf8'), receiver.publicKey, senderPublic]),
       32,
     ),
   );

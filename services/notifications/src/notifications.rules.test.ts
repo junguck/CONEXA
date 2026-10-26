@@ -45,9 +45,7 @@ describe('compteur d’échecs', () => {
 
 describe('suppression d’abonnement', () => {
   it('supprime tout de suite un endpoint mort', () => {
-    expect(
-      shouldPrune({ status: 'failed', errorCode: 'SUBSCRIPTION_GONE' }, 0, 5),
-    ).toBe(true);
+    expect(shouldPrune({ status: 'failed', errorCode: 'SUBSCRIPTION_GONE' }, 0, 5)).toBe(true);
   });
 
   it('tolère un échec réseau isolé', () => {

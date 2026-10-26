@@ -90,7 +90,11 @@ async function moneySection(token) {
     headers: { ...internal, 'content-type': 'application/json' },
     body: JSON.stringify({ commission_fcfa: 640, net_fcfa: 7360 }),
   });
-  check(released.status === 200 && released.body.status === 'released', 'séquestre libéré', released.body);
+  check(
+    released.status === 200 && released.body.status === 'released',
+    'séquestre libéré',
+    released.body,
+  );
 
   const again = await call(`${PAYMENTS}/internal/payments/${paymentId}/release`, {
     method: 'POST',
