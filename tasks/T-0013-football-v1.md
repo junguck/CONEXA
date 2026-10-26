@@ -3,7 +3,7 @@ id: T-0013
 title: "Football v1 : équipes, défis, matchs, Elo, classements"
 feature: F2.1
 agent: football
-status: todo
+status: review
 depends_on: [T-0010]
 size: L
 owned_paths:
@@ -22,8 +22,8 @@ contracts_touched:
 deps_request: []
 human_gate: false
 reviewers: [architect]
-branch: ""
-worktree: ""
+branch: v1/football
+worktree: v1-football
 pr: ""
 notes: "Branche v1/football, dérivée de v1/socle. Le chat des capitaines (realtime) est hors périmètre : le match expose simplement un identifiant de fil nul."
 ---
