@@ -1,0 +1,53 @@
+{
+  "name": "@conexa/service-kit",
+  "version": "0.1.0",
+  "private": true,
+  "description": "Socle commun des services Convexa : config Zod, base Kysely, JWT, logs masqués, filtre d'erreurs, santé",
+  "license": "MIT",
+  "main": "./dist/index.js",
+  "types": "./dist/index.d.ts",
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "default": "./dist/index.js"
+    }
+  },
+  "files": [
+    "dist"
+  ],
+  "scripts": {
+    "build": "tsc -p tsconfig.build.json",
+    "lint": "eslint .",
+    "typecheck": "tsc -p tsconfig.json",
+    "test": "vitest run"
+  },
+  "dependencies": {
+    "@conexa/contracts": "workspace:*",
+    "@conexa/errors": "workspace:*",
+    "@nestjs/common": "12.2.0",
+    "@nestjs/core": "12.2.0",
+    "@nestjs/platform-express": "12.2.0",
+    "jose": "6.2.13",
+    "kysely": "0.29.7",
+    "pg": "8.23.1",
+    "pino": "10.4.0",
+    "pino-http": "11.0.0",
+    "zod": "4.6.7"
+  },
+  "peerDependencies": {
+    "reflect-metadata": ">=0.2.0",
+    "rxjs": ">=7.8.0"
+  },
+  "devDependencies": {
+    "@conexa/config": "workspace:*",
+    "@types/express": "5.0.6",
+    "@types/node": "26.6.5",
+    "@types/pg": "8.23.1",
+    "eslint": "10.13.0",
+    "reflect-metadata": "0.2.2",
+    "rxjs": "7.8.2",
+    "typescript": "5.9.3",
+    "vitest": "5.0.5"
+  },
+  "type": "module"
+}

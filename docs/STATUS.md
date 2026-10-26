@@ -1,10 +1,10 @@
 # État du projet
 
-Mis à jour : **2026-10-26** (session d'initialisation). Tenu par l'orchestrateur ; toute instance le lit avant de choisir une tâche.
+Mis à jour : **2026-10-26** (vague v1 des services). Tenu par l'orchestrateur ; toute instance le lit avant de choisir une tâche.
 
 ## En un mot
 
-Le dépôt est **initialisé** : cadre de pilotage multi-agents, sources produit copiées, monorepo pnpm + Turborepo vide avec son outillage qualité. **Aucun service, aucune app, aucune migration** — le code produit commence à la vague 0, après le signal humain.
+Le cadre de pilotage et le monorepo sont en place, et la **vague v1 des services** est livrée en branches séparées : socle partagé, puis Gateway, Identity, Football, Dating, Talents, Marketplace. Les migrations sont reconstituées faute de `schema.sql` (ADR 0003, à valider). Rien n'est encore fusionné : l'humain fusionne branche par branche.
 
 ## Ce qui est en place
 
@@ -36,16 +36,34 @@ Le dépôt est **initialisé** : cadre de pilotage multi-agents, sources produit
 
 **Conditions de démarrage** : T-0002 et T-0003 exigent `human-ok` (elles touchent `deploy/` et `.github/`) ; T-0004 est le contrat dont dépendent T-0005 et tous les services — le fusionner avant d'ouvrir du code métier.
 
+## Vague v1 : six services (branches à fusionner)
+
+Chaque branche part de `v1/socle`. **Fusionner `v1/socle` en premier**, puis les services dans l'ordre de dépendance des lectures (Gateway ne dépend d'aucun schéma ; Identity avant Football/Dating).
+
+| Branche | Contenu | Tâche | Statut |
+|---|---|---|---|
+| `v1/socle` | Contrats, erreurs, événements, kit de service, gabarit, runner de migrations, compose dev | T-0010 | review |
+| `v1/gateway` | Routage par manifestes, JWT/JWKS, limites de débit, `/internal/*` bloqué | T-0011 | à pousser |
+| `v1/identity` | OTP haché, JWT RS256 + rotation, profil, validation admin, fiabilité | T-0012 | à pousser |
+| `v1/football` | Équipes, défis, matchs, Elo, classements | T-0013 | à pousser |
+| `v1/dating` | Profil, picks, quotas, dates par cartes, annulation 3 h, révélation du contact | T-0014 | à pousser |
+| `v1/talents` | Compétences, publications, missions, avis, événements | T-0015 | à pousser |
+| `v1/marketplace` | Offres à formules, commandes et machine à états, révisions, litiges | T-0016 | à pousser |
+
+**Non couvert en v1** (assumé, voir ADR 0003) : paiements et séquestre réels, facturation, temps réel et chat, worker IA et `pgvector`, portail partenaire, écrans. Les services concernés passent par des interfaces (`PaymentsGateway`, `EntitlementsGateway`) avec des doubles.
+
 ## Blocages et décisions attendues (ne pas coder autour)
 
-1. **`docs/product/schema.sql` manquant** — prérequis de `schema_extension.sql` et de toutes les tâches des vagues 1+. Voir [ADR 0002](decisions/0002-sources-produit-manquantes.md). Tâche qui le lit → `blocked`.
+1. **`docs/product/schema.sql` manquant** — les migrations v1 sont reconstituées et **à valider** ([ADR 0003](decisions/0003-schema-base-reconstitue.md)) ; le fichier d'origine reste attendu pour comparer table par table.
 2. **`docs/product/README.md` (README produit) manquant** — cité §4, §5, §6, §8, §12, §16 ; T-0007 peut démarrer sur les maquettes mais doit signaler le manque.
-3. **Domaine** : `api.convexa.app` est une hypothèse d'attente ([ADR 0001](decisions/0001-marque-convexa.md)). Le domaine réel est une tâche humaine de la roadmap.
-4. **Campay** : webhook, frais, remboursement natif, prélèvement récurrent restent non confirmés (`docs/STACK.md` §3.2) — à trancher avant F3.2.
-5. **OTP WhatsApp** : fournisseur non choisi — ADR avant F1.1 en production.
-6. **Grand livre à simple écriture** dans le schéma d'origine : ADR « double écriture » validée par un humain avant F3.1.
-7. **Protection de `main` sur GitHub** : à activer par l'humain (PR obligatoire, CI verte, squash). Tant qu'elle est absente, la discipline est humaine : ne pas pousser sur `main` hors bootstrap.
-8. **`schema.sql` et `schema_extension.sql` n'ont jamais tourné** sur un vrai PostgreSQL : premier travail d'intégration dès que F0.2 existe.
+3. **`pgvector` non disponible en local (Windows)** — la v1 stocke un emplacement `jsonb` marqué À VALIDER ; activer `vector(64)` et le worker IA avant F4.3 en production.
+4. **Jest → Vitest** — NestJS 12 est ESM-only ; ADR 0004 à valider et `docs/STACK.md` §2 à corriger.
+5. **Domaine** : `api.convexa.app` est une hypothèse d'attente ([ADR 0001](decisions/0001-marque-convexa.md)). Le domaine réel est une tâche humaine de la roadmap.
+6. **Campay** : webhook, frais, remboursement natif, prélèvement récurrent restent non confirmés (`docs/STACK.md` §3.2) — à trancher avant F3.2.
+7. **OTP WhatsApp** : fournisseur non choisi — ADR avant F1.1 en production.
+8. **Grand livre à simple écriture** dans le schéma d'origine : ADR « double écriture » validée par un humain avant F3.1.
+9. **Protection de `main` sur GitHub** : à activer par l'humain (PR obligatoire, CI verte, squash). Tant qu'elle est absente, la discipline est humaine : ne pas pousser sur `main` hors bootstrap.
+10. **`schema_extension.sql` n'a jamais tourné** sur un vrai PostgreSQL : premier travail d'intégration dès que F0.2 existe.
 
 ## Protocole multi-instances (à lire avant de coder)
 
@@ -72,6 +90,7 @@ pnpm install --frozen-lockfile
 
 ## Prochaines étapes
 
-1. Signal humain pour ouvrir la vague 0 (T-0002/T-0003/T-0004/T-0007 en parallèle, 3 instances maximum).
-2. Déposer `schema.sql` et le README produit dans `docs/product/` pour débloquer la vague 1.
-3. Activer la protection de `main` et les étiquettes de revue sur GitHub.
+1. Fusionner `v1/socle`, puis `v1/gateway`, `v1/identity`, `v1/football`, `v1/dating`, `v1/talents`, `v1/marketplace`.
+2. Brancher le front sur les contrats publiés (`@conexa/contracts`) : ils sont la seule interface stable.
+3. Décider de `pgvector` et du service de fichiers ; déposer `schema.sql` pour comparer les migrations.
+4. Vague 0 restante : Docker/CI (T-0002, T-0003), observabilité (T-0006), design system (T-0007).

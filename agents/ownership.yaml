@@ -24,6 +24,7 @@ agents:
       - packages/events/src/common/**
       - packages/messaging/**
       - packages/errors/**
+      - packages/service-kit/**
       - services/_template/**
       - docs/STACK.md
       - docs/product/**
@@ -193,6 +194,7 @@ review_rules:
   architect_required:
     - packages/contracts/**
     - packages/events/**
+    - packages/service-kit/**
     - db/migrations/**
     - services/_template/**
   security_required:
