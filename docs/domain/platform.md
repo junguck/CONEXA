@@ -15,7 +15,8 @@ Outillage, CI, Docker, observabilité. Propriétaire : agent `platform` (voir `a
 | `pnpm docs:verify` | disponible (cohérence roadmap / prompts / propriété / liens) | F0.1 |
 | `pnpm agents:ownership` | disponible (remplit la section Propriété des README d'agents) | F0.1 |
 | `pnpm verify` | disponible (docs:verify + format:check + lint + typecheck + test + build) | F0.1 |
-| `pnpm dev:infra` / `pnpm dev:reset` / `pnpm dev:down` | **à créer** | F0.2 |
+| `pnpm dev:infra` / `pnpm dev:reset` / `pnpm dev:down` | disponible (Compose de développement) | F0.2 |
+| `pnpm test:db:isolation` | disponible (un rôle ne lit pas le schéma d'un autre service) | F0.2 |
 | `pnpm dev` | déclarée (`turbo run dev --parallel`), sans paquet à lancer pour l'instant | F0.2/F0.5 |
 | `pnpm test:integration` | **à créer** | F0.5 |
 | `pnpm db:migrate` / `pnpm db:codegen` | **à créer** | F0.5 |
@@ -25,6 +26,24 @@ Outillage, CI, Docker, observabilité. Propriétaire : agent `platform` (voir `a
 | `pnpm tools:check-ownership` | **à créer** | F0.3 |
 
 Ne pas créer un script bidon pour une commande « à créer » : elle appartient à la tâche indiquée.
+
+## Infrastructure de développement (F0.2)
+
+`pnpm dev:infra` démarre PostgreSQL + pgvector, Redis, RabbitMQ, MinIO et le collecteur OpenTelemetry, puis attend que les vérifications de santé passent (`up -d --wait`). `pnpm dev:down` arrête sans perdre les volumes ; `pnpm dev:reset` supprime les volumes et repart d'une base vide.
+
+| Service | Image | Ports | Profil |
+|---|---|---|---|
+| PostgreSQL + pgvector | `pgvector/pgvector:pg17` | 5432 | `core` |
+| Redis | `redis:7-alpine` | 6379 | `core` |
+| RabbitMQ | `rabbitmq:4-management-alpine` | 5672, 15672 | `core` |
+| MinIO | `minio/minio:latest` | 9000, 9001 | `storage` |
+| Collecteur OTel | `otel/opentelemetry-collector-contrib` | 4317, 4318, 13133 | `observability` |
+
+- **Un schéma et un rôle par service** (`identity`, `football`, `dating`, `talents`, `marketplace`, `partners`, `payments`, `billing`, `messaging`) : le script [10-schemas-roles.sh](../../deploy/postgres/init/10-schemas-roles.sh) crée le rôle, le schéma dont il est propriétaire, révoque `PUBLIC`, active `vector` et fixe son `search_path`. Aucun rôle n'a `USAGE` ni `CREATE` sur le schéma d'un autre.
+- **Test d'isolation** : `pnpm test:db:isolation` crée une table dans `football` avec `conexa_football`, puis vérifie que les huit autres rôles ne peuvent ni la lire ni écrire dans le schéma. Il exige `pnpm dev:infra`.
+- **Configuration** : uniquement des variables d'environnement (`.env.example`) ; l'état vit dans les volumes nommés `postgres-data`, `redis-data`, `rabbitmq-data`, `minio-data`. Aucune variable obligatoire hors d'un `.env` local ; les valeurs livrées sont des mots de passe de développement.
+- **Observabilité** : les services exportent en OTLP vers `localhost:4317`/`4318` ; le collecteur écrit en clair pour l'instant, les tableaux de bord arrivent avec F0.6.
+- **Prérequis** : Docker Desktop (ou Docker Engine + Compose v2) démarré. `pnpm dev:infra` vise un démarrage à froid sous deux minutes et échoue si un service ne devient pas sain.
 
 ## Conventions posées par F0.1
 

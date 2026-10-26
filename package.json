@@ -11,6 +11,10 @@
   "scripts": {
     "build": "turbo run build",
     "dev": "turbo run dev --parallel",
+    "dev:infra": "docker compose -f deploy/compose.dev.yaml --profile core --profile storage --profile observability up -d --wait",
+    "dev:down": "docker compose -f deploy/compose.dev.yaml --profile core --profile storage --profile observability down",
+    "dev:reset": "docker compose -f deploy/compose.dev.yaml --profile core --profile storage --profile observability down -v --remove-orphans && docker compose -f deploy/compose.dev.yaml --profile core --profile storage --profile observability up -d --wait",
+    "test:db:isolation": "bash deploy/tests/check-role-isolation.sh",
     "lint": "turbo run lint",
     "typecheck": "turbo run typecheck",
     "test": "turbo run test",
