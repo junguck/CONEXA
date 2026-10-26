@@ -1,6 +1,6 @@
 # Audit d'intégration — producteur `dating.embedding_requested`
 
-Date : 2026-10-26 · Auditeur : agent `ai` (T-0010) · Objet : travail `dating`
+Date : 2026-10-26 · Auditeur : agent `ai` (T-0018) · Objet : travail `dating`
 présent dans le worktree `v1-dating`, branche `v1/dating`, **non commité** au
 moment de l'audit.
 

@@ -5,7 +5,7 @@
 | `embedding.computed.v1.json` | `embedding.computed` | `ai` | `dating` |
 | `dating.vectors_updated.v1.json` | `dating.vectors_updated` | `ai` | `dating` |
 
-Schémas JSON Schema (draft 2020-12), décision : [ADR 0003](../../../../docs/decisions/0003-vecteurs-rencontres.md).
+Schémas JSON Schema (draft 2020-12), décision : [ADR 0003](../../../../docs/decisions/0006-vecteurs-rencontres.md).
 
 ## En attente de F0.4
 

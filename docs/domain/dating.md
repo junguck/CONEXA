@@ -33,7 +33,7 @@ Tâche : `tasks/T-0014-dating-v1.md`.
 
 ## Écarts et points à valider
 
-1. **Embeddings absents (ADR 0003, T-0014)** : sans pgvector, les propositions sont
+1. **Embeddings absents (ADR 0006, T-0014)** : sans pgvector, les propositions sont
    tirées parmi les profils éligibles. Le worker IA remplacera ce tirage par une
    similarité cosinus (deux similaires + une complémentaire).
 2. **Paiement simulé** : aucune passerelle Payments en v1. `POST /dates/{id}/pay`

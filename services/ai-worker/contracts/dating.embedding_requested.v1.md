@@ -1,6 +1,6 @@
 # Contrat consommateur — `dating.embedding_requested` v1
 
-Statut : **gelé côté `ai`** (T-0010). Le schéma producteur canonique reste à
+Statut : **gelé côté `ai`** (T-0018). Le schéma producteur canonique reste à
 publier par `dating` dans `packages/events/src/dating/`. D'ici là, ce document
 décrit exactement ce que le worker accepte et refuse ; en cas de divergence avec
 un futur schéma producteur, c'est `dating` qui fait autorité et ce corpus doit

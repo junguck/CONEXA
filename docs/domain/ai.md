@@ -2,7 +2,7 @@
 
 > Worker Python : calcule les embeddings, met à jour les vecteurs après un date, alimente les recommandations.
 
-État : **partie rencontres démarrée** (T-0010). Le worker calcule et publie ; il ne stocke aucune donnée personnelle et n'accède à aucune base d'un autre service.
+État : **partie rencontres démarrée** (T-0018). Le worker calcule et publie ; il ne stocke aucune donnée personnelle et n'accède à aucune base d'un autre service.
 
 ## 1. Périmètre livré
 
@@ -10,7 +10,7 @@
 |---|---|---|
 | Trois vecteurs de rencontre (valeurs, personnalité, mode de vie), 64 dimensions | fait | `services/ai-worker/conexa_ai_worker/encoder.py` |
 | Mise à jour Rocchio après un date (α = 0,1, β = 0,05) | fait | `services/ai-worker/conexa_ai_worker/rocchio.py` |
-| Consommation `dating.embedding_requested` / production `embedding.computed` | fait, contrat producteur dating en attente | `events.py`, ADR 0003 |
+| Consommation `dating.embedding_requested` / production `embedding.computed` | fait, contrat producteur dating en attente | `events.py`, ADR 0006 |
 | Consommation `date.completed` / production `dating.vectors_updated` | fait (forme proposée) | `events.py` |
 | Idempotence par identifiant d'événement | fait (mémoire + adaptateur Redis injecté) | `idempotency.py` |
 | Boucle de consommation avec acquittement et file d'échecs | fait (transport à brancher, F0.4) | `runtime.py` |
@@ -66,7 +66,7 @@ dating ◄──dating.vectors_updated── ai
 
 ## 3. Décisions et invariants
 
-- Encodage, dimensions, versionnage et alternatives : [ADR 0003](../decisions/0003-vecteurs-rencontres.md).
+- Encodage, dimensions, versionnage et alternatives : [ADR 0006](../decisions/0006-vecteurs-rencontres.md).
 - `model_version` accompagne chaque vecteur ; un changement d'encodage impose une nouvelle version et un recalcul.
 - Rejeu : clé `type:id`, résultat mémorisé et rejoué à l'identique ; un seul calcul. Le magasin est soit en mémoire, soit Redis (`GET`/`SET EX`, JSON, TTL 7 jours) ; une entrée corrompue lève `IdempotencyError` plutôt que de republier.
 - Ordre de la boucle : traiter, **publier, puis acquitter**. Un échec de publication laisse l'événement non acquitté pour redistribution ; un événement invalide est rejeté et éventuellement consigné, jamais rejoué en boucle.

@@ -1,4 +1,4 @@
-# ADR 0003 : construction des vecteurs de rencontre
+# ADR 0006 : construction des vecteurs de rencontre
 
 - **Statut** : proposé
 - **Date** : 2026-10-26

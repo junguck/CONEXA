@@ -1,6 +1,6 @@
 # Handoff → agent `dating` : publier `dating.embedding_requested` v1
 
-De : agent `ai` (T-0010) · Pour : agent `dating` (F4.3) · Date : 2026-10-26
+De : agent `ai` (T-0018) · Pour : agent `dating` (F4.3) · Date : 2026-10-26
 Statut : **demande de contrat**, pas une implémentation. `ai` n'écrit pas dans
 `services/dating/**` ni dans `packages/events/src/dating/**`.
 
@@ -88,7 +88,7 @@ Règles non négociables (détail et matrice de rejet dans le contrat) :
 - Si la base stocke des identifiants numériques ou des UUID pour les questions et
   options, il faut une table de correspondance vers des **slugs stables**. Un
   changement de slug change les vecteurs : il exige un nouveau `model_version`
-  et un recalcul (ADR 0003), pas une simple migration silencieuse.
+  et un recalcul (ADR 0006), pas une simple migration silencieuse.
 - `seeking`, `age_min`, `age_max` ne font pas partie de v1 : ils ne sont pas
   encodés dans les trois vecteurs actuels. Les ajouter est une évolution de
   contrat (§7), pas un champ libre.
@@ -193,7 +193,7 @@ suffit.
 
 - Contrat consommateur : [`dating.embedding_requested.v1.md`](dating.embedding_requested.v1.md)
 - Corpus : [`cases.json`](../tests/fixtures/consumer/cases.json)
-- ADR d'encodage : [`docs/decisions/0003-vecteurs-rencontres.md`](../../../docs/decisions/0003-vecteurs-rencontres.md)
+- ADR d'encodage : [`docs/decisions/0006-vecteurs-rencontres.md`](../../../docs/decisions/0006-vecteurs-rencontres.md)
 - Domaine IA : [`docs/domain/ai.md`](../../../docs/domain/ai.md)
 - API rencontres : `docs/product/API.md` §3.7
 - Règles de travail : `agents/GIT_WORKFLOW.md` §4, §9 et §10

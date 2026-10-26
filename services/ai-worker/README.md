@@ -2,7 +2,7 @@
 
 Worker Python **sans dépendance externe** qui calcule les vecteurs de rencontre
 et applique la mise à jour Rocchio après un date. Décision d'encodage :
-[ADR 0003](../../docs/decisions/0003-vecteurs-rencontres.md). Vue d'ensemble :
+[ADR 0006](../../docs/decisions/0006-vecteurs-rencontres.md). Vue d'ensemble :
 [docs/domain/ai.md](../../docs/domain/ai.md).
 
 ## Événements

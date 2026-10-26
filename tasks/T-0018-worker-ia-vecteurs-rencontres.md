@@ -1,5 +1,5 @@
 ---
-id: T-0010
+id: T-0018
 title: "Worker IA : vecteurs de rencontre et mise à jour après date"
 feature: F4.3
 agent: ai
@@ -10,7 +10,7 @@ owned_paths:
   - services/ai-worker/**
   - packages/events/src/ai/**
   - docs/domain/ai.md
-  - docs/decisions/0003-vecteurs-rencontres.md
+  - docs/decisions/0006-vecteurs-rencontres.md
 reads:
   - docs/product/ARCHITECTURE.md
   - docs/product/API.md
@@ -26,7 +26,7 @@ reviewers: [architect, security]
 branch: "agent/ai/T-0010-dating-embeddings"
 worktree: "../worktrees/T-0010"
 pr: ""
-notes: "Périmètre IA de F4.3 (+ fonction Rocchio de F4.6) : le questionnaire, l'éligibilité et la persistance restent chez dating. L'ADR 0003 est exigé par F4.3 mais docs/decisions appartient à architect → review:architect-ok. Le producteur dating.embedding_requested n'existe pas encore : forme consommateur décrite dans l'ADR, à publier par dating avant l'intégration de bout en bout. Les schémas d'événements sont posés en JSON dans packages/events/src/ai/ en attendant le générateur de F0.4. Pas de package.json : un paquet de workspace sans dépendance casse pnpm --frozen-lockfile ; tâche platform à créer pour l'intégration Turborepo/CI. Extension : boucle d'événements, adaptateur Redis et contrat consommateur v1 (document + corpus de 22 fixtures) inclus dans la même branche avant fusion, sans dépendance ajoutée ; le client Redis réel reste à fournir par platform (F0.2) et le schéma producteur canonique par dating. Collision de numéro : origin/main contient désormais tasks/T-0010-socle-v1-services.md ; l'orchestrateur doit renuméroter cette tâche avant fusion."
+notes: "Périmètre IA de F4.3 (+ fonction Rocchio de F4.6) : le questionnaire, l'éligibilité et la persistance restent chez dating. L'ADR 0006 est exigé par F4.3 mais docs/decisions appartient à architect → review:architect-ok. Le producteur dating.embedding_requested n'existe pas encore : forme consommateur décrite dans l'ADR, à publier par dating avant l'intégration de bout en bout. Les schémas d'événements sont posés en JSON dans packages/events/src/ai/ en attendant le générateur de F0.4. Pas de package.json : un paquet de workspace sans dépendance casse pnpm --frozen-lockfile ; tâche platform à créer pour l'intégration Turborepo/CI. Extension : boucle d'événements, adaptateur Redis et contrat consommateur v1 (document + corpus de 22 fixtures) inclus dans la même branche avant fusion, sans dépendance ajoutée ; le client Redis réel reste à fournir par platform (F0.2) et le schéma producteur canonique par dating. Collision de numéro : origin/main contient désormais tasks/T-0010-socle-v1-services.md ; l'orchestrateur doit renuméroter cette tâche avant fusion."
 ---
 
 ## Objectif
@@ -39,7 +39,7 @@ Démarrer la partie IA du domaine rencontres : transformer des réponses de ques
 
 ## À livrer
 
-1. ADR 0003 : construction des vecteurs, versions de modèle, alternatives écartées.
+1. ADR 0006 : construction des vecteurs, versions de modèle, alternatives écartées.
 2. `services/ai-worker` : paquet Python sans dépendance externe, encodage déterministe, mise à jour Rocchio, validation d'enveloppe, idempotence par identifiant d'événement, journalisation sans réponse ni vecteur.
 3. Contrats des événements produits : `embedding.computed` v1, `dating.vectors_updated` v1.
 4. Tests : déterminisme, dimensions, ordinalité des échelles, ordre des choix multiples, rejeu idempotent, cas Rocchio calculés à la main, absence de PII dans les journaux.
@@ -67,4 +67,4 @@ Questionnaire et éligibilité (dating), migration `dating_profiles`, stockage p
 
 ## Preuves attendues dans la PR
 
-Sortie de `python3 -m unittest discover -s tests -v`, exemple d'événement d'entrée/sortie via `python3 -m conexa_ai_worker`, schémas JSON validés, ADR 0003.
+Sortie de `python3 -m unittest discover -s tests -v`, exemple d'événement d'entrée/sortie via `python3 -m conexa_ai_worker`, schémas JSON validés, ADR 0006.
