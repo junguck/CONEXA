@@ -1,0 +1,63 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://conexa.app/events/ai/dating.vectors_updated.v1.json",
+  "title": "dating.vectors_updated v1",
+  "description": "Vecteurs d'un participant mis à jour après un date (Rocchio, ADR 0003). Données personnelles : jamais journalisées.",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["id", "type", "version", "occurred_at", "producer", "payload"],
+  "properties": {
+    "id": { "type": "string", "minLength": 1 },
+    "type": { "const": "dating.vectors_updated" },
+    "version": { "const": 1 },
+    "occurred_at": { "type": "string", "format": "date-time" },
+    "producer": { "const": "ai" },
+    "traceparent": { "type": "string" },
+    "payload": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "user_id",
+        "date_id",
+        "model_version",
+        "update_model_version",
+        "update",
+        "vectors"
+      ],
+      "properties": {
+        "user_id": { "type": "string", "minLength": 1 },
+        "date_id": { "type": "string", "minLength": 1 },
+        "model_version": { "const": "dating-qhash-v1" },
+        "update_model_version": { "const": "dating-rocchio-v1" },
+        "update": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["type", "alpha", "beta"],
+          "properties": {
+            "type": { "const": "rocchio" },
+            "alpha": { "const": 0.1 },
+            "beta": { "const": 0.05 }
+          }
+        },
+        "vectors": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["values", "personality", "lifestyle"],
+          "properties": {
+            "values": { "$ref": "#/$defs/vector" },
+            "personality": { "$ref": "#/$defs/vector" },
+            "lifestyle": { "$ref": "#/$defs/vector" }
+          }
+        }
+      }
+    }
+  },
+  "$defs": {
+    "vector": {
+      "type": "array",
+      "minItems": 64,
+      "maxItems": 64,
+      "items": { "type": "number", "minimum": -1, "maximum": 1 }
+    }
+  }
+}
