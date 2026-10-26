@@ -30,13 +30,45 @@ L'intégration à Turborepo demande une tâche `platform` (F0.3) ; en attendant,
 tests se lancent directement avec Python.
 
 Le worker ne lit aucune base, ne stocke aucun vecteur et ne journalise ni réponse
-ni vecteur. L'idempotence se fait sur `type + id` de l'événement.
+ni vecteur.
+
+## Boucle d'événements
+
+`conexa_ai_worker.runtime` sépare le transport du traitement :
+
+- `Delivery` porte les rappels `ack` et `reject` fournis par le bus ;
+- l'ordre est **publier puis acquitter** : une panne du bus laisse l'événement
+  non acquitté, donc redistribué, jamais perdu en silence ;
+- un événement invalide est rejeté, consigné si un `DeadLetterSink` est fourni,
+  et ne boucle pas ;
+- un lot vide (date sans mise à jour) est acquitté sans publication ;
+- `run(max_events=...)` s'arrête sur source vide.
+
+`InMemoryEventSource` ne sert qu'aux tests et aux essais locaux : le bus réel
+arrive avec F0.4. L'adaptateur de bus doit acquitter dans `Delivery.ack` après
+que `run_once` a rendu la main.
+
+## Idempotence
+
+Clé `type:id`, résultat rejoué à l'identique. Deux magasins derrière le protocole
+`IdempotencyStore` :
+
+- `InMemoryIdempotencyStore` : borné, TTL 7 jours, pour le développement ;
+- `RedisIdempotencyStore` : JSON + `SET ... EX`, espace de clés
+  `conexa:ai:idempotency:`, TTL 7 jours, sur tout client exposant `GET`/`SET`.
+
+Une entrée corrompue lève `IdempotencyError` au lieu de recalculer et de
+republier. `GET` puis `SET` n'est pas atomique : deux workers concurrents peuvent
+recalculer le même événement ; les sorties sont déterministes et les
+consommateurs dédupliquent sur l'identifiant.
 
 ## Limites connues
 
 - Le producteur de `dating.embedding_requested` n'existe pas encore : la forme
   attendue est décrite dans l'ADR 0003 et testée avec des fixtures.
-- Le magasin d'idempotence est en mémoire ; l'adaptateur Redis viendra avec
-  l'infrastructure (F0.2/F0.6).
+- Le client Redis (`redis-py` ou équivalent) et le bus réel restent à fournir par
+  platform (F0.2/F0.4) ; l'adaptateur et la boucle sont prêts et testés avec des
+  doublures.
+- L'idempotence n'est pas atomique entre deux instances (voir ci-dessus).
 - Pas encore de `typecheck` Python (mypy/pyright) ni d'image Docker : outillage
   à fixer par platform.

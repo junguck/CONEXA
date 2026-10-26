@@ -13,7 +13,7 @@ from datetime import datetime, timezone
 from typing import Any, Callable, Mapping
 
 from .encoder import BLOCKS, DIMENSION, MODEL_VERSION, InvalidAnswers, encode_profile
-from .idempotency import InMemoryIdempotencyStore
+from .idempotency import IdempotencyStore, InMemoryIdempotencyStore
 from .rocchio import ALPHA, BETA, UPDATE_MODEL_VERSION, InvalidVectors, rocchio_update
 
 logger = logging.getLogger("conexa.ai_worker")
@@ -82,7 +82,7 @@ class DatingWorker:
     def __init__(
         self,
         *,
-        store: InMemoryIdempotencyStore | None = None,
+        store: IdempotencyStore | None = None,
         clock: Callable[[], datetime] | None = None,
         event_id_factory: Callable[[], str] | None = None,
     ) -> None:

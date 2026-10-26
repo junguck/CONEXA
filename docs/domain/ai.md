@@ -12,7 +12,8 @@
 | Mise à jour Rocchio après un date (α = 0,1, β = 0,05) | fait | `services/ai-worker/conexa_ai_worker/rocchio.py` |
 | Consommation `dating.embedding_requested` / production `embedding.computed` | fait, contrat producteur dating en attente | `events.py`, ADR 0003 |
 | Consommation `date.completed` / production `dating.vectors_updated` | fait (forme proposée) | `events.py` |
-| Idempotence par identifiant d'événement | fait (mémoire ; Redis plus tard) | `idempotency.py` |
+| Idempotence par identifiant d'événement | fait (mémoire + adaptateur Redis injecté) | `idempotency.py` |
+| Boucle de consommation avec acquittement et file d'échecs | fait (transport à brancher, F0.4) | `runtime.py` |
 | Embeddings Talents / Marketplace (1536 dimensions) | non commencé | F5.1, F5.5 |
 | Propositions hebdomadaires et mesure d'équité | non commencé, côté dating (F4.4) | — |
 
@@ -65,7 +66,8 @@ dating ◄──dating.vectors_updated── ai
 
 - Encodage, dimensions, versionnage et alternatives : [ADR 0003](../decisions/0003-vecteurs-rencontres.md).
 - `model_version` accompagne chaque vecteur ; un changement d'encodage impose une nouvelle version et un recalcul.
-- Rejeu : clé `type:id`, résultat mémorisé et rejoué à l'identique ; un seul calcul.
+- Rejeu : clé `type:id`, résultat mémorisé et rejoué à l'identique ; un seul calcul. Le magasin est soit en mémoire, soit Redis (`GET`/`SET EX`, JSON, TTL 7 jours) ; une entrée corrompue lève `IdempotencyError` plutôt que de republier.
+- Ordre de la boucle : traiter, **publier, puis acquitter**. Un échec de publication laisse l'événement non acquitté pour redistribution ; un événement invalide est rejeté et éventuellement consigné, jamais rejoué en boucle.
 - Déterminisme : SHA-256, pas de `hash()` Python, arrondi à 9 décimales, aucun appel réseau.
 - Les vecteurs sont des données personnelles : jamais journalisés, jamais persistés par le worker. La persistance (pgvector) appartient à dating.
 - Le texte d'un utilisateur est une donnée, jamais une instruction : le worker n'a ni outil, ni réseau, ni accès fichier au-delà de son code.
@@ -84,13 +86,15 @@ workspace sans dépendance n'obtient pas d'importateur dans `pnpm-lock.yaml`, do
 
 - Journalisation : type et identifiant d'événement, nombre d'événements produits, durée. Rien d'autre.
 - Erreur de validation : l'événement est refusé (`InvalidEvent`) ; l'adaptateur de bus devra l'envoyer en file d'échecs, jamais le rejouer indéfiniment.
-- Panne : le worker est sans état ; un redémarrage ne perd que le cache d'idempotence en mémoire, reconstruit par le rejeu des événements. L'adaptateur Redis est attendu avec F0.2/F0.6.
+- Panne : le worker est sans état. Avec le magasin en mémoire, un redémarrage perd le cache et le rejeu recalcule des sorties identiques ; avec Redis, le cache survit.
+- Concurrence : `GET` puis `SET` n'est pas atomique ; deux instances peuvent recalculer le même événement. Les sorties sont déterministes et les consommateurs dédupliquent sur l'identifiant, donc aucun état divergent.
+- Bus : `runtime.Delivery` porte `ack`/`reject` ; l'adaptateur F0.4 doit acquitter après le retour de `run_once`, et fournir un `DeadLetterSink` pour les événements refusés.
 
 ## 5. Limites et suite
 
 1. **Contrat manquant** : `dating.embedding_requested` doit être publié par l'agent `dating` avant l'intégration de bout en bout (ADR 0003).
 2. **F0.4** : les schémas de `packages/events/src/ai/` ne sont pas encore compilés par le générateur commun.
 3. **Stockage** : la migration pgvector de `dating_profiles` (schema.sql absent, ADR 0002) reste chez dating.
-4. **Idempotence durable** : adaptateur Redis à brancher.
+4. **Idempotence durable** : l'adaptateur Redis est prêt ; il reste à injecter le client réel fourni par platform (F0.2) et à choisir la politique de file d'échecs.
 5. **Qualité** : mesure du taux de « oui » par segment et comparaison avec un modèle neuronal (option 2 de l'ADR) sur des données réelles.
 6. **Outillage Python** : `typecheck` (pyright/mypy), image Docker et tâche Turborepo à fixer par platform (F0.3).
