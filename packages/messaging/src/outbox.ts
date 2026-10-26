@@ -1,4 +1,6 @@
-import type { EventEnvelope } from '@conexa/events';
+import type { EventEnvelope, EventPublisher } from '@conexa/events';
+
+export type { EventPublisher };
 import { DEFAULT_RETRY_POLICY, nextAttemptAt, type RetryPolicy } from './backoff.js';
 
 export type OutboxStatus = 'pending' | 'published' | 'failed';
@@ -26,11 +28,6 @@ export interface OutboxStore {
   markPublished(ids: string[]): Promise<void>;
   /** `retryAt = null` ⇒ file des échecs (plus de reprise automatique). */
   markFailed(id: string, error: string, retryAt: Date | null): Promise<void>;
-}
-
-/** Publication sur le bus (échange topic RabbitMQ en production). */
-export interface EventPublisher {
-  publish(envelopes: EventEnvelope[]): Promise<void>;
 }
 
 export interface OutboxDispatcherOptions {

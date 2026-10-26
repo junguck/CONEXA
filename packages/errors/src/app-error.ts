@@ -20,6 +20,22 @@ export interface AppErrorOptions {
   cause?: unknown;
 }
 
+const OPTION_KEYS = ['details', 'requestId', 'cause'] as const;
+
+/**
+ * v1 appelait `new AppError(code, message, details)` : un 3ᵉ argument sans clé
+ * d'options connue est donc lu comme `details`. Ambiguïté assumée et
+ * documentée (ADR 0007) ; `new AppError('X', 'msg', { details: {...} })` reste
+ * interprété comme des options.
+ */
+function normalizeOptions(input: AppErrorOptions | Record<string, unknown> | undefined) {
+  if (input === undefined) return {};
+  const keys = Object.keys(input);
+  const isOptions =
+    keys.length === 0 || keys.some((key) => OPTION_KEYS.some((option) => option === key));
+  return isOptions ? (input as AppErrorOptions) : { details: input as Record<string, unknown> };
+}
+
 /** Messages par défaut des codes dont le texte porte une règle métier. */
 const ERROR_MESSAGES: Partial<Record<ErrorCode, string>> = {
   ACCOUNT_PENDING: 'Compte en attente de validation par un administrateur.',
@@ -73,16 +89,21 @@ export class AppError extends Error {
   readonly details?: Record<string, unknown>;
   readonly requestId?: string;
 
-  constructor(code: ErrorCode, message?: string, options: AppErrorOptions = {}) {
+  constructor(
+    code: ErrorCode,
+    message?: string,
+    options: AppErrorOptions | Record<string, unknown> = {},
+  ) {
+    const resolved = normalizeOptions(options);
     super(
       message ?? defaultMessage(code),
-      options.cause === undefined ? undefined : { cause: options.cause },
+      resolved.cause === undefined ? undefined : { cause: resolved.cause },
     );
     this.name = 'AppError';
     this.code = code;
     this.status = httpStatusFor(code);
-    if (options.details !== undefined) this.details = options.details;
-    if (options.requestId !== undefined) this.requestId = options.requestId;
+    if (resolved.details !== undefined) this.details = resolved.details;
+    if (resolved.requestId !== undefined) this.requestId = resolved.requestId;
   }
 
   /** Enveloppe prête à sérialiser (`request_id` rempli si connu). */

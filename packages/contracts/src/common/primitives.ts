@@ -18,5 +18,14 @@ export const positiveAmountFcfaSchema = z.int().positive();
 /** Curseur opaque de pagination : le client le renvoie tel quel. */
 export const cursorSchema = z.string().min(1);
 
+/** Bornes de pagination, partagées avec le contrat v1 (`PAGE_DEFAULT_LIMIT`). */
+export const PAGE_DEFAULT_LIMIT = 20;
+export const PAGE_MAX_LIMIT = 100;
+
 /** `?limit=20` : 20 par défaut, 100 au maximum (garde-fou de charge). */
-export const pageLimitSchema = z.coerce.number().int().min(1).max(100).default(20);
+export const pageLimitSchema = z.coerce
+  .number()
+  .int()
+  .min(1)
+  .max(PAGE_MAX_LIMIT)
+  .default(PAGE_DEFAULT_LIMIT);
