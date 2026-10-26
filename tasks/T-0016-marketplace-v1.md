@@ -3,7 +3,7 @@ id: T-0016
 title: "Marketplace v1 : offres, commandes, machine à états, avis"
 feature: F5.5
 agent: marketplace
-status: todo
+status: review
 depends_on: [T-0010]
 size: L
 owned_paths:
@@ -21,8 +21,8 @@ contracts_touched:
 deps_request: []
 human_gate: false
 reviewers: [architect, security]
-branch: ""
-worktree: ""
+branch: v1/marketplace
+worktree: v1-marketplace
 pr: ""
 notes: "Branche v1/marketplace, dérivée de v1/socle. Les tables de `schema_extension.sql` (§2 Marketplace) sont reprises ; Payments et Billing sont simulés par des interfaces avec doubles."
 ---
