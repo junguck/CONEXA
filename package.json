@@ -21,6 +21,13 @@
     "db:migrate": "node tools/db-migrate.mjs",
     "seed:demo": "node tools/seed-demo.mjs",
     "test:e2e": "node tests/e2e/v1-smoke.mjs",
+    "tools:check-ownership": "python3 tools/check-ownership.py",
+    "tools:check-migrations": "python3 tools/check-migrations.py",
+    "tools:check-contracts": "python3 tools/check-contracts.py",
+    "tools:check-pii": "python3 tools/check-pii-logs.py",
+    "tools:check-secrets": "python3 tools/check-secrets.py",
+    "test:tools": "python3 -m unittest discover -s tools/tests -v",
+    "ci:guards": "pnpm tools:check-ownership && pnpm tools:check-migrations && pnpm tools:check-contracts && pnpm tools:check-pii && pnpm tools:check-secrets && pnpm test:tools",
     "verify": "pnpm docs:verify && pnpm format:check && pnpm lint && pnpm typecheck && pnpm test && pnpm build"
   },
   "devDependencies": {

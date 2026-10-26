@@ -1,0 +1,18 @@
+# Les agents ne sont pas des comptes GitHub : ce fichier désigne l'humain qui
+# doit relire les chemins sensibles, en complément des étiquettes review:*-ok.
+# Voir agents/GIT_WORKFLOW.md §6 et agents/ownership.yaml (review_rules).
+
+/.github/                @junguck
+/deploy/                 @junguck
+/agents/ownership.yaml   @junguck
+/agents/GIT_WORKFLOW.md  @junguck
+
+/db/migrations/          @junguck
+/packages/contracts/     @junguck
+/packages/events/        @junguck
+
+/services/payments/      @junguck
+/services/billing/       @junguck
+/services/identity/src/auth/          @junguck
+/services/dating/src/contact-reveal/  @junguck
+/services/realtime/src/chat-filter/   @junguck
