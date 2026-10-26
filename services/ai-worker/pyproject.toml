@@ -1,0 +1,10 @@
+[project]
+name = "conexa-ai-worker"
+version = "0.1.0"
+description = "Convexa AI worker: deterministic dating embeddings and Rocchio updates"
+requires-python = ">=3.12"
+dependencies = []
+
+[tool.pyright]
+include = ["conexa_ai_worker"]
+typeCheckingMode = "standard"

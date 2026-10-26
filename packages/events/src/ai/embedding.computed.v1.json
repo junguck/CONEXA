@@ -1,0 +1,54 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://conexa.app/events/ai/embedding.computed.v1.json",
+  "title": "embedding.computed v1",
+  "description": "Vecteurs de rencontre calculés par le worker IA (ADR 0003). Données personnelles : jamais journalisées.",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["id", "type", "version", "occurred_at", "producer", "payload"],
+  "properties": {
+    "id": { "type": "string", "minLength": 1 },
+    "type": { "const": "embedding.computed" },
+    "version": { "const": 1 },
+    "occurred_at": { "type": "string", "format": "date-time" },
+    "producer": { "const": "ai" },
+    "traceparent": { "type": "string" },
+    "payload": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "user_id",
+        "profile_id",
+        "questionnaire_version",
+        "model_version",
+        "dimension",
+        "vectors"
+      ],
+      "properties": {
+        "user_id": { "type": "string", "minLength": 1 },
+        "profile_id": { "type": "string", "minLength": 1 },
+        "questionnaire_version": { "type": "integer", "minimum": 1 },
+        "model_version": { "const": "dating-qhash-v1" },
+        "dimension": { "const": 64 },
+        "vectors": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["values", "personality", "lifestyle"],
+          "properties": {
+            "values": { "$ref": "#/$defs/vector" },
+            "personality": { "$ref": "#/$defs/vector" },
+            "lifestyle": { "$ref": "#/$defs/vector" }
+          }
+        }
+      }
+    }
+  },
+  "$defs": {
+    "vector": {
+      "type": "array",
+      "minItems": 64,
+      "maxItems": 64,
+      "items": { "type": "number", "minimum": -1, "maximum": 1 }
+    }
+  }
+}
