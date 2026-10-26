@@ -3,7 +3,7 @@ id: T-0015
 title: "Talents v1 : compétences, publications, missions, événements"
 feature: F5.1
 agent: talents
-status: todo
+status: review
 depends_on: [T-0010]
 size: L
 owned_paths:
@@ -22,8 +22,8 @@ contracts_touched:
 deps_request: []
 human_gate: false
 reviewers: [architect, security]
-branch: ""
-worktree: ""
+branch: v1/talents
+worktree: v1-talents
 pr: ""
 notes: "Branche v1/talents, dérivée de v1/socle. Payments et Billing sont absents de la v1 : interfaces PaymentsGateway et EntitlementsGateway avec doubles, aucune écriture d'argent en base."
 ---

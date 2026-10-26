@@ -5,3 +5,4 @@ export * from './common/pagination.js';
 export * from './dating/index.js';
 export * from './football/index.js';
 export * from './identity/index.js';
+export * from './talents/index.js';
