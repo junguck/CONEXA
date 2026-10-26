@@ -17,6 +17,10 @@ describe('configuration', () => {
     expect(env.PORT).toBe(3000);
   });
 
+  it('traite un PORT vide comme absent (docker compose passe une chaîne vide)', () => {
+    expect(parseEnv(BaseEnvSchema, { PORT: '' }).PORT).toBe(3000);
+  });
+
   it('refuse une configuration invalide en nommant la variable', () => {
     expect(() => parseEnv(BaseEnvSchema, { PORT: 'abc' })).toThrow(/PORT/);
     expect(() => parseEnv(BaseEnvSchema, { DATABASE_URL: '' })).toThrow(/DATABASE_URL/);
