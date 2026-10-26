@@ -34,7 +34,7 @@ cleanup() {
 trap cleanup EXIT
 
 psql_as conexa_football \
-  'create table if not exists football.isolation_probe (id integer primary key); insert into football.isolation_probe values (1)' >/dev/null
+  'drop table if exists football.isolation_probe; create table football.isolation_probe (id integer primary key); insert into football.isolation_probe values (1)' >/dev/null
 echo "probe : football.isolation_probe créée par conexa_football"
 
 if ! psql_as conexa_football 'select count(*) from football.isolation_probe' >/dev/null; then
