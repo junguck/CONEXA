@@ -3,7 +3,7 @@ id: T-0002
 title: "Environnement de développement Docker Compose"
 feature: F0.2
 agent: platform
-status: todo
+status: in_progress
 depends_on: [T-0001]
 size: M
 owned_paths:
@@ -19,8 +19,8 @@ contracts_touched: []
 deps_request: []
 human_gate: true
 reviewers: [security]
-branch: ""
-worktree: ""
+branch: "agent/platform/T-0002-compose-dev"
+worktree: "C:\\Users\\EG\\Desktop\\Conexa\\worktrees\\T-0002"
 pr: ""
 notes: "Validation humaine obligatoire : tout changement dans deploy/. Aucune clé Campay réelle, mots de passe de développement uniquement dans .env.example."
 ---
