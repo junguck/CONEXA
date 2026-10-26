@@ -3,7 +3,7 @@ id: T-0014
 title: "Dating v1 : profil, picks, quotas, dates, révélation du contact"
 feature: F4.3
 agent: dating
-status: todo
+status: review
 depends_on: [T-0010]
 size: L
 owned_paths:
@@ -22,8 +22,8 @@ contracts_touched:
 deps_request: []
 human_gate: true
 reviewers: [architect, security]
-branch: ""
-worktree: ""
+branch: v1/dating
+worktree: v1-dating
 pr: ""
 notes: "Branche v1/dating, dérivée de v1/socle. Validation humaine : révélation de contact. Sans pgvector, les embeddings ne sont pas calculés en v1 (ADR 0003) : les picks sont tirés parmi des profils éligibles, la règle de compatibilité viendra avec le worker IA."
 ---
