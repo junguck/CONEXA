@@ -9,10 +9,13 @@ et la demande [`dating.embedding_requested.handoff.md`](dating.embedding_request
 
 ## 1. Verdict
 
-**Compatible.** L'émetteur `dating` produit un événement accepté par le worker
-`ai`, et les écarts constatés sont tous dans le sens restrictif (le producteur
-est plus strict que le consommateur). Aucune modification de `ai` n'est requise
-pour consommer ce producteur.
+**Implémentation compatible.** L'émetteur `dating` produit un événement accepté
+par le worker `ai`. La matrice de rejet a été passée dans le schéma Zod de
+`dating` : **22 des 23 comportements sont alignés**. Seul `blank-profile-id`
+(identifiant composé d'espaces) est accepté par le schéma producteur alors que le
+consommateur le refuse ; le builder ne peut pas produire ce cas en pratique
+(l'identifiant vient du JWT), mais le schéma doit être resserré. Aucune
+modification de `ai` n'est requise pour consommer ce producteur.
 
 La compatibilité est figée par
 [`tests/fixtures/consumer/valid/dating-catalogue.json`](../tests/fixtures/consumer/valid/dating-catalogue.json) :
@@ -31,6 +34,7 @@ catalogue v1, puis traité par `python3 -m conexa_ai_worker` (trois vecteurs,
 | Tests unitaires `dating` | `vitest run src/embedding-request.test.ts` : **6/6 verts**. |
 | Test de bout en bout | Événement produit par le code `dating` → worker `ai` : sortie `embedding.computed` avec trois vecteurs de 64 dimensions. |
 | Corpus `ai` | La nouvelle fixture passe `tests.test_consumer_contract` (4 fixtures valides, 19 refus). |
+| Matrice de rejet dans le schéma `dating` | 4/4 valides acceptés, 18/19 refus correctement rejetés ; seul `blank-profile-id` passe. |
 
 ## 3. Écarts, tous compatibles
 
@@ -41,6 +45,7 @@ catalogue v1, puis traité par `python3 -m conexa_ai_worker` (trois vecteurs,
 | `id` | UUID (`z.uuid()`) | Chaîne non vide | Plus strict. |
 | Champs supplémentaires | `additionalProperties: false` | Ignorés | Plus strict. |
 | `traceparent` | Optionnel, forwardé | Optionnel, recopié dans la sortie | Aligné. |
+| Identifiants blancs | `z.string().min(1)` accepte `"   "` | Refuse un identifiant blanc | À resserrer côté `dating` (`.trim().min(1)`). |
 
 ## 4. Points à corriger avant de considérer F4.3 terminée
 
@@ -52,31 +57,36 @@ catalogue v1, puis traité par `python3 -m conexa_ai_worker` (trois vecteurs,
    `origin/main`. Bonne nouvelle : pour les chemins `dating`, la base de
    `v1/dating` est identique à `origin/main` (`git diff` vide), donc le patch
    peut être rejoué proprement sur une branche dédiée.
-2. **Concurrence non traitée** : `putProfile` lit le profil existant, décide
-   d'émettre, puis upsert dans une transaction. Deux `PUT` simultanés peuvent
-   produire des événements incohérents avec l'état final (écrasement perdu,
-   vecteurs calculés pour des réponses qui ne sont plus en base). Il faut un
-   verrou par profil (`SELECT … FOR UPDATE`), une version de profil ou une
-   sérialisation.
-3. **Test d'outbox non exécuté en CI** : `embedding-outbox.integration.test.ts`
-   est `skipIf` sans `DATING_TEST_DATABASE_URL`. Le rollback et le rejeu ne sont
-   donc pas prouvés par défaut ; prévoir un PostgreSQL de CI.
-4. **Relais non planifié** : `relayDatingOutbox` existe mais aucun ordonnanceur
-   ne l'appelle. Le socle F0.4 fournit désormais l'enveloppe commune et un bus en
-   mémoire (`packages/events`), mais pas encore de broker durable ; le relais
-   n'a ni métrique, ni plafond de tentatives, ni backoff.
-5. **Cycle de vie** : pause, suppression de compte et retrait de consentement ne
-   changent pas l'émission ; la rétention des vecteurs reste à définir côté
-   `dating`.
-6. **Aval manquant** : `dating` ne consomme pas encore `embedding.computed` et ne
-   stocke pas les vecteurs (pgvector hors v1) ; F4.3 n'est pas bouclée.
+2. **Concurrence (prérequis F4.4, pas blocage du producteur)** : `putProfile` lit
+   le profil, décide d'émettre, puis upsert. Deux `PUT` simultanés peuvent
+   produire deux événements dont `occurred_at` (horodatage de requête) ne suit
+   pas l'ordre de commit. Tant que `dating` ne stocke pas les vecteurs, la
+   décision « dernière écriture gagnante » documentée suffit ; quand il les
+   stockera, il ne pourra pas garantir que le vecteur conservé correspond aux
+   réponses finales sans révision de profil. À trancher avant F4.4 (verrou par
+   profil, `profile_revision`, ou ordre de commit).
+3. **Preuve d'atomicité hors CI** : `embedding-outbox.integration.test.ts` est
+   `skipIf` sans `DATING_TEST_DATABASE_URL`. Le code est prêt et le test a été
+   exécuté manuellement, mais il n'est pas prouvé par défaut ; cela relève d'une
+   tâche qa/ai avec un PostgreSQL de CI.
+4. **Relais dépendant de F0.4** : seul élément de production absent.
+   `relayDatingOutbox` existe mais aucun ordonnanceur ne l'appelle ; le socle
+   fournit l'enveloppe et un bus en mémoire, pas encore de broker durable, de
+   métrique, de plafond de tentatives ni de backoff.
+5. **Aval F4.4** : `dating` ne consomme pas encore `embedding.computed` et ne
+   stocke pas les vecteurs (pgvector hors v1) ; c'est documenté dans
+   `docs/domain/dating.md` et ne bloque pas la livraison du producteur.
+6. **Schéma à resserrer** : accepter `profile_id: "   "` est le seul écart de la
+   matrice ; un `.trim().min(1)` suffit.
 
 ## 5. Recommandation
 
-`dating` doit d'abord régulariser son travail : nouvelle tâche F4.3 (T-0014
-exclut les embeddings), branche depuis `origin/main`, commit et PR avec
-`review:architect-ok`. Puis traiter la concurrence et le test d'outbox en CI. Le
-relais durable et la consommation de `embedding.computed` suivront avec
-l'infrastructure de bus et F4.4. Côté `ai`, aucune action n'est nécessaire : la
-fixture `valid/dating-catalogue.json` protège la compatibilité contre toute
-régression future.
+L'implémentation `dating` est complète et compatible : le schéma, l'émetteur et
+l'outbox sont livrés, la matrice de rejet est alignée à 22/23 et le test manuel
+de bout en bout est concluant. Pour la production, il ne manque que le relais
+F0.4. Pour la fusion, le travail doit encore être commité sur une tâche F4.3
+dédiée (T-0014 exclut les embeddings) et une branche depuis `origin/main`. Avant
+F4.4, trancher la révision de profil pour que les vecteurs restent associés aux
+bonnes réponses. Côté `ai`, aucune action n'est nécessaire : la fixture
+`valid/dating-catalogue.json` protège la compatibilité contre toute régression
+future.

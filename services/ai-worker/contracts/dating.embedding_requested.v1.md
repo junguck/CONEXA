@@ -30,8 +30,8 @@ Les champs d'enveloppe supplémentaires sont ignorés (compatibilité ascendante
 
 | Champ | Type | Requis | Règle |
 |---|---|---|---|
-| `user_id` | string | oui | Identifiant opaque non vide, jamais un e-mail ou un nom. |
-| `profile_id` | string | oui | Identifiant opaque non vide. |
+| `user_id` | string | oui | Identifiant opaque non vide et non blanc, jamais un e-mail ou un nom. |
+| `profile_id` | string | oui | Identifiant opaque non vide et non blanc. |
 | `questionnaire_version` | integer ≥ 1 | oui | Version du **catalogue de questions**, recopiée dans la sortie. Ce n'est pas la version du modèle d'encodage (`model_version`). |
 | `answers` | object | oui | Exactement les trois blocs de §3, chacun un objet (éventuellement vide). |
 
