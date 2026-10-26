@@ -1,12 +1,14 @@
-# ADR 0004 : Format des événements, outbox et reprise
+# ADR 0006 : Format des événements, outbox et reprise
 
 - **Statut** : proposé
 - **Date** : 2026-10-26
 - **Décideur** : agent `architect` (tâche T-0004)
 - **Portée** : contrats | outillage
 
-> Numérotation : l'ADR 0003 est réservé aux vecteurs de rencontre (`agent/ai/T-0010`).
-> Cet ADR prend donc le numéro 0004 pour éviter deux documents portant le même numéro.
+> Numérotation : `0003`, `0004` et `0005` sont déjà pris par la piste v1
+> (`0003-schema-base-reconstitue`, `0004-nestjs-esm-vitest`, `0005-kit-de-service-partage`) et
+> `0003-vecteurs-rencontres` arrive avec `agent/ai/T-0010`. Cet ADR prend le numéro libre suivant,
+> `0006`, pour ne collisionner avec aucun document en attente de fusion.
 
 ## Contexte
 
