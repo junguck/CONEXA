@@ -3,7 +3,7 @@ id: T-0012
 title: "Identity v1 : OTP, JWT, profil, validation admin"
 feature: F1.1
 agent: identity
-status: todo
+status: review
 depends_on: [T-0010]
 size: L
 owned_paths:
@@ -22,8 +22,8 @@ contracts_touched:
 deps_request: []
 human_gate: true
 reviewers: [architect, security]
-branch: ""
-worktree: ""
+branch: "v1/identity"
+worktree: "../worktrees/v1-identity"
 pr: ""
 notes: "Branche v1/identity, dérivée de v1/socle. Validation humaine obligatoire : authentification. Fournisseur OTP = console en développement (aucun envoi réel) ; le fournisseur WhatsApp reste à trancher (ADR à écrire avant la production)."
 ---
