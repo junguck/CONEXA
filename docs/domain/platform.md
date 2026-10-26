@@ -22,7 +22,11 @@ Outillage, CI, Docker, observabilité. Propriétaire : agent `platform` (voir `a
 | `pnpm gen:contracts` | **à créer** | F0.4 |
 | `pnpm gen:registry` | **à créer** | F0.7 |
 | `pnpm new:service` | **à créer** | F0.5 |
-| `pnpm tools:check-ownership` | **à créer** | F0.3 |
+| `pnpm tools:check-ownership` | disponible (propriété des chemins) | F0.3 |
+| `pnpm tools:check-migrations` | disponible (nom, ordre, immutabilité, danger) | F0.3 |
+| `pnpm tools:check-contracts` | disponible (OpenAPI et schémas d'événements) | F0.3 |
+| `pnpm tools:check-pii` / `pnpm tools:check-secrets` | disponible (gardes statiques) | F0.3 |
+| `pnpm test:tools` / `pnpm ci:guards` | disponible (tests des outils / tous les gardes) | F0.3 |
 
 Ne pas créer un script bidon pour une commande « à créer » : elle appartient à la tâche indiquée.
 
@@ -40,3 +44,23 @@ Ne pas créer un script bidon pour une commande « à créer » : elle appartien
 - **Windows** : les outils Python doivent lire et écrire en UTF-8 explicite (les défauts de la locale cassent les accents et les caractères `·`/`—` des documents). Corrigé dans `tools/*.py` le 2026-10-26.
 - **pnpm 12** : `onlyBuiltDependencies` n'existe plus, c'est `allowBuilds` dans `pnpm-workspace.yaml`. Un `allowBuilds` dupliqué fait échouer la lecture du fichier.
 - **Turborepo** : ne déclarer `outputs` que si la tâche produit réellement ces fichiers, sinon chaque exécution affiche un avertissement.
+
+## Garde-fous de CI (F0.3)
+
+La CI (`.github/workflows/ci.yml`) refuse automatiquement une PR qui sort des chemins de son agent, modifie une migration fusionnée, casse un contrat, journalise une PII ou contient un secret. Les outils sont utilisables en local, sans Docker ni réseau.
+
+| Outil | Ce qu'il refuse | Exception |
+|---|---|---|
+| `check-ownership` | un fichier hors de `ownership.yaml` et des `owned_paths` de la tâche ; un champ de tâche autre que `status`, `branch`, `worktree`, `pr`, `notes` | une tâche `blocked` documente la demande à l'agent propriétaire (règle 7) |
+| `check-migrations` | un nom non horodaté, une migration fusionnée modifiée ou supprimée, un horodatage rétroactif, une migration destructrice | `ALLOW_DESTRUCTIVE=1` après `human-ok` |
+| `check-contracts` | suppression de route, d'opération, de réponse, de champ, d'énumération ; changement de type ; champ devenu obligatoire | nouvelle version `…v2` |
+| `check-pii-logs` | `logger`/`console` citant téléphone, WhatsApp, matricule, OTP, MoMo, jeton, mot de passe sans masquage | commentaire `pii-check: ignore` justifié en revue |
+| `check-secrets` | clé privée, jeton AWS/GitHub/Slack/API, affectation de secret longue | `pragma: allowlist secret` ou `gitleaks:allow` |
+
+- **Base de comparaison** : `origin/main` par défaut ; `--working-tree` inclut le travail non commité ; `--branch` force la branche (utile en CI ou après un rebase).
+- **Résolution de la tâche** : `agent/<agent>/T-xxxx-…`, ou le champ `branch:` de la tâche pour les branches `v1/…`.
+- **Propriété étendue** : les `owned_paths` de la tâche s'ajoutent aux chemins de l'agent, sinon un agent ne pourrait pas livrer une tranche verticale (écran + service + migration).
+- **Secrets** : `check-secrets` couvre l'arbre de travail ; `gitleaks` couvre l'historique et reste l'autorité. `pnpm audit --audit-level=high` bloque les vulnérabilités hautes.
+- **CI** : `quality` (format, docs, commits conventionnels, lint/types/tests/build filtrés, intégration si définie, audit), `guards` (propriété, migrations, contrats), `privacy` (PII, secrets, gitleaks), `python-services` (worker IA quand `services/ai-worker/pyproject.toml` existe).
+- **Étiquettes et revue** : `.github/labels.yml` synchronisé par `.github/workflows/labels.yml` ; `.github/CODEOWNERS` et le modèle de PR rappellent `human-ok`, `review:architect-ok`, `review:security-ok`, `review:qa-ok`.
+- **`pnpm ci:guards`** enchaîne tous les gardes et leurs tests ; à lancer avant d'ouvrir une PR.
