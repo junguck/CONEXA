@@ -1,0 +1,10 @@
+# Empreintes gitleaks explicitement acceptées, avec justification.
+# Un jour = une ligne, et chaque ligne doit rester justifiée ici.
+# Toute suppression de ligne devrait re-ratifier l'ajout (revue humaine).
+#
+# Faux positif : règle `curl-auth-user`, qui signale n'importe quelle occurrence
+# de `curl --user` sans distinguer un secret d'une référence à une variable
+# d'environnement. Ici la ligne lit des variables avec valeurs par défaut de
+# développement locales (`${GRAFANA_ADMIN_USER:-conexa}`), déjà présentes dans
+# `.env.example` ; aucune valeur réelle n'est dans l'historique.
+bccd0a1e7c1d1c2f188d81c4e4ada2f47332c66e:deploy/tests/check-observability-runtime.sh:curl-auth-user:78
