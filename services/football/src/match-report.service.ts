@@ -1,30 +1,25 @@
 import { Inject, Injectable } from '@nestjs/common';
 import type { MatchReportInput, ReportStatus } from '@conexa/contracts';
-import type { EventPublisher } from '@conexa/events';
-import { createEvent } from '@conexa/events';
 import { AppError, forbidden, notFound } from '@conexa/errors';
-import { sql, type Kysely } from 'kysely';
+import type { Kysely } from 'kysely';
 
 import { db } from './db.js';
 import type { FootballDb } from './db.js';
-import { applyResult, levelFor } from './elo.js';
+import { MatchResultService } from './match-result.service.js';
 import type { MatchRow } from './matches.service.js';
 import { MatchesService } from './matches.service.js';
-import { aggregateEvents, badgesForMatch, reconcile } from './report.js';
-import { canCancelMatch, contestWindowOpen } from './rules.js';
-import { FOOTBALL_CLOCK, FOOTBALL_EVENTS, parseEvents } from './shared.js';
-
-interface Publication {
-  type: string;
-  payload: Record<string, unknown>;
-}
+import { OutboxService } from './outbox.service.js';
+import { aggregateEvents, reconcile } from './report.js';
+import { canCancelMatch, contestWindowOpen, mvpWindowOpen } from './rules.js';
+import { FOOTBALL_CLOCK, parseEvents } from './shared.js';
 
 @Injectable()
 export class MatchReportService {
   constructor(
     @Inject(FOOTBALL_CLOCK) private readonly now: () => Date,
-    @Inject(FOOTBALL_EVENTS) private readonly bus: EventPublisher,
     private readonly matches: MatchesService,
+    private readonly result: MatchResultService,
+    private readonly outbox: OutboxService,
   ) {}
 
   /** Déclaration d'un capitaine ; la seconde déclaration clôt le match. */
@@ -33,8 +28,6 @@ export class MatchReportService {
     matchId: string,
     input: MatchReportInput,
   ): Promise<{ status: ReportStatus }> {
-    const publications: Publication[] = [];
-
     const outcome = await db.transaction().execute(async (trx) => {
       const match = await trx
         .selectFrom('matches')
@@ -87,6 +80,7 @@ export class MatchReportService {
           .updateTable('matches')
           .set({ status: 'awaiting_reports' })
           .where('id', '=', matchId)
+          .where('status', 'in', ['scheduled', 'awaiting_reports'])
           .execute();
         return 'waiting_other';
       }
@@ -105,36 +99,32 @@ export class MatchReportService {
           .updateTable('matches')
           .set({ status: 'disputed' })
           .where('id', '=', matchId)
+          .where('status', 'in', ['scheduled', 'awaiting_reports'])
           .execute();
-        publications.push({
-          type: 'match.disputed',
-          payload: {
-            match_id: match.id,
-            home_team_id: match.home_team_id,
-            away_team_id: match.away_team_id,
+        await this.outbox.enqueue(trx, [
+          {
+            type: 'match.disputed',
+            payload: {
+              match_id: match.id,
+              home_team_id: match.home_team_id,
+              away_team_id: match.away_team_id,
+            },
           },
-        });
+        ]);
         return 'disputed';
       }
 
-      await this.finalize(trx, match, {
+      await this.result.finalize(trx, match, {
         scoreA: first.score_a,
         scoreB: first.score_b,
         events: parseEvents(first.events),
-        reportingTeam,
         status: 'validated',
-        publications,
       });
 
       return 'validated';
     });
 
-    for (const item of publications) {
-      await this.bus.publish(
-        createEvent({ type: item.type, producer: 'football', payload: item.payload }),
-      );
-    }
-
+    await this.relayQuietly();
     return { status: outcome as ReportStatus };
   }
 
@@ -185,177 +175,16 @@ export class MatchReportService {
     }
 
     await db.transaction().execute(async (trx) => {
-      await trx
+      const updated = await trx
         .updateTable('matches')
         .set({ status: 'cancelled', cancelled_reason: reason })
         .where('id', '=', matchId)
-        .execute();
+        .where('status', 'in', ['scheduled', 'awaiting_reports'])
+        .executeTakeFirst();
+      if (Number(updated.numUpdatedRows) === 0) {
+        throw new AppError('INVALID_STATE', 'Ce match a changé d’état entre-temps');
+      }
       await trx.deleteFrom('field_bookings').where('match_id', '=', matchId).execute();
-    });
-  }
-
-  /** Applique le résultat une seule fois : Elo, statistiques, badges, journal. */
-  private async finalize(
-    trx: Kysely<FootballDb>,
-    match: MatchRow,
-    input: {
-      scoreA: number;
-      scoreB: number;
-      events: MatchReportInput['events'];
-      reportingTeam: string;
-      status: 'validated' | 'forfeited';
-      publications: Publication[];
-    },
-  ): Promise<void> {
-    const [home, away] = await Promise.all([
-      trx
-        .selectFrom('teams')
-        .selectAll()
-        .where('id', '=', match.home_team_id)
-        .forUpdate()
-        .executeTakeFirstOrThrow(),
-      trx
-        .selectFrom('teams')
-        .selectAll()
-        .where('id', '=', match.away_team_id)
-        .forUpdate()
-        .executeTakeFirstOrThrow(),
-    ]);
-    const now = this.now();
-    const elo = applyResult({
-      home: { elo: home.elo, matchesPlayed: home.matches_played },
-      away: { elo: away.elo, matchesPlayed: away.matches_played },
-      scoreA: input.scoreA,
-      scoreB: input.scoreB,
-    });
-
-    await trx
-      .updateTable('teams')
-      .set({
-        elo: elo.home,
-        matches_played: home.matches_played + 1,
-        level: levelFor(elo.home, home.matches_played + 1),
-        updated_at: now,
-      })
-      .where('id', '=', home.id)
-      .execute();
-    await trx
-      .updateTable('teams')
-      .set({
-        elo: elo.away,
-        matches_played: away.matches_played + 1,
-        level: levelFor(elo.away, away.matches_played + 1),
-        updated_at: now,
-      })
-      .where('id', '=', away.id)
-      .execute();
-
-    await trx
-      .insertInto('elo_history')
-      .values([
-        { team_id: home.id, match_id: match.id, elo_before: home.elo, elo_after: elo.home },
-        { team_id: away.id, match_id: match.id, elo_before: away.elo, elo_after: elo.away },
-      ])
-      .onConflict((oc) => oc.doNothing())
-      .execute();
-
-    await trx
-      .updateTable('matches')
-      .set({
-        status: input.status,
-        score_a: input.scoreA,
-        score_b: input.scoreB,
-        elo_home_before: home.elo,
-        elo_away_before: away.elo,
-        elo_home_after: elo.home,
-        elo_away_after: elo.away,
-        finalized_at: now,
-      })
-      .where('id', '=', match.id)
-      .execute();
-
-    if (input.events.length > 0) {
-      await trx
-        .insertInto('match_events')
-        .values(
-          input.events.map((event) => ({
-            match_id: match.id,
-            team_id: input.reportingTeam,
-            player_id: event.player_id,
-            type: event.type,
-            minute: event.minute,
-            related_player_id: event.related_player_id ?? null,
-          })),
-        )
-        .execute();
-    }
-
-    const lineups = await trx
-      .selectFrom('match_lineups')
-      .selectAll()
-      .where('match_id', '=', match.id)
-      .execute();
-
-    for (const row of lineups) {
-      await trx
-        .updateTable('team_members')
-        .set({ matches: sql`matches + 1` })
-        .where('team_id', '=', row.team_id)
-        .where('user_id', '=', row.player_id)
-        .execute();
-    }
-
-    const aggregated = aggregateEvents(input.events);
-    for (const [playerId, goals] of aggregated.goals) {
-      await trx
-        .updateTable('team_members')
-        .set({ goals: sql`goals + ${goals}` })
-        .where('user_id', '=', playerId)
-        .execute();
-    }
-    for (const [playerId, assists] of aggregated.assists) {
-      await trx
-        .updateTable('team_members')
-        .set({ assists: sql`assists + ${assists}` })
-        .where('user_id', '=', playerId)
-        .execute();
-    }
-
-    const badges = new Map<string, string[]>();
-    for (const row of lineups) {
-      badges.set(
-        row.player_id,
-        badgesForMatch({
-          goals: aggregated.goals.get(row.player_id) ?? 0,
-          assists: aggregated.assists.get(row.player_id) ?? 0,
-          firstMatch: true,
-        }),
-      );
-    }
-    const badgeRows = [...badges].flatMap(([userId, codes]) =>
-      codes.map((code) => ({ user_id: userId, code })),
-    );
-    if (badgeRows.length > 0) {
-      await trx
-        .insertInto('player_badges')
-        .values(badgeRows)
-        .onConflict((oc) => oc.doNothing())
-        .execute();
-    }
-
-    input.publications.push({
-      type: 'match.validated',
-      payload: {
-        match_id: match.id,
-        home_team_id: home.id,
-        away_team_id: away.id,
-        score_a: input.scoreA,
-        score_b: input.scoreB,
-        elo_home_before: home.elo,
-        elo_home_after: elo.home,
-        elo_away_before: away.elo,
-        elo_away_after: elo.away,
-      },
     });
   }
 
@@ -384,18 +213,41 @@ export class MatchReportService {
         })
         .onConflict((oc) => oc.doNothing())
         .execute();
-      await trx
+      const updated = await trx
         .updateTable('matches')
-        .set({ status: 'disputed' })
+        .set({ status: 'disputed', contest_closed_at: null })
         .where('id', '=', matchId)
-        .execute();
+        .where('status', '=', 'validated')
+        .executeTakeFirst();
+      if (Number(updated.numUpdatedRows) === 0) {
+        throw new AppError('INVALID_STATE', 'Ce match a changé d’état entre-temps');
+      }
+      await this.outbox.enqueue(trx, [
+        {
+          type: 'match.disputed',
+          payload: {
+            match_id: match.id,
+            home_team_id: match.home_team_id,
+            away_team_id: match.away_team_id,
+          },
+        },
+      ]);
     });
+
+    await this.relayQuietly();
   }
 
+  /**
+   * Vote MVP ouvert 24 h (ADR 0008) : le vote est enregistré, le dépouillement
+   * et l'incrément de `mvp_count` sont faits une seule fois par la clôture.
+   */
   async voteMvp(userId: string, matchId: string, playerId: string): Promise<void> {
     const match = await this.matches.findMatch(matchId);
     if (match.status !== 'validated' && match.status !== 'forfeited') {
       throw new AppError('INVALID_STATE', 'Le vote MVP ouvre après la validation du match');
+    }
+    if (match.mvp_closed_at || !mvpWindowOpen(match.finalized_at, this.now())) {
+      throw new AppError('INVALID_STATE', 'La fenêtre de vote du MVP de 24 h est fermée');
     }
 
     const lineups = await db
@@ -420,37 +272,9 @@ export class MatchReportService {
       .values({ match_id: matchId, voter_id: userId, player_id: playerId })
       .onConflict((oc) => oc.columns(['match_id', 'voter_id']).doUpdateSet({ player_id: playerId }))
       .execute();
-
-    const votes = await db
-      .selectFrom('mvp_votes')
-      .select('player_id')
-      .where('match_id', '=', matchId)
-      .execute();
-    const tally = new Map<string, number>();
-    for (const vote of votes) {
-      tally.set(vote.player_id, (tally.get(vote.player_id) ?? 0) + 1);
-    }
-    const [leader] = [...tally].sort((a, b) => b[1] - a[1]);
-    if (!leader) {
-      return;
-    }
-
-    await db.transaction().execute(async (trx) => {
-      await trx
-        .updateTable('matches')
-        .set({ mvp_user_id: leader[0] })
-        .where('id', '=', matchId)
-        .execute();
-      await trx
-        .updateTable('team_members')
-        .set({ mvp_count: sql`mvp_count + 1` })
-        .where('user_id', '=', leader[0])
-        .where('left_at', 'is', null)
-        .execute();
-    });
   }
 
-  /** Forfait de l’adversaire déclaré par un capitaine : victoire 3-0 sur tapis vert. */
+  /** Forfait déclaré par un capitaine : victoire 3-0 sur tapis vert. */
   async forfeit(userId: string, matchId: string): Promise<void> {
     const match = await this.matches.findMatch(matchId);
     const teamId = await this.teamOfCaptain(db, match, userId);
@@ -458,27 +282,44 @@ export class MatchReportService {
       throw new AppError('INVALID_STATE', 'Ce match ne peut plus être déclaré forfait');
     }
 
-    const publications: Publication[] = [];
     await db.transaction().execute(async (trx) => {
       const isHome = teamId === match.home_team_id;
-      await this.finalize(trx, match, {
+      await this.result.finalize(trx, match, {
         scoreA: isHome ? 3 : 0,
         scoreB: isHome ? 0 : 3,
         events: [],
-        reportingTeam: teamId,
         status: 'forfeited',
-        publications,
       });
     });
 
-    for (const item of publications) {
-      await this.bus.publish(
-        createEvent({ type: item.type, producer: 'football', payload: item.payload }),
-      );
-    }
+    await this.relayQuietly();
+  }
+
+  /** Totalise les buts d'un joueur sur le match (dépouillement et correction admin). */
+  async goalTally(matchId: string): Promise<Map<string, number>> {
+    const events = await db
+      .selectFrom('match_events')
+      .select(['player_id', 'type'])
+      .where('match_id', '=', matchId)
+      .execute();
+    return aggregateEvents(
+      events.map((event) => ({
+        type: event.type,
+        minute: 1,
+        player_id: event.player_id,
+      })),
+    ).goals;
   }
 
   // --- internes ---------------------------------------------------------
+
+  private async relayQuietly(): Promise<void> {
+    try {
+      await this.outbox.relay();
+    } catch {
+      // Le résultat sportif est déjà commité : l'outbox reprendra au prochain relais.
+    }
+  }
 
   private async teamOfCaptain(
     executor: Kysely<FootballDb>,
