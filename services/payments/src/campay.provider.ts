@@ -24,9 +24,15 @@ export interface CampayConfig {
   /** Hôte : `https://demo.campay.net` (demo) ou `https://www.campay.net` (prod). */
   baseUrl: string;
   /** Identifiant d'application (« API username »), jamais journalisé. */
-  appToken: string;
+  appToken?: string;
   /** Mot de passe d'application, jamais journalisé. */
-  appSecret: string;
+  appSecret?: string;
+  /**
+   * Jeton d'accès permanent de l'application : quand il est fourni, aucun appel
+   * à `/api/token/` n'est fait. C'est le mode recommandé — un secret de moins à
+   * faire circuler et un échange réseau de moins par démarrage.
+   */
+  permanentToken?: string;
   /** Clé de webhook de l'application : vérifie le JWT HS256 du callback. */
   webhookKey: string;
 }
@@ -62,8 +68,11 @@ export class CampayProvider implements PaymentProvider {
     return `${this.host}/api/${path.replace(/^\/+/, '')}`;
   }
 
-  /** Jeton d'application, mis en cache et dédupliqué en cas d'appels concurrents. */
+  /** Jeton permanent, ou jeton d'application mis en cache (dédupliqué). */
   private async token(): Promise<string> {
+    if (this.config.permanentToken) {
+      return this.config.permanentToken;
+    }
     if (this.cachedToken && this.cachedToken.expiresAt > Date.now()) {
       return this.cachedToken.value;
     }
@@ -79,6 +88,12 @@ export class CampayProvider implements PaymentProvider {
   }
 
   private async requestToken(): Promise<string> {
+    if (!this.config.appToken || !this.config.appSecret) {
+      throw new AppError(
+        'INTERNAL_ERROR',
+        'Campay : CAMPAY_PERMANENT_TOKEN ou (CAMPAY_APP_TOKEN + CAMPAY_APP_SECRET) requis',
+      );
+    }
     const response = await this.fetchImpl(this.url('token/'), {
       method: 'POST',
       headers: { 'content-type': 'application/json' },

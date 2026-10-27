@@ -133,16 +133,27 @@ export { CampayProvider } from './campay.provider.js';
 export function createPaymentProvider(): PaymentProvider {
   if (env.PAYMENT_PROVIDER === 'campay') {
     const baseUrl = env.CAMPAY_BASE_URL;
-    const appToken = env.CAMPAY_APP_TOKEN;
-    const appSecret = env.CAMPAY_APP_SECRET;
     const webhookKey = env.CAMPAY_WEBHOOK_KEY;
-    if (!baseUrl || !appToken || !appSecret || !webhookKey) {
+    const permanentToken = env.CAMPAY_PERMANENT_TOKEN ?? env.CAMPAY_JETON_DE_SERVICE;
+    if (!baseUrl || !webhookKey) {
       throw new AppError(
         'INTERNAL_ERROR',
-        'PAYMENT_PROVIDER=campay exige CAMPAY_BASE_URL, CAMPAY_APP_TOKEN, CAMPAY_APP_SECRET et CAMPAY_WEBHOOK_KEY',
+        'PAYMENT_PROVIDER=campay exige CAMPAY_BASE_URL et CAMPAY_WEBHOOK_KEY',
       );
     }
-    return new CampayProvider({ baseUrl, appToken, appSecret, webhookKey });
+    if (!permanentToken && !(env.CAMPAY_APP_TOKEN && env.CAMPAY_APP_SECRET)) {
+      throw new AppError(
+        'INTERNAL_ERROR',
+        'PAYMENT_PROVIDER=campay exige CAMPAY_PERMANENT_TOKEN ou (CAMPAY_APP_TOKEN + CAMPAY_APP_SECRET)',
+      );
+    }
+    return new CampayProvider({
+      baseUrl,
+      webhookKey,
+      ...(permanentToken ? { permanentToken } : {}),
+      ...(env.CAMPAY_APP_TOKEN ? { appToken: env.CAMPAY_APP_TOKEN } : {}),
+      ...(env.CAMPAY_APP_SECRET ? { appSecret: env.CAMPAY_APP_SECRET } : {}),
+    });
   }
   return new MockPaymentProvider();
 }

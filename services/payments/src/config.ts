@@ -14,6 +14,10 @@ export const EnvSchema = BaseEnvSchema.extend({
   CAMPAY_APP_SECRET: z.string().min(8).optional(),
   /** Clé de webhook de l'application : vérifie le JWT HS256 du callback. */
   CAMPAY_WEBHOOK_KEY: z.string().min(8).optional(),
+  /** Jeton d'accès permanent (APP KEYS) : dispense de l'échange `/api/token/`. */
+  CAMPAY_PERMANENT_TOKEN: z.string().min(8).optional(),
+  /** Alias français accepté pour le `.env` local, même valeur que ci-dessus. */
+  CAMPAY_JETON_DE_SERVICE: z.string().min(8).optional(),
   /** Jeton des appels service à service (release/refund/entitlements). */
   SERVICE_TOKEN: z.string().min(16).optional(),
   /** Commission par défaut si l'appelant n'en fournit pas (pourcentage). */

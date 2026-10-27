@@ -84,6 +84,16 @@ côté billing `entitlements.changed`, `subscription.activated`,
 - **Factures, codes promo, grâce, expiration** :
   [T-0026](../../tasks/T-0026-factures-codes-promo-grace-expiration.md), non démarrée.
 
+## Preuves sur l'environnement demo
+
+| Date | Contrôle | Résultat |
+|---|---|---|
+| 2026-10-27 | `GET /api/balance/` avec le jeton permanent de l'application demo | `200`, `mtn_balance: 0`, `orange_balance: 0`, `total_balance: 0` |
+
+Le jeton permanent est accepté ; le solde par opérateur est exposé. L'application
+demo est à zéro : la collecte, le rejeu et le décaissement restent à prouver dès
+qu'un numéro de test et un solde demo seront disponibles.
+
 ## Vérifier
 
 ```

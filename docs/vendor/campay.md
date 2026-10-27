@@ -20,9 +20,10 @@
 
 | Point | Fait | Conséquence dans le code |
 |---|---|---|
-| Jeton | `POST /api/token/` avec `{"username","password"}` (identifiants d'**application**, section « APP KEYS ») → `{"token"}` | `CAMPAY_APP_TOKEN` / `CAMPAY_APP_SECRET` |
-| En-tête | `Authorization: Token <jeton>` sur tous les autres appels | ajouté par l'adaptateur |
-| Durée de vie | non documentée | cache local de 5 min, jamais journalisé |
+| Jeton permanent | la section « APP KEYS » de l'application fournit un jeton d'accès **permanent** utilisable directement ; vérifié sur la demo le 2026-10-27 (`GET /api/balance/` → 200) | `CAMPAY_PERMANENT_TOKEN` (alias accepté : `CAMPAY_JETON_DE_SERVICE`) ; aucun échange réseau |
+| Jeton temporaire | à défaut, `POST /api/token/` avec `{"username","password"}` (identifiants d'**application**) → `{"token"}` | `CAMPAY_APP_TOKEN` / `CAMPAY_APP_SECRET` |
+| En-tête | `Authorization: Token <jeton>` sur tous les appels authentifiés | ajouté par l'adaptateur |
+| Durée de vie | non documentée pour le jeton temporaire | cache local de 5 min, jamais journalisé |
 
 ### Collecte (encaissement)
 
@@ -99,18 +100,28 @@ Dans `services/payments/.env` (fichier ignoré par git, jamais commité) :
 ```
 PAYMENT_PROVIDER=campay
 CAMPAY_BASE_URL=https://demo.campay.net
-CAMPAY_APP_TOKEN=<identifiant d'application demo>
-CAMPAY_APP_SECRET=<mot de passe d'application demo>
 CAMPAY_WEBHOOK_KEY=<clé de webhook de l'application demo>
+# Recommandé : jeton d'accès permanent de la section APP KEYS.
+CAMPAY_PERMANENT_TOKEN=<jeton permanent demo>
+# Sinon, identifiants d'application (échange /api/token/) :
+# CAMPAY_APP_TOKEN=<identifiant d'application demo>
+# CAMPAY_APP_SECRET=<mot de passe d'application demo>
 ```
 
 `CAMPAY_BASE_URL` peut aussi être fourni avec `/api` : l'adaptateur normalise.
 Le callback à déclarer dans la console est
 `POST https://<hôte public>/payments/webhooks/campay`.
 
-## Vérification sur l'environnement demo (à faire avec les clés)
+## Vérification sur l'environnement demo
 
-1. `GET /api/balance/` : relever `mtn_balance` et `orange_balance`.
+**Fait le 2026-10-27** avec le jeton permanent de l'application demo :
+`GET /api/balance/` → `200`, `total_balance: 0`, `mtn_balance: 0`,
+`orange_balance: 0` (application demo approvisionnée à zéro). Le jeton
+permanent est donc accepté et le solde par opérateur est bien exposé.
+
+Reste à faire, dans l'ordre :
+
+1. ~~`GET /api/balance/` : relever `mtn_balance` et `orange_balance`.~~ Fait.
 2. Collecte de 100 FCFA depuis un numéro de test MTN : obtenir une `reference`,
    statut `PENDING`, puis le statut final après validation USSD.
 3. Rejouer la même `external_reference` : vérifier qu'aucun second débit n'a lieu.

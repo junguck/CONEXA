@@ -50,6 +50,31 @@ describe('Campay : authentification', () => {
   });
 });
 
+describe('Campay : jeton permanent', () => {
+  it('n’appelle jamais /api/token/ quand un jeton permanent est fourni', async () => {
+    const fetchStub = vi.fn(async (_url: string, _init?: RequestInit) =>
+      jsonResponse({ mtn_balance: 5, orange_balance: 0, currency: 'XAF' }),
+    );
+    const provider = new CampayProvider(
+      { baseUrl: config.baseUrl, webhookKey: config.webhookKey, permanentToken: 'jeton-permanent' },
+      fetchStub,
+    );
+
+    expect(await provider.getBalance('mtn_momo')).toBe(5);
+    expect(fetchStub.mock.calls.some(([url]) => String(url).endsWith('/api/token/'))).toBe(false);
+    const [, init] = fetchStub.mock.calls[0]!;
+    expect(init?.headers).toMatchObject({ authorization: 'Token jeton-permanent' });
+  });
+
+  it('refuse de fonctionner sans jeton permanent ni identifiants d’application', async () => {
+    const provider = new CampayProvider(
+      { baseUrl: config.baseUrl, webhookKey: config.webhookKey },
+      async () => jsonResponse({}),
+    );
+    await expect(provider.getBalance('mtn_momo')).rejects.toThrow(/CAMPAY_PERMANENT_TOKEN/);
+  });
+});
+
 describe('Campay : collecte et statut', () => {
   it('envoie la collecte au format documenté et rend la référence', async () => {
     const { provider, fetchStub } = providerWith(() =>
