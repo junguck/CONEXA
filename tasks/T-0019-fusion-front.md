@@ -10,6 +10,7 @@ owned_paths:
   - apps/**
   - packages/ui/**
   - docs/domain/web-core.md
+  - docs/evidence/T-0019/**
   - tasks/**
 reads:
   - AGENTS.md

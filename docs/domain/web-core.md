@@ -166,7 +166,11 @@ Build : les trois apps compilent, toutes les routes statiques sont générées
 pnpm format:check : All matched files use Prettier code style!
 ```
 
-Captures : `artifacts/design-system.png` (1280 px) et `artifacts/football.png` (390 px).
+Captures (build de production, port 3109) :
+
+![Design system](../evidence/T-0019/design-system.png)
+
+![Écran football](../evidence/T-0019/football.png)
 
 ## Limites connues
 
