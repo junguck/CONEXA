@@ -123,18 +123,27 @@ Le callback à déclarer dans la console est
 | Rejeu avec la même `external_reference` | **même référence** rendue : idempotence officielle confirmée |
 | Statut final | `FAILED`, `reason: NOT_ALLOWED`, `amount: 15.00`, `app_amount: 14.00` |
 | `signature` JWT de la réponse, vérifiée avec la clé de webhook | **acceptée** (et refusée avec une clé fausse) — le schéma HS256 est donc le bon |
+| `POST /api/collect/` 20 FCFA vers le **numéro de test** de la demo | `200`, référence `6c21e8b8-4642-44dd-bae4-09778ebce209`, `PENDING` puis **`SUCCESSFUL`** en ~25 s |
+| Rejeu de cette seconde collecte | **même référence** : idempotence confirmée une seconde fois |
+| Détail de la transaction réussie | `status: SUCCESSFUL`, mais **`amount: "0.00"` et `app_amount: "0.00"`** ; solde toujours à 0 |
 
 Enseignements : notre vérification de signature correspond à ce que Campay
 signe réellement ; les frais semblent être la différence `amount − app_amount`
-(ici 1 FCFA sur 15) ; le refus `NOT_ALLOWED` vient du fournisseur, sans débit
-(cause à identifier : application demo non autorisée aux collectes, ou numéro
-hors liste de test).
+(1 FCFA observé sur 15) ; le refus `NOT_ALLOWED` vient du fournisseur, sans débit
+(application demo non autorisée aux collectes, ou numéro hors liste de test).
+
+**Attention** : le numéro de test de la demo **simule** un succès — la
+transaction passe `SUCCESSFUL` alors que les montants renvoyés sont à zéro et que
+le solde ne bouge pas. Un `SUCCESSFUL` ne prouve donc pas un encaissement réel :
+le montant de la transaction doit être comparé au montant attendu avant de
+compter l'argent (garde-fou à ajouter, voir T-0021).
 
 Reste à faire, dans l'ordre :
 
 1. ~~`GET /api/balance/` : relever `mtn_balance` et `orange_balance`.~~ Fait.
-1 bis. Obtenir une collecte `SUCCESSFUL` (débloquer `NOT_ALLOWED`), puis
-   rejouer le même `external_reference` et vérifier l'absence de double débit.
+1 bis. ~~Obtenir une collecte `SUCCESSFUL`.~~ Obtenu sur le numéro de test, mais
+   avec `amount: 0.00` : il reste à obtenir un succès **avec un montant réel**, et
+   à ajouter le contrôle du montant renvoyé avant de compter un encaissement.
 2. Collecte de 100 FCFA depuis un numéro de test MTN : obtenir une `reference`,
    statut `PENDING`, puis le statut final après validation USSD.
 3. Rejouer la même `external_reference` : vérifier qu'aucun second débit n'a lieu.

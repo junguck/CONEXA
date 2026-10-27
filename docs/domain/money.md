@@ -92,12 +92,20 @@ côté billing `entitlements.changed`, `subscription.activated`,
 | 2026-10-27 | `POST /api/collect/` 15 FCFA MTN | `200`, référence rendue, statut initial `PENDING` |
 | 2026-10-27 | Rejeu du même `external_reference` | **même référence** : idempotence officielle confirmée |
 | 2026-10-27 | Statut final de la collecte | `FAILED`, `reason: NOT_ALLOWED`, `app_amount: 14.00` pour `15.00` demandés |
+| 2026-10-27 | `POST /api/collect/` 20 FCFA vers le numéro de test Campay | `200`, `PENDING` puis **`SUCCESSFUL`** en ~25 s |
+| 2026-10-27 | Rejeu de cette collecte | **même référence** rendue une seconde fois |
+| 2026-10-27 | Détail de la transaction réussie | `SUCCESSFUL` mais `amount: "0.00"`, `app_amount: "0.00"`, solde inchangé (numéro de **simulation**) |
 | 2026-10-27 | JWT de signature renvoyé par Campay, vérifié avec la clé de webhook | **acceptée** ; refusée avec une clé fausse |
 
 Le jeton permanent est accepté, la collecte est bien enregistrée chez Campay et
 le rejeu est idempotent. Le refus `NOT_ALLOWED` vient du fournisseur (aucun débit)
 et reste à débloquer côté application demo. Les frais semblent être
 `amount − app_amount` : à confirmer avant toute écriture comptable.
+
+**Risque identifié** : le numéro de test de la demo rend `SUCCESSFUL` avec
+`amount: 0.00` sans mouvement de solde. Compter un encaissement sur le seul
+statut serait faux : le montant renvoyé par l'API doit être vérifié, sinon le
+grand livre et le solde fournisseur divergent au premier test.
 
 ## Vérifier
 
