@@ -18,10 +18,10 @@ contracts_touched: []
 deps_request: []
 human_gate: false
 reviewers: []
-branch: "agent/web-core/T-0009-backoffice-portal"
-worktree: ""
+branch: "agent/web-core/T-0019-fusion-front"
+worktree: "C:\\Users\\EG\\Desktop\\Conexa\\worktrees\\T-0019"
 pr: ""
-notes: "Dépend du socle web (T-0007) : branche empilée sur agent/web-core/T-0007-web-shell, à rebaser sur main après fusion de T-0007. Aperçu local : NEXT_PUBLIC_CONSOLE_PREVIEW_SESSION=true (jamais en production). Écrans de maquette à remplacer par les domaines : comptes (identity), litiges, finance (money), portail (partners)."
+notes: "Fusionnée sur agent/web-core/T-0019-fusion-front avec main (13 services) et T-0007 ; plus de branche empilée à rebaser. Vert en local : lint, typecheck, 11 tests back-office + 8 tests portail, build des deux apps, format:check OK. Aperçu local : NEXT_PUBLIC_CONSOLE_PREVIEW_SESSION=true (jamais en production). Écrans de maquette à remplacer par les domaines : comptes (identity), litiges, finance (money), portail (partners) ; pas encore de client d'API dans ces deux apps. PR non ouverte : aucun client GitHub (gh/token) sur la machine."
 ---
 
 ## Objectif

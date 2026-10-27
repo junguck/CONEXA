@@ -15,9 +15,9 @@ Socle front partagé : jetons de design, composants, coquille PWA, navigation g�
 ## Commandes
 
 ```bash
-pnpm --filter @conexa/web dev            # http://localhost:3000
-pnpm --filter @conexa/web gen:registry   # régénère la navigation depuis features/*/nav.ts
-pnpm --filter @conexa/web build          # build Next + service worker Serwist
+pnpm --filter @conexa/web exec next dev -p 3107   # la Gateway occupe le port 3000
+pnpm --filter @conexa/web gen:registry            # régénère la navigation depuis features/*/nav.ts
+pnpm --filter @conexa/web build                   # build Next + service worker Serwist
 pnpm turbo run lint typecheck test build --filter=@conexa/ui --filter=@conexa/web
 ```
 
@@ -67,6 +67,33 @@ Les maquettes ne couvraient ni le chat, ni le parcours de paiement complet, ni l
 - **Chat** : `shell/maquettes/chat-filter.ts` imite la règle serveur de `API.md` §3 — chiffres (y compris Unicode), nombres en lettres, liens, pseudos et demandes de contact refusés, avec explication. Testé dans `chat-filter.test.ts`.
 - **Paiement** : aucun montant n'est débité ; l'étape d'attente annonce qu'elle est simulée. Les écrans `attente`/`recu`/`echec` servent à valider la copie et les états, pas la logique Campay.
 - **Aucun minuteur artificiel** : le renvoi du code est immédiat et la maquette ne fabrique pas d'urgence. Les cartes rapides du chat évitent les chiffres (« en retard » au lieu de « retard 5 min »).
+
+## Client Gateway (T-0019, 2026-10-27)
+
+Le front parle au Gateway, pas aux services directement. Le Gateway écoute sur `http://localhost:3000`
+en développement ; l'URL publique (préfixe `/api/v1` inclus) vient de `NEXT_PUBLIC_API_URL`.
+
+| Fichier | Rôle |
+|---|---|
+| `apps/web/src/shell/api/client.ts` | Transport : URL de base, jeton `Bearer`, `Idempotency-Key`, curseurs, `204`, erreurs normalisées (`ApiError` avec `code`, `status`, `details`, `request_id`) |
+| `apps/web/src/shell/api/endpoints.ts` | Appels typés par domaine, chemins alignés sur `services/*/gateway.routes.json` |
+| `apps/web/src/shell/api/errors.ts` | Messages français ; la liste des codes vient de `@conexa/contracts` (`ErrorCode`), un code ajouté aux contrats casse le typecheck |
+
+- **Types** : les réponses (`Me`, `Plan`, `Team`, `DatingDate`, `Post`, `Mission`, `Message`, `ServiceOrder`…)
+  et les entrées (`RegisterInput`, `SubscribeInput`, `SendMessageInput`…) viennent de `@conexa/contracts`.
+  Aucun schéma n'est recopié dans l'app.
+- **Chemins** : `/me` et `/auth/*` à la racine (Identity), `/football/*`, `/dating/*`, `/dates/*`,
+  `/posts`, `/missions`, `/services`, `/service-orders`, `/billing/*`, `/messaging/threads`,
+  `/notifications`. Ils suivent les manifestes du Gateway, pas les chemins historiques d'`API.md`.
+- **Idempotence** : `billing.subscribe`, `dating.pay` et `talents.fundMission` exigent une clé
+  en argument, conformément à `API.md` §1.
+- **Aucune règle métier côté front** : l'Elo, les quotas de picks/invitations, les commissions,
+  les droits Premium et les montants viennent des réponses serveur. Les maquettes affichent encore
+  des fixtures (`shell/maquettes/data.ts`, prix Premium) ; elles ne recalculent ni commission ni
+  classement, et seront remplacées écran par écran par les appels typés.
+- **Tests** : `endpoints.test.ts` vérifie les URL (préfixes, encodage, curseurs), l'en-tête
+  d'idempotence, la lecture de `/billing/plans` et les routes de messagerie. `client.test.ts`
+  couvre le transport, les erreurs et le `204`.
 
 ## Règles de design appliquées
 
@@ -124,9 +151,31 @@ Service worker (navigateur, build de production) :
 Routes générées : /, /demo, /design, /offline, /manifest.webmanifest, /[...universe]
 ```
 
+## Vérifications (T-0019, 2026-10-27)
+
+Fusion de T-0007 et T-0009 sur `main` (13 services, contrats à jour), puis :
+
+```
+pnpm turbo run lint typecheck test build \
+  --filter=@conexa/ui --filter=@conexa/web \
+  --filter=@conexa/backoffice --filter=@conexa/partner-portal
+  Tasks: 20 successful, 20 total
+
+Tests : ui 14 · web 31 · backoffice 11 · partner-portal 8 = 64
+Build : les trois apps compilent, toutes les routes statiques sont générées
+pnpm format:check : All matched files use Prettier code style!
+```
+
+Captures : `artifacts/design-system.png` (1280 px) et `artifacts/football.png` (390 px).
+
 ## Limites connues
 
-- **Contrats d'API** : le client (`shell/api/client.ts`) est typé localement ; il branchera `@conexa/contracts` après fusion de T-0004.
+- **Écrans de maquette** : les 23 écrans mobiles et les deux consoles lisent encore des fixtures ;
+  le client typé (`shell/api/endpoints.ts`) est la couture prête pour les agents de domaine.
+  Le prix Premium de la maquette est une fixture : l'écran devra lire `/billing/plans` quand la
+  session et le rôle seront fournis par Identity.
+- **Consoles desktop** : `apps/backoffice` et `apps/partner-portal` n'ont pas encore de client d'API ;
+  leurs actions restent locales et l'annoncent.
 - **Authentification** : les gardes (`shell/auth/guards.ts`) sont testées mais aucune session n'est fournie tant que F1.1 n'existe pas ; l'app est publique en attendant.
 - **Police** : les WOFF2 de la maquette sont copiés dans `apps/web/public/fonts/` (676 Ko, latin uniquement).
 - **Lighthouse** : l'audit d'installation reste à joindre à la PR (voir T-0007).

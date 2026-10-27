@@ -288,6 +288,9 @@ importers:
 
   apps/web:
     dependencies:
+      '@conexa/contracts':
+        specifier: workspace:*
+        version: link:../../packages/contracts
       '@conexa/ui':
         specifier: workspace:*
         version: link:../../packages/ui

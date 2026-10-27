@@ -67,9 +67,8 @@ function buildUrl(baseUrl: string, path: string, query: RequestOptions['query'])
 }
 
 /**
- * Client HTTP de la PWA. Le contrat typé viendra de `@conexa/contracts` après
- * fusion de T-0004 ; d'ici là les écrans déclarent leurs propres types de
- * réponse et ce client ne fait que transporter et normaliser les erreurs.
+ * Client HTTP de la PWA : transport, authentification et normalisation des
+ * erreurs. Les types de réponse viennent de `@conexa/contracts` via `endpoints`.
  */
 export function createApiClient({ baseUrl, getToken, fetchImpl = fetch }: ApiClientOptions) {
   async function request<T>(path: string, options: RequestOptions = {}): Promise<T> {
@@ -132,7 +131,11 @@ export function createApiClient({ baseUrl, getToken, fetchImpl = fetch }: ApiCli
 
 export type ApiClient = ReturnType<typeof createApiClient>;
 
-/** Instance par défaut : le préfixe `/v1` vient du gateway en production. */
-export const apiClient = createApiClient({
-  baseUrl: process.env['NEXT_PUBLIC_API_BASE_URL'] ?? '/api/v1',
-});
+/**
+ * Instance par défaut : la Gateway écoute sur le port 3000 en local. En
+ * production, `NEXT_PUBLIC_API_URL` porte l'URL publique (`/api/v1` inclus).
+ * L'accès direct (pas d'index) permet à Next d'inliner la variable au build.
+ */
+export const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL ?? 'http://localhost:3000';
+
+export const apiClient = createApiClient({ baseUrl: API_BASE_URL });

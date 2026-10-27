@@ -1,60 +1,11 @@
+import type { ErrorCode as BusinessErrorCode } from '@conexa/contracts';
+
 /**
  * Codes d'erreur métier de `docs/product/API.md` §1 et leur message français.
- * Le serveur reste la seule source de vérité : ces textes sont un repli lisible
- * quand la réponse ne fournit pas de message, jamais une règle métier.
+ * La liste et le statut HTTP viennent de `@conexa/contracts` ; ces textes sont
+ * un repli lisible quand la réponse ne fournit pas de message, jamais une
+ * règle métier. Un nouveau code côté contrats casse le typecheck ici.
  */
-export const BUSINESS_ERROR_CODES = [
-  'UNAUTHENTICATED',
-  'FORBIDDEN',
-  'ACCOUNT_PENDING',
-  'ACCOUNT_SUSPENDED',
-  'NOT_FOUND',
-  'VALIDATION_ERROR',
-  'INVALID_STATE',
-  'RATE_LIMITED',
-  'MATRICULE_TAKEN',
-  'OTP_INVALID',
-  'AGE_RESTRICTED',
-  'RELIABILITY_TOO_LOW',
-  'TEAM_ALREADY_MEMBER',
-  'TEAM_JOIN_COOLDOWN',
-  'TEAM_NOT_ACTIVE',
-  'NOT_CAPTAIN',
-  'FIELD_SLOT_TAKEN',
-  'REPORT_ALREADY_SUBMITTED',
-  'CHAT_DIGIT_BLOCKED',
-  'CHAT_CONTACT_BLOCKED',
-  'WEEKLY_QUOTA_EXCEEDED',
-  'PICK_EXPIRED',
-  'SLOT_FULL',
-  'FORMULA_CAP_EXCEEDED',
-  'PAYMENT_REQUIRED',
-  'CANCEL_WINDOW_CLOSED',
-  'CONTACT_NOT_REVEALED',
-  'ALREADY_BLOCKED',
-  'DUPLICATE_REQUEST',
-  'ENTITLEMENT_REQUIRED',
-  'PLAN_LIMIT_REACHED',
-  'PLAN_NOT_FOUND',
-  'PLAN_AUDIENCE_MISMATCH',
-  'PROMO_INVALID',
-  'LISTING_NOT_ACTIVE',
-  'LISTING_PROHIBITED',
-  'SELF_ORDER_FORBIDDEN',
-  'SLOT_ALREADY_BOOKED',
-  'REVISIONS_EXHAUSTED',
-  'ORDER_NOT_COMPLETED',
-  'OFFER_NOT_AVAILABLE',
-  'OFFER_SOLD_OUT',
-  'OFFER_LIMIT_REACHED',
-  'VOUCHER_INVALID',
-  'VOUCHER_ALREADY_USED',
-  'VOUCHER_EXPIRED',
-  'PARTNER_NOT_ACTIVE',
-  'ASSET_NOT_APPROVED',
-] as const;
-
-export type BusinessErrorCode = (typeof BUSINESS_ERROR_CODES)[number];
 
 /** Erreurs produites côté client, hors contrat d'API. */
 export type ClientErrorCode = 'NETWORK_ERROR' | 'INVALID_RESPONSE';
@@ -110,7 +61,13 @@ const MESSAGES: Record<BusinessErrorCode, string> = {
   VOUCHER_EXPIRED: 'Ce bon est périmé.',
   PARTNER_NOT_ACTIVE: 'Cette organisation partenaire n’est pas active.',
   ASSET_NOT_APPROVED: 'Le visuel de bannière n’a pas été approuvé.',
+  UPLOAD_TOO_LARGE: 'Le fichier dépasse la taille autorisée.',
+  UPLOAD_TYPE_NOT_ALLOWED: 'Ce type de fichier n’est pas accepté.',
+  INTERNAL_ERROR: 'Une erreur inattendue est survenue. Réessayez dans un instant.',
 };
+
+/** Liste dérivée des messages : aucune copie manuelle de `ERROR_STATUS`. */
+export const BUSINESS_ERROR_CODES = Object.keys(MESSAGES) as BusinessErrorCode[];
 
 const CLIENT_MESSAGES: Record<ClientErrorCode, string> = {
   NETWORK_ERROR: 'Connexion impossible. Vérifiez votre réseau puis réessayez.',
@@ -118,7 +75,7 @@ const CLIENT_MESSAGES: Record<ClientErrorCode, string> = {
 };
 
 export function isBusinessErrorCode(code: string): code is BusinessErrorCode {
-  return (BUSINESS_ERROR_CODES as readonly string[]).includes(code);
+  return Object.hasOwn(MESSAGES, code);
 }
 
 /** Message français pour un code connu ; repli neutre sinon. */
