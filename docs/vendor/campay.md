@@ -115,13 +115,26 @@ Le callback à déclarer dans la console est
 ## Vérification sur l'environnement demo
 
 **Fait le 2026-10-27** avec le jeton permanent de l'application demo :
-`GET /api/balance/` → `200`, `total_balance: 0`, `mtn_balance: 0`,
-`orange_balance: 0` (application demo approvisionnée à zéro). Le jeton
-permanent est donc accepté et le solde par opérateur est bien exposé.
+
+| Contrôle | Résultat observé |
+|---|---|
+| `GET /api/balance/` | `200`, `total_balance: 0`, `mtn_balance: 0`, `orange_balance: 0` |
+| `POST /api/collect/` 15 FCFA MTN | `200`, référence `40a9dc5c-85d1-4fca-baf7-777ccfbddb1f`, statut initial `PENDING` |
+| Rejeu avec la même `external_reference` | **même référence** rendue : idempotence officielle confirmée |
+| Statut final | `FAILED`, `reason: NOT_ALLOWED`, `amount: 15.00`, `app_amount: 14.00` |
+| `signature` JWT de la réponse, vérifiée avec la clé de webhook | **acceptée** (et refusée avec une clé fausse) — le schéma HS256 est donc le bon |
+
+Enseignements : notre vérification de signature correspond à ce que Campay
+signe réellement ; les frais semblent être la différence `amount − app_amount`
+(ici 1 FCFA sur 15) ; le refus `NOT_ALLOWED` vient du fournisseur, sans débit
+(cause à identifier : application demo non autorisée aux collectes, ou numéro
+hors liste de test).
 
 Reste à faire, dans l'ordre :
 
 1. ~~`GET /api/balance/` : relever `mtn_balance` et `orange_balance`.~~ Fait.
+1 bis. Obtenir une collecte `SUCCESSFUL` (débloquer `NOT_ALLOWED`), puis
+   rejouer le même `external_reference` et vérifier l'absence de double débit.
 2. Collecte de 100 FCFA depuis un numéro de test MTN : obtenir une `reference`,
    statut `PENDING`, puis le statut final après validation USSD.
 3. Rejouer la même `external_reference` : vérifier qu'aucun second débit n'a lieu.

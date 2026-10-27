@@ -89,10 +89,15 @@ côté billing `entitlements.changed`, `subscription.activated`,
 | Date | Contrôle | Résultat |
 |---|---|---|
 | 2026-10-27 | `GET /api/balance/` avec le jeton permanent de l'application demo | `200`, `mtn_balance: 0`, `orange_balance: 0`, `total_balance: 0` |
+| 2026-10-27 | `POST /api/collect/` 15 FCFA MTN | `200`, référence rendue, statut initial `PENDING` |
+| 2026-10-27 | Rejeu du même `external_reference` | **même référence** : idempotence officielle confirmée |
+| 2026-10-27 | Statut final de la collecte | `FAILED`, `reason: NOT_ALLOWED`, `app_amount: 14.00` pour `15.00` demandés |
+| 2026-10-27 | JWT de signature renvoyé par Campay, vérifié avec la clé de webhook | **acceptée** ; refusée avec une clé fausse |
 
-Le jeton permanent est accepté ; le solde par opérateur est exposé. L'application
-demo est à zéro : la collecte, le rejeu et le décaissement restent à prouver dès
-qu'un numéro de test et un solde demo seront disponibles.
+Le jeton permanent est accepté, la collecte est bien enregistrée chez Campay et
+le rejeu est idempotent. Le refus `NOT_ALLOWED` vient du fournisseur (aucun débit)
+et reste à débloquer côté application demo. Les frais semblent être
+`amount − app_amount` : à confirmer avant toute écriture comptable.
 
 ## Vérifier
 
