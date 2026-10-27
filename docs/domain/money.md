@@ -1,0 +1,91 @@
+# Domaine argent (payments et billing)
+
+> État réel au 2026-10-27. Ce document décrit ce qui tourne, pas ce qui est prévu :
+> le prévu est dans [docs/ROADMAP.md](../ROADMAP.md), les choix dans
+> [l'ADR 0007](../decisions/0007-grand-livre-double-ecriture.md).
+
+## Ce que fait le domaine
+
+- **Encaisser** : collecte mobile money asynchrone, référence conservée,
+  séquestre comptable à la confirmation.
+- **Séquestrer** : l'argent reste chez l'agrégateur ; le grand livre sépare ce
+  qui appartient aux clients, aux prestataires et à Convexa.
+- **Libérer** : un décaissement par bénéficiaire et par opérateur, commission
+  retenue à la libération.
+- **Rembourser** : décaissement vers le payeur (pas de remboursement natif).
+- **Rapprocher** chaque jour le grand livre et le solde par opérateur.
+- **Vendre des droits** : plans, abonnements, droits effectifs, `entitlements.changed`.
+
+## Invariants (testés sans base)
+
+| Invariant | Où |
+|---|---|
+| Débits = crédits pour chaque écriture | `ledger.ts` (`assertBalanced`, `imbalance`) |
+| `commission + net = montant`, entiers FCFA, arrondi inférieur | `ledger.ts` (`splitCommission`, `assertSplit`) |
+| Transitions fermées (`pending → escrow/failed`, `escrow → released/refund_pending`, …) | `payments.rules.ts` |
+| Relève 30 s pendant 15 min puis 5 min, abandon à l'échéance | `payments.schedule.ts` |
+| Numéro `2376XXXXXXXX` et opérateur MTN/Orange seulement | `packages/contracts` (`MsisdnSchema`) et `payouts.rules.ts` |
+| Solde de l'opérateur du bénéficiaire vérifié avant décaissement | `payouts.rules.ts` (`decidePayout`) |
+| Écart de rapprochement = solde fournisseur − caisse, par opérateur | `reconciliation.rules.ts` |
+| Webhook dédoublonné par `(provider, external_id)` | `webhooks.rules.ts` + table `webhook_events` |
+
+## Flux d'un paiement
+
+1. `POST /payments` (JWT, `Idempotency-Key`) : paiement `pending`, relève
+   planifiée, `external_reference` = référence du fournisseur.
+2. `POST /payments/webhooks/campay` : signature vérifiée, événement dédoublonné,
+   **statut relu par l'API**, puis `pending → escrow` avec écriture
+   `CASH` débit / `ESCROW_LIABILITY` crédit.
+3. `POST /internal/payments/:id/release` : compte de reversement du bénéficiaire,
+   solde de son opérateur, décaissement, puis `escrow → released` et deux
+   écritures (`ESCROW → PAYABLE + REVENUE`, `PAYABLE → CASH`).
+4. `POST /internal/payments/:id/refund` : `escrow → refund_pending →
+   refunded`, écriture `ESCROW` débit / `CASH` crédit.
+5. Échec de décaissement : le reversement passe en `queued` avec un motif, le
+   paiement **reste sous séquestre**, `payout.failed` est publié.
+
+## Comptes de reversement
+
+`POST /payout-accounts` enregistre le numéro mobile money **dédié** du
+bénéficiaire (distinct du WhatsApp) et son opérateur. La réponse est masquée
+(`23765••••01`), le numéro n'est jamais journalisé. Un seul compte par
+bénéficiaire, remplaçable.
+
+## Tâches de fond
+
+| Tâche | Cadence | Comportement |
+|---|---|---|
+| Relève des `pending` | 30 s puis 5 min par paiement | statut relu par l'API, abandon propre |
+| Reprise des reversements `queued` | 5 min entre deux essais, 5 tentatives | motif conservé, alerte lisible |
+| Rapprochement | quotidien (premier passage au démarrage) | ligne par opérateur, alerte si écart |
+
+`PAYMENTS_JOBS_ENABLED=false` les désactive (tests et tâches ponctuelles).
+
+## Événements publiés
+
+`payment.escrowed`, `payment.failed`, `payment.released`, `payment.refunded`,
+`payout.sent`, `payout.failed`, `payment.reconciliation.mismatched` ;
+côté billing `entitlements.changed`, `subscription.activated`,
+`subscription.expired`. Aucun numéro, aucun nom dans une charge utile.
+
+## Bloqué, à ne pas contourner
+
+- **Campay réel** : URL, webhook et signature, forme des réponses ne sont pas
+  confirmés ([docs/vendor/campay.md](../vendor/campay.md)). L'adaptateur échoue
+  fermé ; aucune URL n'est inventée. Tâche
+  [T-0021](../../tasks/T-0021-adaptateur-campay.md).
+- **Validation humaine de l'ADR 0007** (cadre juridique du séquestre,
+  reconnaissance du produit) : sans elle, pas de production.
+- **Consommateurs des droits** : Marketplace et Talents lisent encore
+  `FixedEntitlementsGateway` (chemins d'un autre agent) ; la lecture réelle de
+  `/internal/entitlements` est livrée côté Billing.
+- **Factures, codes promo, grâce, expiration** :
+  [T-0026](../../tasks/T-0026-factures-codes-promo-grace-expiration.md), non démarrée.
+
+## Vérifier
+
+```
+pnpm turbo run lint typecheck test --filter=@conexa/payments --filter=@conexa/billing --filter=@conexa/entitlements
+pnpm test:integration --filter=@conexa/payments
+pnpm db:migrate payments
+```

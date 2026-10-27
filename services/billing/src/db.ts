@@ -4,6 +4,7 @@ import type {
   PlanAudience,
   SubscriptionStatus,
 } from '@conexa/contracts';
+import { assertEntitlements } from '@conexa/entitlements';
 import { createDb } from '@conexa/service-kit';
 import type { ColumnType, Selectable } from 'kysely';
 
@@ -50,12 +51,14 @@ export const db = handle.db;
 export const pingDatabase = handle.ping;
 
 export function entitlementsOf(plan: PlanRow): Entitlements {
-  return {
+  // Validation par le paquet partagé : un plan incomplet fait échouer la lecture
+  // au lieu de produire des droits silencieusement faux.
+  return assertEntitlements({
     plan_code: plan.code,
     commission_pct: plan.commission_pct,
     max_active_listings: plan.max_active_listings,
     picks_per_week: plan.picks_per_week,
     boost_discount_pct: plan.boost_discount_pct,
     event_commission_pct: plan.event_commission_pct,
-  };
+  });
 }

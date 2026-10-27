@@ -17,6 +17,7 @@
   },
   "dependencies": {
     "@conexa/contracts": "workspace:*",
+    "@conexa/entitlements": "workspace:*",
     "@conexa/errors": "workspace:*",
     "@conexa/events": "workspace:*",
     "@conexa/service-kit": "workspace:*",

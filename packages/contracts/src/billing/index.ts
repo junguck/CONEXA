@@ -72,3 +72,38 @@ export const DEFAULT_PLAN_BY_AUDIENCE: Record<PlanAudience, string> = {
   restaurant: 'restaurant_free',
   partner: 'partner_free',
 };
+
+/**
+ * Événements publiés par Billing (`ARCHITECTURE.md` §7.1).
+ * `entitlements.changed` purge le cache de 60 s des consommateurs ; il ne porte
+ * aucun droit en clair, seulement de quoi invalider et relire.
+ */
+export const BILLING_EVENTS = {
+  entitlementsChanged: 'entitlements.changed',
+  subscriptionActivated: 'subscription.activated',
+  subscriptionExpired: 'subscription.expired',
+} as const;
+
+export const EntitlementsChangedEventSchema = z.object({
+  subject_kind: z.enum(['user', 'team', 'partner']),
+  subject_id: z.uuid(),
+  audience: PlanAudienceSchema,
+  plan_code: z.string().min(2),
+  reason: z.enum(['activated', 'cancelled', 'expired', 'plan_changed', 'grant']),
+  changed_at: z.iso.datetime({ offset: true }),
+});
+export type EntitlementsChangedEvent = z.infer<typeof EntitlementsChangedEventSchema>;
+
+export const SubscriptionActivatedEventSchema = z.object({
+  subscription_id: z.uuid(),
+  user_id: z.uuid(),
+  plan_code: z.string().min(2),
+  current_period_end: z.iso.datetime({ offset: true }),
+});
+
+export const SubscriptionExpiredEventSchema = z.object({
+  subscription_id: z.uuid(),
+  user_id: z.uuid(),
+  plan_code: z.string().min(2),
+  reason: z.enum(['payment_failed', 'cancelled', 'period_ended']),
+});

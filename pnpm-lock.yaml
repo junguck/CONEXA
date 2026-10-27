@@ -237,6 +237,28 @@ importers:
         specifier: 5.0.5
         version: 5.0.5(@types/node@26.6.5)(vite@8.3.5(@types/node@26.6.5)(jiti@2.7.0))
 
+  packages/entitlements:
+    dependencies:
+      '@conexa/contracts':
+        specifier: workspace:*
+        version: link:../contracts
+    devDependencies:
+      '@conexa/config':
+        specifier: workspace:*
+        version: link:../config
+      '@types/node':
+        specifier: 26.6.5
+        version: 26.6.5
+      eslint:
+        specifier: 10.13.0
+        version: 10.13.0(jiti@2.7.0)
+      typescript:
+        specifier: 5.9.3
+        version: 5.9.3
+      vitest:
+        specifier: 5.0.5
+        version: 5.0.5(@types/node@26.6.5)(vite@8.3.5(@types/node@26.6.5)(jiti@2.7.0))
+
   packages/errors:
     dependencies:
       '@conexa/contracts':
@@ -414,6 +436,9 @@ importers:
       '@conexa/contracts':
         specifier: workspace:*
         version: link:../../packages/contracts
+      '@conexa/entitlements':
+        specifier: workspace:*
+        version: link:../../packages/entitlements
       '@conexa/errors':
         specifier: workspace:*
         version: link:../../packages/errors

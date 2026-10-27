@@ -16,6 +16,15 @@ export const EnvSchema = BaseEnvSchema.extend({
   SERVICE_TOKEN: z.string().min(16).optional(),
   /** Commission par défaut si l'appelant n'en fournit pas (pourcentage). */
   DEFAULT_COMMISSION_PCT: z.coerce.number().int().min(0).max(30).default(8),
+  /** Attente maximale d'une confirmation avant abandon propre. */
+  PAYMENT_PENDING_TTL_MINUTES: z.coerce.number().int().min(1).max(1440).default(30),
+  /** Relève et rapprochement : désactivés dans les tests unitaires. */
+  PAYMENTS_JOBS_ENABLED: z
+    .enum(['true', 'false'])
+    .default('true')
+    .transform((value) => value === 'true'),
+  /** Intervalle de la boucle de relève (elle-même planifiée par paiement). */
+  PAYMENTS_TICK_MS: z.coerce.number().int().min(1000).max(300_000).default(15_000),
 });
 
 export type Env = z.infer<typeof EnvSchema>;

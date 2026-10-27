@@ -1,16 +1,29 @@
-import { LEDGER_ACCOUNTS, type LedgerLine } from '@conexa/contracts';
+import {
+  LEDGER_ACCOUNTS,
+  commission,
+  type LedgerLine,
+  type MobileMoneyOperator,
+} from '@conexa/contracts';
 import { AppError } from '@conexa/errors';
 
 /**
  * Grand livre à **double écriture** : chaque mouvement produit un débit et un
  * crédit de même montant, et la somme des lignes d'une écriture est nulle.
  * C'est la correction du trou n°1 de la roadmap (schéma d'origine à écriture
- * simple) — ADR à valider par un humain, mais l'invariant est déjà testé.
+ * simple) — ADR 0007 à valider par un humain, mais l'invariant est déjà testé.
+ *
+ * Règle de temps : on n'écrit **que** quand l'argent a bougé chez l'agrégateur.
+ * Un paiement `pending` ou un reversement `queued` ne produit aucune écriture.
  */
 
-export function escrowPosting(amountFcfa: number): LedgerLine[] {
+export function escrowPosting(amountFcfa: number, operator?: MobileMoneyOperator): LedgerLine[] {
   return [
-    { account: LEDGER_ACCOUNTS.cash, direction: 'debit', amount_fcfa: amountFcfa },
+    {
+      account: LEDGER_ACCOUNTS.cash,
+      direction: 'debit',
+      amount_fcfa: amountFcfa,
+      ...(operator === undefined ? {} : { operator }),
+    },
     { account: LEDGER_ACCOUNTS.escrow, direction: 'credit', amount_fcfa: amountFcfa },
   ];
 }
@@ -25,11 +38,46 @@ export function releasePosting(amountFcfa: number, netFcfa: number): LedgerLine[
   ];
 }
 
-export function refundPosting(amountFcfa: number): LedgerLine[] {
+export function refundPosting(amountFcfa: number, operator?: MobileMoneyOperator): LedgerLine[] {
   return [
     { account: LEDGER_ACCOUNTS.escrow, direction: 'debit', amount_fcfa: amountFcfa },
-    { account: LEDGER_ACCOUNTS.cash, direction: 'credit', amount_fcfa: amountFcfa },
+    {
+      account: LEDGER_ACCOUNTS.cash,
+      direction: 'credit',
+      amount_fcfa: amountFcfa,
+      ...(operator === undefined ? {} : { operator }),
+    },
   ];
+}
+
+/**
+ * Décaissement au prestataire : la dette s'éteint et l'argent quitte
+ * l'agrégateur. La caisse et le solde fournisseur baissent ensemble, ce qui
+ * garde le rapprochement par opérateur à zéro.
+ */
+export function payoutPosting(netFcfa: number, operator: MobileMoneyOperator): LedgerLine[] {
+  return [
+    { account: LEDGER_ACCOUNTS.payable, direction: 'debit', amount_fcfa: netFcfa },
+    {
+      account: LEDGER_ACCOUNTS.cash,
+      direction: 'credit',
+      amount_fcfa: netFcfa,
+      operator,
+    },
+  ];
+}
+
+/** Commission au franc inférieur : l'arrondi ne crée jamais d'argent. */
+export function splitCommission(
+  amountFcfa: number,
+  ratePercent: number,
+): {
+  commission_fcfa: number;
+  net_fcfa: number;
+} {
+  const commissionFcfa = commission(amountFcfa, ratePercent);
+  assertSplit(amountFcfa, commissionFcfa, amountFcfa - commissionFcfa);
+  return { commission_fcfa: commissionFcfa, net_fcfa: amountFcfa - commissionFcfa };
 }
 
 /** Net + commission doivent reconstituer le montant encaissé, au franc près. */

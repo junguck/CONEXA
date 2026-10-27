@@ -7,8 +7,10 @@ import {
   assertSplit,
   escrowPosting,
   imbalance,
+  payoutPosting,
   refundPosting,
   releasePosting,
+  splitCommission,
 } from './ledger.js';
 import { PAYMENT_TRANSITIONS, canTransition, isHeldInEscrow } from './payments.rules.js';
 
@@ -47,6 +49,40 @@ describe('grand livre à double écriture', () => {
     });
   });
 
+  it('éteint la dette du prestataire en sortant l’argent de la caisse', () => {
+    expect(payoutPosting(7360, 'mtn_momo')).toEqual([
+      { account: LEDGER_ACCOUNTS.payable, direction: 'debit', amount_fcfa: 7360 },
+      {
+        account: LEDGER_ACCOUNTS.cash,
+        direction: 'credit',
+        amount_fcfa: 7360,
+        operator: 'mtn_momo',
+      },
+    ]);
+  });
+
+  it('garde le rapprochement à zéro sur un cycle complet', () => {
+    const amount = 8000;
+    const net = 7360;
+    const lines = [
+      ...escrowPosting(amount, 'mtn_momo'),
+      ...releasePosting(amount, net),
+      ...payoutPosting(net, 'mtn_momo'),
+    ];
+    expect(imbalance(lines)).toBe(0);
+    expect(
+      lines
+        .filter((line) => line.account === LEDGER_ACCOUNTS.cash)
+        .reduce(
+          (total, line) =>
+            total + (line.direction === 'credit' ? -line.amount_fcfa : line.amount_fcfa),
+          0,
+        ),
+      // La commission (640) reste chez l'agrégateur : c'est le seul argent qui
+      // nous appartient encore, et c'est ce que le solde fournisseur contient.
+    ).toBe(amount - net);
+  });
+
   it('détecte une écriture déséquilibrée avant de l’écrire', () => {
     expect(() =>
       assertBalanced([
@@ -68,6 +104,25 @@ describe('répartition net / commission', () => {
     expect(() => assertSplit(8000, 640, 7000)).toThrow(/reconstituent/);
     expect(() => assertSplit(8000, -40, 8040)).toThrow(/négatif/);
     expect(() => assertSplit(8000, 640.5, 7359.5)).toThrow(/entiers/);
+  });
+});
+
+describe('arrondis en FCFA entiers', () => {
+  it('arrondit la commission au franc inférieur, jamais au détriment du client', () => {
+    // 1 999 × 8 % = 159,92 : la commission est 159 et le net 1 840.
+    expect(splitCommission(1_999, 8)).toEqual({ commission_fcfa: 159, net_fcfa: 1_840 });
+    expect(splitCommission(12_345, 6)).toEqual({ commission_fcfa: 740, net_fcfa: 11_605 });
+  });
+
+  it('ne crée ni ne perd un franc, quel que soit le montant', () => {
+    for (const amount of [1, 7, 99, 1_999, 250_000]) {
+      for (const rate of [0, 5, 8, 30]) {
+        const { commission_fcfa, net_fcfa } = splitCommission(amount, rate);
+        expect(commission_fcfa + net_fcfa).toBe(amount);
+        expect(Number.isInteger(commission_fcfa)).toBe(true);
+        expect(Number.isInteger(net_fcfa)).toBe(true);
+      }
+    }
   });
 });
 

@@ -1,15 +1,17 @@
 import { randomUUID } from 'node:crypto';
 
-import { Injectable } from '@nestjs/common';
+import { Inject, Injectable } from '@nestjs/common';
 
-import type {
-  Entitlements,
-  Plan,
-  PlanAudience,
-  Subscription,
-  SubscriptionStatus,
+import {
+  BILLING_EVENTS,
+  type Entitlements,
+  type Plan,
+  type PlanAudience,
+  type Subscription,
+  type SubscriptionStatus,
 } from '@conexa/contracts';
 import { AppError, forbidden, notFound } from '@conexa/errors';
+import { createEvent, type EventPublisher } from '@conexa/events';
 
 import {
   assertCanActivate,
@@ -21,6 +23,7 @@ import {
 } from './billing.rules.js';
 import { env } from './config.js';
 import { db, entitlementsOf, type PlanRow } from './db.js';
+import { BILLING_EVENT_BUS } from './events.js';
 import { createSubscriptionPayments, type SubscriptionPayments } from './payments.client.js';
 
 interface SubscriptionRow {
@@ -38,6 +41,8 @@ interface SubscriptionRow {
 export class BillingService {
   private readonly payments: SubscriptionPayments = createSubscriptionPayments();
   private readonly now = () => new Date();
+
+  constructor(@Inject(BILLING_EVENT_BUS) private readonly events: EventPublisher) {}
 
   async listPlans(): Promise<Plan[]> {
     const rows = await db
@@ -110,6 +115,9 @@ export class BillingService {
         .executeTakeFirstOrThrow();
     });
 
+    if (free) {
+      await this.publishEntitlements(userId, plan.audience, plan.code, 'plan_changed');
+    }
     return this.toSubscription(row);
   }
 
@@ -171,6 +179,13 @@ export class BillingService {
         .executeTakeFirstOrThrow();
     });
 
+    await this.publish(BILLING_EVENTS.subscriptionActivated, {
+      subscription_id: updated.id,
+      user_id: updated.user_id,
+      plan_code: updated.plan_code,
+      current_period_end: updated.current_period_end?.toISOString() ?? new Date().toISOString(),
+    });
+    await this.publishEntitlements(userId, plan.audience, plan.code, 'activated');
     return this.toSubscription(updated);
   }
 
@@ -202,6 +217,8 @@ export class BillingService {
       ])
       .executeTakeFirstOrThrow();
 
+    const plan = await this.loadPlan(updated.plan_code);
+    await this.publishEntitlements(userId, plan.audience, plan.code, 'cancelled');
     return this.toSubscription(updated);
   }
 
@@ -287,6 +304,30 @@ export class BillingService {
       throw notFound('Abonnement');
     }
     return row;
+  }
+
+  /**
+   * `entitlements.changed` : les consommateurs purgent leur cache de 60 s et
+   * relisent. Aucun droit en clair dans l'événement.
+   */
+  private async publishEntitlements(
+    userId: string,
+    audience: PlanAudience,
+    planCode: string,
+    reason: 'activated' | 'cancelled' | 'expired' | 'plan_changed' | 'grant',
+  ): Promise<void> {
+    await this.publish(BILLING_EVENTS.entitlementsChanged, {
+      subject_kind: 'user',
+      subject_id: userId,
+      audience,
+      plan_code: planCode,
+      reason,
+      changed_at: this.now().toISOString(),
+    });
+  }
+
+  private async publish(type: string, payload: Record<string, unknown>): Promise<void> {
+    await this.events.publish(createEvent({ type, producer: 'billing', payload }));
   }
 
   private toPlan(row: PlanRow): Plan {
