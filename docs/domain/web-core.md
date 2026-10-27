@@ -81,6 +81,29 @@ Les maquettes ne couvraient ni le chat, ni le parcours de paiement complet, ni l
 - Service worker Serwist (`apps/web/src/app/sw.ts`) : précache, repli hors-ligne sur `/offline`, mise à jour proposée par `shell/pwa/update-prompt.tsx` (jamais imposée).
 - Notifications : `shell/pwa/push.ts` (VAPID, clé publique `NEXT_PUBLIC_VAPID_PUBLIC_KEY`, abonnement sur geste explicite). L'envoi appartient au service Realtime.
 
+## Consoles desktop (T-0009, 2026-10-26)
+
+Deux apps Next.js partagent le design system et la politique de rôles de `@conexa/ui` :
+
+| App | Port dev | Rôles | Routes |
+|---|---|---|---|
+| `apps/backoffice` | 3001 | `admin`, `moderator` | `/` (Validation), `/litiges`, `/finance`, `/demo` |
+| `apps/partner-portal` | 3002 | `partner_staff`, `restaurant_staff` | `/` (Ce soir), `/menu`, `/creneaux` |
+
+- Coquille commune (`src/shell/console-frame.tsx`) : mot-symbole, sections, compte, thème sombre/clair mémorisé. Barre du haut sur desktop, deuxième ligne défilante sous `md` ; les pages restent utilisables à 390 px (le portail remplace le tableau par des cartes).
+- Garde de rôle : `src/shell/access.ts` déclare les rôles, `shell/session.tsx` les applique dans le layout de route (`(admin)`, `(portal)`). `@conexa/ui/access` porte la décision, testée pour chaque app (rôle étranger → refus, compte en attente, absence de session).
+- **Aperçu local sans Identity** : `NEXT_PUBLIC_CONSOLE_PREVIEW_SESSION=true` fournit un compte de maquette. Sans cette variable, le build de production affiche « Connexion requise ». Ne jamais la poser en production.
+- Navigation générée par app : `pnpm --filter @conexa/<app> gen:registry` lit `src/features/*/nav.ts`. L'écran `/demo` du back-office montre qu'un domaine n'ajoute que ses trois fichiers.
+- Données de maquette dans `src/shell/fixtures.ts` (fictives, XAF) ; les actions (valider une arrivée, un compte) restent locales et l'annoncent, aucune écriture serveur.
+
+```bash
+pnpm --filter @conexa/backoffice dev          # http://localhost:3001
+pnpm --filter @conexa/partner-portal dev     # http://localhost:3002
+NEXT_PUBLIC_CONSOLE_PREVIEW_SESSION=true pnpm --filter @conexa/backoffice dev
+pnpm --filter @conexa/backoffice gen:registry
+pnpm turbo run lint typecheck test build --filter=@conexa/backoffice --filter=@conexa/partner-portal
+```
+
 ## Vérifications (T-0007, 2026-10-26)
 
 ```

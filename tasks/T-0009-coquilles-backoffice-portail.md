@@ -3,7 +3,7 @@ id: T-0009
 title: "Coquilles du back-office et du portail partenaire"
 feature: F0.9
 agent: web-core
-status: todo
+status: review
 depends_on: [T-0007]
 size: S
 owned_paths:
@@ -18,10 +18,10 @@ contracts_touched: []
 deps_request: []
 human_gate: false
 reviewers: []
-branch: ""
+branch: "agent/web-core/T-0009-backoffice-portal"
 worktree: ""
 pr: ""
-notes: "Dépend du socle web (T-0007). Le portail doit rester utilisable sur téléphone : le personnel du restaurant l'utilise en service."
+notes: "Dépend du socle web (T-0007) : branche empilée sur agent/web-core/T-0007-web-shell, à rebaser sur main après fusion de T-0007. Aperçu local : NEXT_PUBLIC_CONSOLE_PREVIEW_SESSION=true (jamais en production). Écrans de maquette à remplacer par les domaines : comptes (identity), litiges, finance (money), portail (partners)."
 ---
 
 ## Objectif
