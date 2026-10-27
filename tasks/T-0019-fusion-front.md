@@ -7,11 +7,14 @@ status: review
 depends_on: [T-0007, T-0009]
 size: M
 owned_paths:
-  - apps/**
+  - apps/web/**
+  - apps/backoffice/**
+  - apps/partner-portal/**
   - packages/ui/**
   - docs/domain/web-core.md
   - docs/evidence/T-0019/**
-  - tasks/**
+  - tasks/T-0007-design-system-coquille-web-pwa.md
+  - tasks/T-0009-coquilles-backoffice-portail.md
 reads:
   - AGENTS.md
   - agents/GIT_WORKFLOW.md
