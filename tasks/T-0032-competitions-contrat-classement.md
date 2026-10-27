@@ -3,7 +3,7 @@ id: T-0032
 title: "Compétitions : contrat, tables et classement"
 feature: F2.9
 agent: football
-status: todo
+status: review
 depends_on: [T-0030]
 size: M
 owned_paths:

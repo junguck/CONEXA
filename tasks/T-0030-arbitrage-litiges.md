@@ -3,7 +3,7 @@ id: T-0030
 title: "Arbitrage admin des litiges de match"
 feature: F2.8
 agent: football
-status: in_progress
+status: review
 depends_on: [T-0013]
 size: M
 owned_paths:
@@ -26,7 +26,7 @@ reviewers: [architect, security]
 branch: agent/football/T-0030-litiges-competitions
 worktree: ../worktrees/T-0030
 pr: ""
-notes: "Lot 1/5 : endpoints admin, journal d'arbitrage, transitions protégées en SQL, publication des événements par le publisher injecté."
+notes: "Lot 1/5 livré avec les lots 2 à 5 dans une seule PR (branche poussée). Endpoints admin, journal match_adjudications, transitions SQL protégées, réversion Elo/statistiques, outbox. Vérification PostgreSQL locale impossible sur ce poste (pg_isready : no response, erreurs ASLR Windows) : migration 0002 non appliquée ici, à valider par la CI/le poste de revue."
 ---
 
 ## Objectif

@@ -3,7 +3,7 @@ id: T-0031
 title: "Crons de clôture : rapport manquant, contestation 48 h, vote MVP 24 h"
 feature: F2.6
 agent: football
-status: todo
+status: review
 depends_on: [T-0030]
 size: M
 owned_paths:

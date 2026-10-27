@@ -3,7 +3,7 @@ id: T-0033
 title: "Compétitions : poules, phases finales et progression"
 feature: F2.9
 agent: football
-status: todo
+status: review
 depends_on: [T-0032]
 size: M
 owned_paths:

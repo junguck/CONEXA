@@ -3,7 +3,7 @@ id: T-0034
 title: "Publication fiable des événements football (outbox)"
 feature: F2.5
 agent: football
-status: todo
+status: review
 depends_on: [T-0030]
 size: M
 owned_paths:
