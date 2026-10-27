@@ -25,8 +25,8 @@ human_gate: false
 reviewers: []
 branch: "agent/web-core/T-0019-fusion-front"
 worktree: "C:\\Users\\EG\\Desktop\\Conexa\\worktrees\\T-0019"
-pr: ""
-notes: "Fusion de T-0007 (design system, PWA, 23 écrans) et T-0009 (back-office, portail) sur main à 13 services, sans toucher services/, packages/contracts, db/, tools/ ni deploy/. Client d'API pointé sur la Gateway via NEXT_PUBLIC_API_URL (défaut http://localhost:3000) et typé par @conexa/contracts. Vert en local : 20 tâches turbo, 64 tests, build des trois apps, format:check. PR non ouverte : aucun client GitHub (gh/token) sur la machine."
+pr: "https://github.com/junguck/CONEXA/pull/7"
+notes: "Fusion de T-0007 (design system, PWA, 23 écrans) et T-0009 (back-office, portail) sur main à 13 services, sans toucher services/, packages/contracts, db/, tools/ ni deploy/. Client d'API pointé sur la Gateway via NEXT_PUBLIC_API_URL (défaut http://localhost:3000) et typé par @conexa/contracts. Vert en local : 20 tâches turbo, 64 tests, build des trois apps, format:check. PR #7 ouverte sur main ; CI GitHub à vérifier après le push."
 ---
 
 ## Objectif

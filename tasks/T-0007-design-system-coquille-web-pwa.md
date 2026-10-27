@@ -21,8 +21,8 @@ human_gate: false
 reviewers: []
 branch: "agent/web-core/T-0019-fusion-front"
 worktree: "C:\\Users\\EG\\Desktop\\Conexa\\worktrees\\T-0019"
-pr: ""
-notes: "Fusionnée avec main (13 services) et T-0009 sur agent/web-core/T-0019-fusion-front ; la branche T-0007 sert de base empilée. Vert en local : 20 tâches turbo (lint, typecheck, test, build), 64 tests, format:check OK ; captures design system et football dans docs/evidence/T-0019/. Client d'API désormais typé par @conexa/contracts et pointé sur la Gateway (NEXT_PUBLIC_API_URL, défaut http://localhost:3000). PR non ouverte : aucun client GitHub (gh/token) sur la machine. Le document produit « docs/product/README.md » (§16, écrans) reste absent (ADR 0002) : maquettes utilisées. Gardes de session testées mais inactives tant que F1.1 n'existe pas. deps_request pour platform : alias racine `pnpm gen:registry` (package.json racine hors périmètre) ; en attendant `pnpm --filter @conexa/web gen:registry`."
+pr: "https://github.com/junguck/CONEXA/pull/7"
+notes: "Fusionnée avec main (13 services) et T-0009 sur agent/web-core/T-0019-fusion-front ; la branche T-0007 sert de base empilée. Vert en local : 20 tâches turbo (lint, typecheck, test, build), 64 tests, format:check OK ; captures design system et football dans docs/evidence/T-0019/. Client d'API désormais typé par @conexa/contracts et pointé sur la Gateway (NEXT_PUBLIC_API_URL, défaut http://localhost:3000). PR #7 ouverte sur main. Le document produit « docs/product/README.md » (§16, écrans) reste absent (ADR 0002) : maquettes utilisées. Gardes de session testées mais inactives tant que F1.1 n'existe pas. deps_request pour platform : alias racine `pnpm gen:registry` (package.json racine hors périmètre) ; en attendant `pnpm --filter @conexa/web gen:registry`."
 ---
 
 ## Objectif
