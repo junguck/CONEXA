@@ -3,7 +3,7 @@ id: T-0007
 title: "Design system et coquille de l'app web (PWA)"
 feature: F0.7
 agent: web-core
-status: todo
+status: review
 depends_on: [T-0001]
 size: M
 owned_paths:
@@ -19,10 +19,10 @@ contracts_touched: []
 deps_request: []
 human_gate: false
 reviewers: []
-branch: ""
-worktree: ""
+branch: "agent/web-core/T-0007-web-shell"
+worktree: "C:\\Users\\EG\\Desktop\\Conexa\\worktrees\\T-0007"
 pr: ""
-notes: "Le document produit « docs/product/README.md » (§16, écrans) est absent (voir ADR 0002) : démarrer sur les maquettes fournies et signaler le manque dans la PR. Contrat d'API typé à brancher seulement après fusion de T-0004."
+notes: "Branche prête et verte en local (lint, types, 29 tests, build, Lighthouse PWA sans échec) ; PR non ouverte, push en attente d'autorisation humaine. Le document produit « docs/product/README.md » (§16, écrans) reste absent (ADR 0002) : maquettes utilisées. Client d'API typé localement, à brancher sur @conexa/contracts après T-0004. Gardes de session testées mais inactives tant que F1.1 n'existe pas. deps_request pour platform : alias racine `pnpm gen:registry` (package.json racine hors périmètre) ; en attendant `pnpm --filter @conexa/web gen:registry`."
 ---
 
 ## Objectif

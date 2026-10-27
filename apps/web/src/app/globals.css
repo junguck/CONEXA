@@ -1,0 +1,54 @@
+@import url('/fonts/fonts.css');
+@import '@conexa/ui/styles.css';
+
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+  :root {
+    color-scheme: dark;
+  }
+
+  html {
+    -webkit-text-size-adjust: 100%;
+  }
+
+  body {
+    min-height: 100dvh;
+    background: var(--bg);
+    color: var(--tx);
+    font-family: var(--fu);
+    font-size: 15px;
+    line-height: 1.45;
+    -webkit-font-smoothing: antialiased;
+  }
+
+  :focus-visible {
+    outline: 2px solid var(--ac);
+    outline-offset: 2px;
+  }
+
+  ::selection {
+    background: var(--ac);
+    color: var(--ac-ink);
+  }
+}
+
+/* Le réglage « Réduire les animations » (Moi) et la préférence système coupent
+   toutes les animations, comme la maquette (DESIGN_HANDOFF.md §4). */
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation: none !important;
+    transition: none !important;
+  }
+}
+
+html[data-reduced-motion='true'] *,
+html[data-reduced-motion='true'] *::before,
+html[data-reduced-motion='true'] *::after {
+  animation: none !important;
+  transition: none !important;
+}
