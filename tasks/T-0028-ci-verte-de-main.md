@@ -11,18 +11,19 @@ owned_paths:
   - pnpm-lock.yaml
   - package.json
   - .gitleaksignore
+  - .github/workflows/ci.yml
 reads:
   - .github/workflows/ci.yml
   - docs/domain/platform.md
   - tasks/T-0003-ci-et-garde-fous.md
 contracts_touched: []
 deps_request: []
-human_gate: false
+human_gate: true
 reviewers: [platform]
 branch: ""
 worktree: ""
 pr: ""
-notes: "Deux étapes de la CI de push sur main échouaient, aucune des deux n'était régressée par la fusion du bus (T-0051) : (1) « Audit des dépendances » — @nestjs/platform-express épingle exactement multer 2.4.0, vulnérable (GHSA-q7qp-rjg7-q26m, high) ; pnpm 12 ne lit plus pnpm.overrides depuis package.json, l'override vit dans pnpm-workspace.yaml et porte la transitive à 2.5.0 (audit vert, install --frozen-lockfile vert). (2) « gitleaks (historique git) » — un faux positif de la règle curl-auth-user sur deploy/tests/check-observability-runtime.sh:78 : la ligne lit ${GRAFANA_ADMIN_USER:-conexa}, une variable shell à valeurs de développement, pas un secret ; ignoré au niveau de son empreinte exacte dans .gitleaksignore, vérifié avec la même version épinglée que la CI (v8.24.3) et les mêmes flags. Vérifié : pnpm verify (76 tâches --force, aucun cache), format:check, docs:verify, audit --audit-level=high, gitleaks, tests Python du worker IA (59). Limite : la CI n'a pas encore été relue après le dernier push (relire le run GitHub avant de clore)."
+notes: "Trois étapes de la CI de push sur main échouaient, aucune des trois n'était régressée par la fusion du bus (T-0051) : (0) « gitleaks (historique git) » — le job faisait un actions/checkout en profondeur 1, donc `git log --all -p` traitait HEAD comme un commit racine et réaffichait tout l'arbre comme ajouté : la ligne de `deploy/tests/check-observability-runtime.sh:78` apparaissait alors avec le SHA courant, jamais avec celui que `.gitleaksignore` ignorait. Corrigé par `fetch-depth: 0` sur le checkout du job — c'est ce que « historique git » suppose, et sans cela la CI échouait à chaque push. human_gate: true car `.github/**` est à validation humaine. (1) « Audit des dépendances » — @nestjs/platform-express épingle exactement multer 2.4.0, vulnérable (GHSA-q7qp-rjg7-q26m, high) ; pnpm 12 ne lit plus pnpm.overrides depuis package.json, l'override vit dans pnpm-workspace.yaml et porte la transitive à 2.5.0 (audit vert, install --frozen-lockfile vert). (2) « gitleaks (historique git) » — un faux positif de la règle curl-auth-user sur deploy/tests/check-observability-runtime.sh:78 : la ligne lit ${GRAFANA_ADMIN_USER:-conexa}, une variable shell à valeurs de développement, pas un secret ; ignoré au niveau de son empreinte exacte dans .gitleaksignore, vérifié avec la même version épinglée que la CI (v8.24.3) et les mêmes flags. Vérifié : pnpm verify (76 tâches --force, aucun cache), format:check, docs:verify, audit --audit-level=high, gitleaks, tests Python du worker IA (59). Limite : la CI n'a pas encore été relue après le dernier push (relire le run GitHub avant de clore)."
 ---
 
 ## Objectif

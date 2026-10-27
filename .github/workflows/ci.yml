@@ -78,7 +78,13 @@ jobs:
     name: PII et secrets
     runs-on: ubuntu-latest
     steps:
+      # Profondeur complète obligatoire : gitleaks scanne les COMMITs, et une
+      # clone superficiel fait de HEAD un commit racine — git log -p réaffiche
+      # alors tout l'arbre comme ajouté, ce qui attribue les anciennes fuites au
+      # SHA courant et rend .gitleaksignore inopérant (échec à chaque push).
       - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
       - uses: actions/setup-python@v5
         with:
           python-version: '3.12'
