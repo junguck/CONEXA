@@ -12,7 +12,6 @@ import {
 } from '@nestjs/common';
 import {
   CreatePaymentSchema,
-  PaymentWebhookSchema,
   PayoutStatusSchema,
   RefundPaymentSchema,
   ReleasePaymentSchema,
@@ -62,7 +61,7 @@ export class PaymentsController {
     if (!raw) {
       throw validationError('Corps brut indisponible pour vérifier la signature');
     }
-    return this.payments.confirmWebhook(PaymentWebhookSchema.parse(body), raw, signature);
+    return this.payments.confirmWebhook(body, raw, signature);
   }
 }
 

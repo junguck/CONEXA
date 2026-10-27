@@ -3,7 +3,7 @@ id: T-0021
 title: "Adaptateur Campay réel : collecte, statut, décaissement, webhook"
 feature: F3.2
 agent: money
-status: blocked
+status: review
 depends_on: [T-0020]
 size: L
 owned_paths:
@@ -21,7 +21,7 @@ reviewers: [security, architect]
 branch: "agent/money/T-0020-paiements-reels"
 worktree: "../worktrees/T-0020"
 pr: ""
-notes: "BLOQUÉE. Les points 1 à 3 de docs/vendor/campay.md §Ouvert manquent : URL demo/production, existence et signature du webhook, forme exacte des réponses (statut, solde par opérateur). L'ancien adaptateur inventait /token/, /collect/, /withdraw/, /refund/ et un en-tête x-campay-signature : il a été remplacé par une implémentation qui échoue fermée. Reprise dès que la source (Postman/console Campay) est fournie."
+notes: "Débloquée le 2026-10-27 par la collection Postman officielle et le SDK Python 1.1.0 (sources dans docs/vendor/campay.md) : endpoints, corps, statuts, solde par opérateur et signature JWT HS256 du webhook confirmés. Adaptateur réel implémenté et testé sans réseau (fetch simulé, 10 tests). RESTE À FAIRE : vérification sur l'environnement demo avec les clés (non fournies à l'agent), et observation de la durée de vie du jeton et des frais."
 ---
 
 ## Objectif

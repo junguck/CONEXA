@@ -10,7 +10,6 @@ import {
   type MobileMoneyOperator,
   type Payment,
   type PaymentStatus,
-  type PaymentWebhook,
   type Payout,
   type PayoutFailureReason,
   type PayoutStatus,
@@ -40,7 +39,12 @@ import { decidePayout, parsePayoutAccount, payoutFailureReason } from './payouts
 import { assertTransition } from './payments.rules.js';
 import { expiresAt, nextCheckAt } from './payments.schedule.js';
 import { createPaymentProvider, type PaymentProvider } from './providers.js';
-import { payloadFingerprint, webhookEventKey } from './webhooks.rules.js';
+import {
+  normalizeWebhook,
+  payloadFingerprint,
+  webhookEventKey,
+  type NormalizedWebhook,
+} from './webhooks.rules.js';
 
 export interface PaymentRow {
   id: string;
@@ -209,11 +213,12 @@ export class PaymentsService {
    * 3. **relecture du statut par l'API** : un webhook seul ne fait jamais foi.
    */
   async confirmWebhook(
-    payload: PaymentWebhook,
+    body: unknown,
     rawBody: string,
     signature: string | undefined,
   ): Promise<{ status: PaymentStatus }> {
-    this.verifySignature(rawBody, signature);
+    this.provider.verifyWebhook({ rawBody, body, signature });
+    const payload = normalizeWebhook(body);
 
     const payment = await this.loadByReference(payload);
     if (payment.amount_fcfa !== (payload.amount_fcfa ?? payment.amount_fcfa)) {
@@ -235,6 +240,13 @@ export class PaymentsService {
 
     if (!inserted) {
       // Rejeu : le premier passage a déjà décidé, on renvoie l'état courant.
+      return { status: payment.status };
+    }
+
+    if (payload.status === 'pending') {
+      // Campay signale une transaction encore en cours : rien à appliquer, la
+      // relève tranchera. On en garde la trace pour le diagnostic.
+      await this.markWebhook(inserted.id, 'ignored_pending');
       return { status: payment.status };
     }
 
@@ -634,11 +646,6 @@ export class PaymentsService {
     };
   }
 
-  /** Vérifie le webhook avec le mécanisme du fournisseur (HMAC en local). */
-  verifySignature(rawBody: string, signature: string | undefined): void {
-    this.provider.verifyWebhook(rawBody, signature);
-  }
-
   /** Relecture du statut par l'API : la relève ne croit aucun webhook seul. */
   async readProviderStatus(reference: string): Promise<ProviderStatus> {
     return this.provider.getStatus(reference);
@@ -867,7 +874,7 @@ export class PaymentsService {
     return row;
   }
 
-  private async loadByReference(payload: PaymentWebhook): Promise<PaymentRow> {
+  private async loadByReference(payload: NormalizedWebhook): Promise<PaymentRow> {
     const payment = await db
       .selectFrom('payments')
       .select(COLUMNS)

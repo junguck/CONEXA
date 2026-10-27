@@ -80,10 +80,14 @@ export const PaymentSchema = z.object({
 });
 export type Payment = z.infer<typeof PaymentSchema>;
 
-/** Notification envoyée par l'agrégateur (Campay en production, mock en dev). */
+/**
+ * Notification normalisée d'un agrégateur. Campay envoie `SUCCESSFUL`/`FAILED`
+ * en majuscules, un montant en chaîne et une signature JWT dans le corps : le
+ * service normalise avant validation (services/payments/src/webhooks.rules.ts).
+ */
 export const PaymentWebhookSchema = z.object({
   reference: z.string().min(3),
-  status: z.enum(['successful', 'failed']),
+  status: z.enum(['successful', 'failed', 'pending']),
   amount_fcfa: MoneySchema.optional(),
   external_reference: z.string().optional(),
 });

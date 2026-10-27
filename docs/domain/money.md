@@ -70,10 +70,12 @@ côté billing `entitlements.changed`, `subscription.activated`,
 
 ## Bloqué, à ne pas contourner
 
-- **Campay réel** : URL, webhook et signature, forme des réponses ne sont pas
-  confirmés ([docs/vendor/campay.md](../vendor/campay.md)). L'adaptateur échoue
-  fermé ; aucune URL n'est inventée. Tâche
-  [T-0021](../../tasks/T-0021-adaptateur-campay.md).
+- **Campay réel** : endpoints, corps, statuts, solde par opérateur et signature
+  JWT HS256 du webhook sont confirmés par la collection Postman officielle et le
+  SDK 1.1.0 ([docs/vendor/campay.md](../vendor/campay.md)). L'adaptateur est
+  implémenté et testé sans réseau ; il reste à faire la **vérification demo avec
+  les clés** (aucune clé n'est fournie à l'agent) et à relever la durée de vie du
+  jeton, les frais et les plafonds.
 - **Validation humaine de l'ADR 0007** (cadre juridique du séquestre,
   reconnaissance du produit) : sans elle, pas de production.
 - **Consommateurs des droits** : Marketplace et Talents lisent encore

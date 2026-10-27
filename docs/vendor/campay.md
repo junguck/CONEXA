@@ -1,69 +1,124 @@
 # Campay : ce qui est confirmé, ce qui reste ouvert
 
 > Fiche fournisseur du domaine argent. **Règle** : rien n'entre ici sans une
-> source citée. Ce qui n'est pas confirmé est listé en §Ouvert et **bloque** la
-> tâche correspondante ; l'API n'est jamais devinée à partir d'un nom de méthode.
+> source citée. Ce qui n'est pas confirmé est listé en §Ouvert ; l'API n'est
+> jamais devinée à partir d'un nom de méthode.
 
 - Dernière vérification : 2026-10-27
-- Sources consultées : `docs/STACK.md` §3.1, qui cite la documentation Postman
-  publique de Campay et la page du SDK Python publié sur PyPI.
-- Ce que je n'ai pas pu faire : ouvrir les pages détaillées des endpoints. Cet
-  environnement n'a **pas d'accès réseau** ; les URL, les chemins et les formes de
-  réponse n'ont donc pas pu être vérifiés. Ils sont en §Ouvert, pas ici.
+- **Sources consultées et lues** :
+  - collection Postman officielle : <https://documenter.getpostman.com/view/2391374/T1LV8PVA>
+    (JSON servi par `documenter.gw.postman.com`, descriptions et exemples inclus) ;
+  - SDK Python officiel `campay` **1.1.0** sur PyPI
+    (<https://pypi.org/project/campay/>), code source `src/campay/sdk.py` et `README.md` ;
+  - `docs/STACK.md` §3.1 (codes d'erreur et contraintes).
+- Hôtes : **demo** `https://demo.campay.net`, **production** `https://www.campay.net`.
+  Toutes les routes sont sous `/api/`.
 
 ## Confirmé
 
+### Authentification
+
 | Point | Fait | Conséquence dans le code |
 |---|---|---|
-| Opérateurs | MTN et Orange **uniquement** ; un autre numéro renvoie `ER102` | `operator` est un enum `mtn_momo \| orange_money` ; un reversement exige un opérateur déclaré |
-| Format du numéro | indicatif pays, `237xxxxxxxxx` ; sinon `ER101` | stockage `237…`, conversion `+237…` → `237…` avant l'appel |
-| Montants | entiers, sans décimale (sinon `ER201`), devise XAF | `MoneySchema` = entier positif ; commission arrondie à l'inférieur |
-| Authentification | jeton permanent (« APP KEYS ») ou jeton temporaire renouvelable | jeton lu depuis un secret, jamais journalisé |
-| Environnements | `demo` (`DEV`) et `production` (`PROD`) | `CAMPAY_BASE_URL` obligatoire, aucune URL par défaut |
-| Collecte | **asynchrone** : rend une `reference`, un code USSD, l'opérateur, statut `PENDING` ; statut ensuite `PENDING`, `SUCCESSFUL` ou `FAILED` | l'encaissement n'est jamais supposé : il faut relire le statut |
-| Décaissement | possible vers un numéro, à **activer** dans les réglages de l'application ; `ER301` si le solde de l'opérateur est insuffisant | vérification du solde de l'opérateur avant tout décaissement ; échec → file à traiter |
-| Solde | consultable **par opérateur** (MTN et Orange séparément) | rapprochement par opérateur, pas de solde global |
-| Référence externe | champ `external_reference` accepté à la collecte et au décaissement | `external_reference` = identifiant interne (clé d'idempotence) |
-| Lien de paiement | existe, avec redirections de succès et d'échec | `payment_url` renvoyé au client quand le fournisseur en fournit un |
+| Jeton | `POST /api/token/` avec `{"username","password"}` (identifiants d'**application**, section « APP KEYS ») → `{"token"}` | `CAMPAY_APP_TOKEN` / `CAMPAY_APP_SECRET` |
+| En-tête | `Authorization: Token <jeton>` sur tous les autres appels | ajouté par l'adaptateur |
+| Durée de vie | non documentée | cache local de 5 min, jamais journalisé |
 
-Codes d'erreur confirmés : `ER101` (format du numéro), `ER102` (opérateur non
-supporté), `ER201` (montant non entier), `ER301` (solde insuffisant).
+### Collecte (encaissement)
 
-## Ouvert — bloquant
+`POST /api/collect/` — corps `{"amount":"<entier>","currency":"XAF","from":"237…","description":"…","external_reference":"…"}`.
+Réponse 200 : `{"reference":"<uuid>","ussd_code":"…","operator":"mtn|orange"}`.
+Statut initial `PENDING` ; l'utilisateur valide sur son téléphone.
+**Idempotence officielle sur `external_reference`** : deux appels avec la même
+valeur rendent le résultat du premier. Nous y envoyons notre clé d'idempotence.
+Pas de lien de paiement dans cette réponse : `payment_url` reste `null`.
 
-Ces points bloquent la tâche [T-0021](../../tasks/T-0021-adaptateur-campay.md).
-Tant qu'ils sont ouverts, `CampayPaymentProvider` **échoue fermé** : aucune
-requête n'est envoyée, aucune URL n'est supposée.
+### Statut
 
-1. **URL et chemins exacts** des API demo et production, y compris l'échange de
-   jeton. Bloque : `collect`, `getStatus`, `disburse`, `getBalance`.
-2. **Webhook** : existe-t-il ? comment est-il signé (HMAC ? en-tête ? secret
-   partagé ?), est-il rejoué, quel est le format du corps ? Bloque la vérification
-   de signature. La relecture du statut par l'API et le dédoublonnage
-   (`webhook_events`) sont en place et testés indépendamment.
-3. **Forme des réponses** : nom du champ de statut, valeurs exactes, forme du
-   solde par opérateur. Bloque l'analyse des réponses.
-4. Durée de vie du jeton temporaire.
-5. Frais de collecte et de décaissement, plafonds, délais de disponibilité.
-6. Remboursement natif : s'il n'existe pas, le remboursement est un décaissement
-   vers le payeur (ADR 0007).
-7. Prélèvement récurrent : supposé absent, donc période prépayée.
-8. Séquestre natif : supposé absent, donc séquestre = écritures comptables.
-9. Limites de débit et disponibilité du service.
-10. **Cadre juridique** : détenir pour le compte de tiers l'argent d'un séquestre
-    peut relever d'une réglementation de paiement. À faire valider par un juriste
-    local avant toute production.
+`GET /api/transaction/{reference}/` → `{"reference","status","amount","currency","operator","code","operator_reference","endpoint","signature","external_reference","phone_number","app_amount","description","reason",…}`.
+`status` vaut `PENDING`, `SUCCESSFUL` ou `FAILED`. Un 404 signifie « inconnu ».
 
-## Vérification sur l'environnement demo (à faire une fois §Ouvert levé)
+### Décaissement (reversement, remboursement)
 
-1. Collecte de 100 FCFA depuis un numéro de test MTN : obtenir une `reference`
-   et le statut `PENDING`, puis le statut final après validation USSD.
-2. Rejouer le même `external_reference` : vérifier le comportement (doublon
-   refusé ou même référence) et l'absence de double débit.
-3. Décaissement du même montant vers un numéro de test : vérifier `ER301` quand
+`POST /api/withdraw/` — corps `{"amount":"<entier>","currency":"XAF","to":"237…","description":"…","external_reference":"…"}`
+→ 200 `{"reference","status":"PENDING"}`. **Idempotence officielle sur
+`external_reference`** : nous y envoyons l'identifiant du reversement.
+À activer dans les réglages de l'application (« API withdrawals »).
+`ER301` = solde insuffisant sur l'opérateur concerné.
+
+### Solde
+
+`GET /api/balance/` → `{"total_balance","mtn_balance","orange_balance","currency":"XAF"}`.
+Le solde est donc bien **par opérateur** : le rapprochement compare `CASH` MTN
+à `mtn_balance`, et `CASH` Orange à `orange_balance`. Les montants arrivent avec
+des décimales (`0.00`) : ils sont arrondis en FCFA entiers.
+
+### Webhook (callback)
+
+Déclaré dans les réglages de l'application, en **GET** (paramètres d'URL) ou
+**POST** (JSON). Notifié quand une transaction passe `SUCCESSFUL` ou `FAILED`.
+Champs POST : `status`, `reference`, `amount`, `currency`, `operator`, `code`,
+`operator_reference`, **`signature`**, `endpoint` (`collect` ou `withdraw`),
+`external_reference`, `external_user`, `phone_number`, `description`, `reason`,
+`app_amount`, liens de redirection.
+**Signature = JWT HS256 signé avec la clé de webhook de l'application** ;
+l'en-tête JWT doit être `{"alg":"HS256"}`. Nous vérifions la signature, puis
+**relisons le statut par `/api/transaction/{reference}/`** avant toute
+transition : un callback ne fait jamais foi seul.
+
+### Erreurs et contraintes
+
+`ER101` format de numéro, `ER102` opérateur non supporté (MTN et Orange
+uniquement), `ER201` montant non entier, `ER301` solde insuffisant. Montants
+entiers en XAF, numéros avec indicatif pays `237…`.
+
+## Ouvert
+
+1. **Durée de vie du jeton** : non documentée. Choix local : cache 5 min,
+   renouvellement à la première erreur d'authentification (à observer en demo).
+2. **Frais** de collecte et de décaissement, et champ `app_amount` du callback
+   (semble être le montant net après frais) : à relever sur des transactions
+   demo réelles avant toute écriture comptable de frais.
+3. **Plafonds** par transaction et par jour, limites de débit.
+4. **Remboursement natif** : aucun endpoint de remboursement dans la collection
+   officielle. Le remboursement est donc un **décaissement** vers le payeur
+   (ADR 0007).
+5. **Prélèvement récurrent** : aucun endpoint documenté → période prépayée.
+6. **Séquestre natif** : aucun endpoint documenté → séquestre = écritures.
+7. **Disponibilité des fonds** après une collecte (délai avant décaissement).
+8. **Cadre juridique** : détenir pour le compte de tiers l'argent d'un séquestre
+   peut relever d'une réglementation de paiement. À faire valider par un juriste
+   local avant la production.
+9. **Mass payout** (`POST /api/mass_payout/`) existe mais n'est pas utilisé :
+   un reversement par bénéficiaire et par opérateur reste la règle.
+
+## Configuration attendue
+
+Dans `services/payments/.env` (fichier ignoré par git, jamais commité) :
+
+```
+PAYMENT_PROVIDER=campay
+CAMPAY_BASE_URL=https://demo.campay.net
+CAMPAY_APP_TOKEN=<identifiant d'application demo>
+CAMPAY_APP_SECRET=<mot de passe d'application demo>
+CAMPAY_WEBHOOK_KEY=<clé de webhook de l'application demo>
+```
+
+`CAMPAY_BASE_URL` peut aussi être fourni avec `/api` : l'adaptateur normalise.
+Le callback à déclarer dans la console est
+`POST https://<hôte public>/payments/webhooks/campay`.
+
+## Vérification sur l'environnement demo (à faire avec les clés)
+
+1. `GET /api/balance/` : relever `mtn_balance` et `orange_balance`.
+2. Collecte de 100 FCFA depuis un numéro de test MTN : obtenir une `reference`,
+   statut `PENDING`, puis le statut final après validation USSD.
+3. Rejouer la même `external_reference` : vérifier qu'aucun second débit n'a lieu.
+4. Décaissement du même montant vers un numéro de test : vérifier `ER301` quand
    le solde de l'opérateur est insuffisant, puis le succès après approvisionnement.
-4. Lire le solde par opérateur et le comparer au compte `CASH` du grand livre
-   (rapprochement, T-0024).
+5. Déclarer le callback, provoquer une collecte, vérifier que la signature JWT
+   est acceptée et que le statut relu correspond.
+6. Comparer `CASH` par opérateur au solde lu (rapprochement, T-0024).
 
 Preuves attendues : références, statuts et montants, **sans numéro ni clé**
 (les numéros sont masqués dans les relevés).
