@@ -1,0 +1,14 @@
+{
+  "service": "payments",
+  "base_path": "",
+  "upstream": "http://localhost:3015",
+  "internal": false,
+  "routes": [
+    { "method": "GET", "path": "/health", "auth": false },
+    { "method": "GET", "path": "/ready", "auth": false },
+    { "method": "POST", "path": "/payments", "auth": true },
+    { "method": "GET", "path": "/payments/:id", "auth": true },
+    { "method": "GET", "path": "/me/payments", "auth": true },
+    { "method": "POST", "path": "/payments/webhooks/campay", "auth": false }
+  ]
+}

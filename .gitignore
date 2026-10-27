@@ -18,6 +18,9 @@ coverage/
 # Worktrees git (voir agents/GIT_WORKFLOW.md)
 worktrees/
 
+# Stockage local des fichiers uploadés (développement uniquement)
+.var/
+
 # Divers
 *.log
 .DS_Store

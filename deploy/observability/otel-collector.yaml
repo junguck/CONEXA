@@ -1,0 +1,111 @@
+# Collecteur OpenTelemetry du développement (F0.2/F0.6).
+#
+# Les services exportent en OTLP vers localhost:4317 (gRPC) ou :4318 (HTTP).
+# Le collecteur route ensuite :
+#   - les traces  -> Tempo (OTLP gRPC) ;
+#   - les journaux -> Loki (OTLP HTTP) ;
+#   - les métriques -> Prometheus (exporteur sur :8889).
+#
+# Masquage : les attributs sensibles sont supprimés avant tout export, en
+# défense en profondeur du masquage applicatif (pino, `@conexa/service-kit`).
+# La liste est vérifiée par deploy/tests/check-pii-masking.py.
+receivers:
+  otlp:
+    protocols:
+      grpc:
+        endpoint: 0.0.0.0:4317
+      http:
+        endpoint: 0.0.0.0:4318
+
+processors:
+  memory_limiter:
+    check_interval: 1s
+    limit_mib: 256
+    spike_limit_mib: 64
+  batch: {}
+  transform:
+    error_mode: ignore
+    log_statements:
+      - context: log
+        statements:
+          - delete_key(attributes, "phone") where attributes["phone"] != nil
+          - delete_key(attributes, "phone_number") where attributes["phone_number"] != nil
+          - delete_key(attributes, "whatsapp") where attributes["whatsapp"] != nil
+          - delete_key(attributes, "msisdn") where attributes["msisdn"] != nil
+          - delete_key(attributes, "matricule") where attributes["matricule"] != nil
+          - delete_key(attributes, "momo") where attributes["momo"] != nil
+          - delete_key(attributes, "otp") where attributes["otp"] != nil
+          - delete_key(attributes, "password") where attributes["password"] != nil
+          - delete_key(attributes, "secret") where attributes["secret"] != nil
+          - delete_key(attributes, "token") where attributes["token"] != nil
+          - delete_key(attributes, "access_token") where attributes["access_token"] != nil
+          - delete_key(attributes, "refresh_token") where attributes["refresh_token"] != nil
+          - delete_key(attributes, "authorization") where attributes["authorization"] != nil
+    trace_statements:
+      - context: span
+        statements:
+          - delete_key(attributes, "phone") where attributes["phone"] != nil
+          - delete_key(attributes, "phone_number") where attributes["phone_number"] != nil
+          - delete_key(attributes, "whatsapp") where attributes["whatsapp"] != nil
+          - delete_key(attributes, "msisdn") where attributes["msisdn"] != nil
+          - delete_key(attributes, "matricule") where attributes["matricule"] != nil
+          - delete_key(attributes, "momo") where attributes["momo"] != nil
+          - delete_key(attributes, "otp") where attributes["otp"] != nil
+          - delete_key(attributes, "password") where attributes["password"] != nil
+          - delete_key(attributes, "secret") where attributes["secret"] != nil
+          - delete_key(attributes, "token") where attributes["token"] != nil
+          - delete_key(attributes, "access_token") where attributes["access_token"] != nil
+          - delete_key(attributes, "refresh_token") where attributes["refresh_token"] != nil
+          - delete_key(attributes, "authorization") where attributes["authorization"] != nil
+    metric_statements:
+      - context: datapoint
+        statements:
+          - delete_key(attributes, "phone") where attributes["phone"] != nil
+          - delete_key(attributes, "phone_number") where attributes["phone_number"] != nil
+          - delete_key(attributes, "whatsapp") where attributes["whatsapp"] != nil
+          - delete_key(attributes, "msisdn") where attributes["msisdn"] != nil
+          - delete_key(attributes, "matricule") where attributes["matricule"] != nil
+          - delete_key(attributes, "momo") where attributes["momo"] != nil
+          - delete_key(attributes, "otp") where attributes["otp"] != nil
+          - delete_key(attributes, "password") where attributes["password"] != nil
+          - delete_key(attributes, "secret") where attributes["secret"] != nil
+          - delete_key(attributes, "token") where attributes["token"] != nil
+          - delete_key(attributes, "access_token") where attributes["access_token"] != nil
+          - delete_key(attributes, "refresh_token") where attributes["refresh_token"] != nil
+          - delete_key(attributes, "authorization") where attributes["authorization"] != nil
+
+exporters:
+  otlp/tempo:
+    endpoint: tempo:4317
+    tls:
+      insecure: true
+  otlphttp/loki:
+    endpoint: http://loki:3100/otlp
+    tls:
+      insecure: true
+  prometheus:
+    endpoint: 0.0.0.0:8889
+    resource_to_telemetry_conversion:
+      enabled: true
+  debug:
+    verbosity: basic
+
+extensions:
+  health_check:
+    endpoint: 0.0.0.0:13133
+
+service:
+  extensions: [health_check]
+  pipelines:
+    traces:
+      receivers: [otlp]
+      processors: [memory_limiter, transform, batch]
+      exporters: [otlp/tempo]
+    logs:
+      receivers: [otlp]
+      processors: [memory_limiter, transform, batch]
+      exporters: [otlphttp/loki]
+    metrics:
+      receivers: [otlp]
+      processors: [memory_limiter, transform, batch]
+      exporters: [prometheus]

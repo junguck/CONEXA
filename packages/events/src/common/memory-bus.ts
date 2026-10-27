@@ -6,8 +6,9 @@ import type { EventHandler, EventPublisher } from './publisher.js';
  *
  * `publish` accepte un événement seul ou un lot : c'est le seul écart
  * volontaire avec le port `EventPublisher` (ADR 0007), pour que les appels v1
- * `bus.publish(createEvent(...))` continuent de compiler. La publication
- * durable (outbox `@conexa/messaging`) reste la seule voie en production.
+ * `bus.publish(createEvent(...))` continuent de compiler dans les tests. La
+ * publication durable (outbox `@conexa/event-messaging`) reste la seule voie en
+ * production.
  *
  * La validation ici est structurelle ; le garde-fou PII s'applique à travers
  * `parseEvent`, que les producteurs doivent utiliser.

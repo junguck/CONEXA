@@ -1,5 +1,5 @@
 {
-  "name": "@conexa/messaging",
+  "name": "@conexa/event-messaging",
   "version": "0.0.0",
   "private": true,
   "description": "Outbox transactionnelle, inbox idempotente, politiques de reprise et topologie RabbitMQ de Convexa",

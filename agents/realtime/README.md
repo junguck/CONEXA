@@ -10,8 +10,12 @@ Faire parvenir la bonne information à la bonne personne tout de suite, et garan
 Cet agent n'écrit **que** dans :
 
 - `services/realtime/**`
+- `services/messaging/**`
+- `services/notifications/**`
 - `db/migrations/messaging/**`
+- `db/migrations/notifications/**`
 - `packages/contracts/src/messaging/**`
+- `packages/contracts/src/notifications/**`
 - `packages/events/src/messaging/**`
 - `apps/web/src/app/(app)/messages/**`
 - `apps/web/src/app/(app)/notifications/**`

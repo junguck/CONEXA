@@ -1,14 +1,14 @@
-# ADR 0006 : Format des événements, outbox et reprise
+# ADR 0007 : Format des événements, outbox et reprise
 
 - **Statut** : proposé
-- **Date** : 2026-10-26
-- **Décideur** : agent `architect` (tâche T-0004)
+- **Date** : 2026-10-26 ; renuméroté `0007` le 2026-10-27
+- **Décideur** : agent `architect` (tâches T-0004 et T-0051)
 - **Portée** : contrats | outillage
 
-> Numérotation : `0003`, `0004` et `0005` sont déjà pris par la piste v1
-> (`0003-schema-base-reconstitue`, `0004-nestjs-esm-vitest`, `0005-kit-de-service-partage`) et
-> `0003-vecteurs-rencontres` arrive avec `agent/ai/T-0010`. Cet ADR prend le numéro libre suivant,
-> `0006`, pour ne collisionner avec aucun document en attente de fusion.
+> Numérotation : `0003`, `0004` et `0005` sont pris par la piste v1
+> (`0003-schema-base-reconstitue`, `0004-nestjs-esm-vitest`, `0005-kit-de-service-partage`) et `0006`
+> par les vecteurs de rencontre (`0006-vecteurs-rencontres`, fusionné avec T-0018). Cet ADR, livré
+> d'abord sous le numéro `0006`, prend donc le numéro libre suivant, `0007`, à sa fusion dans `main`.
 
 ## Contexte
 

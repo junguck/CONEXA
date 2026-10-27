@@ -3,7 +3,7 @@ id: T-0002
 title: "Environnement de développement Docker Compose"
 feature: F0.2
 agent: platform
-status: todo
+status: review
 depends_on: [T-0001]
 size: M
 owned_paths:
@@ -19,10 +19,10 @@ contracts_touched: []
 deps_request: []
 human_gate: true
 reviewers: [security]
-branch: ""
-worktree: ""
-pr: ""
-notes: "Validation humaine obligatoire : tout changement dans deploy/. Aucune clé Campay réelle, mots de passe de développement uniquement dans .env.example."
+branch: "agent/platform/T-0002-compose-dev"
+worktree: "C:\\Users\\EG\\Desktop\\Conexa\\worktrees\\T-0002"
+pr: "https://github.com/junguck/CONEXA/pull/4"
+notes: "Validation humaine obligatoire : tout changement dans deploy/. Aucune clé Campay réelle, mots de passe de développement uniquement dans .env.example. Vérifié : compose config, init sur PostgreSQL 18 réel, test d'isolation (8 rôles bloqués), pnpm verify. Docker Desktop indisponible sur le poste (HypervisorPresent=false) : pnpm dev:infra, docker compose ps et le démarrage à froid restent à mesurer sur un poste Docker avant fusion."
 ---
 
 ## Objectif

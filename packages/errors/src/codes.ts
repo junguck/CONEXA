@@ -57,6 +57,9 @@ export const ERROR_CODES = [
   'VOUCHER_EXPIRED',
   'PARTNER_NOT_ACTIVE',
   'ASSET_NOT_APPROVED',
+  /** Extension uploads : fichier trop lourd ou type MIME refusé (piste v1). */
+  'UPLOAD_TOO_LARGE',
+  'UPLOAD_TYPE_NOT_ALLOWED',
   'INTERNAL_ERROR',
 ] as const;
 

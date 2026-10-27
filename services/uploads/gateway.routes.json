@@ -1,0 +1,17 @@
+{
+  "service": "uploads",
+  "base_path": "",
+  "upstream": "http://localhost:3006",
+  "internal": false,
+  "routes": [
+    { "method": "GET", "path": "/health", "auth": false },
+    { "method": "GET", "path": "/ready", "auth": false },
+    { "method": "POST", "path": "/uploads", "auth": true },
+    { "method": "PUT", "path": "/uploads/:id/content", "auth": true },
+    { "method": "GET", "path": "/uploads/:id", "auth": true },
+    { "method": "GET", "path": "/uploads/:id/content", "auth": false },
+    { "method": "POST", "path": "/uploads/:id/attach", "auth": true },
+    { "method": "DELETE", "path": "/uploads/:id", "auth": true },
+    { "method": "GET", "path": "/files", "auth": true }
+  ]
+}

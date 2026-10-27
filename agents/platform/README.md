@@ -13,6 +13,10 @@ Cet agent n'écrit **que** dans :
 - `deploy/**`
 - `tools/**`
 - `services/_runtimes/**`
+- `services/uploads/**`
+- `db/migrations/uploads/**`
+- `packages/contracts/src/uploads/**`
+- `docs/domain/uploads.md`
 - `packages/config/**`
 - `docs/runbooks/**`
 - `turbo.json`
@@ -23,7 +27,20 @@ Cet agent n'écrit **que** dans :
 - `.nvmrc`
 - `.editorconfig`
 - `.gitignore`
+- `.gitattributes`
 - `.env.example`
+- `.prettierignore`
+- `.prettierrc.json`
+- `eslint.config.mjs`
+- `commitlint.config.cjs`
+- `lefthook.yml`
+- `LICENSE`
+- `docs/domain/platform.md`
+- `docs/vendor/**`
+- `apps/.gitkeep`
+- `services/.gitkeep`
+- `db/migrations/.gitkeep`
+- `docs/domain/.gitkeep`
 
 Tout le reste est en lecture seule. Source : `agents/ownership.yaml`.
 <!-- OWNERSHIP:end -->

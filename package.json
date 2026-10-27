@@ -11,6 +11,13 @@
   "scripts": {
     "build": "turbo run build",
     "dev": "turbo run dev --parallel",
+    "dev:infra": "docker compose -f deploy/compose.dev.yaml --profile core --profile storage --profile observability up -d --wait",
+    "dev:down": "docker compose -f deploy/compose.dev.yaml --profile core --profile storage --profile observability down",
+    "dev:reset": "docker compose -f deploy/compose.dev.yaml --profile core --profile storage --profile observability down -v --remove-orphans && docker compose -f deploy/compose.dev.yaml --profile core --profile storage --profile observability up -d --wait",
+    "test:db:isolation": "bash deploy/tests/check-role-isolation.sh",
+    "test:observability": "python3 deploy/tests/check-observability-config.py",
+    "test:pii-masking": "python3 deploy/tests/check-pii-masking.py",
+    "test:observability:runtime": "bash deploy/tests/check-observability-runtime.sh",
     "lint": "turbo run lint",
     "typecheck": "turbo run typecheck",
     "test": "turbo run test",
@@ -18,6 +25,16 @@
     "format:check": "prettier --check .",
     "docs:verify": "python3 tools/verify-docs.py",
     "agents:ownership": "python3 tools/gen-agent-ownership.py",
+    "db:migrate": "node tools/db-migrate.mjs",
+    "seed:demo": "node tools/seed-demo.mjs",
+    "test:e2e": "node tests/e2e/v1-smoke.mjs",
+    "tools:check-ownership": "python3 tools/check-ownership.py",
+    "tools:check-migrations": "python3 tools/check-migrations.py",
+    "tools:check-contracts": "python3 tools/check-contracts.py",
+    "tools:check-pii": "python3 tools/check-pii-logs.py",
+    "tools:check-secrets": "python3 tools/check-secrets.py",
+    "test:tools": "python3 -m unittest discover -s tools/tests -v",
+    "ci:guards": "pnpm tools:check-ownership && pnpm tools:check-migrations && pnpm tools:check-contracts && pnpm tools:check-pii && pnpm tools:check-secrets && pnpm test:tools",
     "verify": "pnpm docs:verify && pnpm format:check && pnpm lint && pnpm typecheck && pnpm test && pnpm build"
   },
   "devDependencies": {
@@ -26,6 +43,7 @@
     "@eslint/js": "10.0.1",
     "eslint": "10.13.0",
     "lefthook": "2.2.2",
+    "pg": "8.23.1",
     "prettier": "3.9.10",
     "turbo": "2.11.10",
     "typescript-eslint": "8.72.0"

@@ -1,10 +1,12 @@
 {
   "name": "@conexa/events",
-  "version": "0.0.0",
+  "version": "0.1.0",
   "private": true,
   "description": "Enveloppe d'événement partagée, garde-fou PII et JSON Schema versionné des événements Convexa",
   "license": "MIT",
   "type": "module",
+  "main": "./dist/index.js",
+  "types": "./dist/index.d.ts",
   "exports": {
     ".": {
       "types": "./dist/index.d.ts",

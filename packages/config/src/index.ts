@@ -9,3 +9,4 @@ import { fileURLToPath } from 'node:url';
 export const tsconfigDir = fileURLToPath(new URL('../tsconfig', import.meta.url));
 export const tsconfigBasePath = `${tsconfigDir}/base.json`;
 export const tsconfigLibraryPath = `${tsconfigDir}/library.json`;
+export const tsconfigNestPath = `${tsconfigDir}/nest.json`;

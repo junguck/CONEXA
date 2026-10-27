@@ -64,6 +64,8 @@
                   "VOUCHER_EXPIRED",
                   "PARTNER_NOT_ACTIVE",
                   "ASSET_NOT_APPROVED",
+                  "UPLOAD_TOO_LARGE",
+                  "UPLOAD_TYPE_NOT_ALLOWED",
                   "INTERNAL_ERROR"
                 ]
               },

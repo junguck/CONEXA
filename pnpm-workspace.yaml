@@ -11,3 +11,5 @@ engineStrict: true
 # Scripts d'installation autorisés (pnpm 12 bloque les build scripts par défaut).
 allowBuilds:
   lefthook: true
+  # Next s’appuie sur sharp (binaires précompilés) pour l’optimisation d’images.
+  sharp: true

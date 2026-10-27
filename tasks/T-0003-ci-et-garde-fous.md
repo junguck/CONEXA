@@ -3,7 +3,7 @@ id: T-0003
 title: "CI et garde-fous (propriété, contrats, migrations)"
 feature: F0.3
 agent: platform
-status: todo
+status: review
 depends_on: [T-0001]
 size: M
 owned_paths:
@@ -21,9 +21,9 @@ contracts_touched: []
 deps_request: []
 human_gate: true
 reviewers: [security]
-branch: ""
-worktree: ""
-pr: ""
+branch: "agent/platform/T-0003-ci-guardrails"
+worktree: "C:\\Users\\EG\\Desktop\\Conexa\\worktrees\\T-0003"
+pr: "https://github.com/junguck/CONEXA/pull/2"
 notes: "Validation humaine obligatoire : tout changement dans .github/. C'est ce contrôle qui rend le travail multi-instances sûr : il refuse une PR qui touche le chemin d'un autre agent."
 ---
 

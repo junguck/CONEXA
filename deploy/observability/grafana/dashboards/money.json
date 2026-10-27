@@ -1,0 +1,87 @@
+{
+  "annotations": { "list": [] },
+  "editable": true,
+  "graphTooltip": 1,
+  "panels": [
+    {
+      "datasource": { "type": "prometheus", "uid": "prometheus" },
+      "fieldConfig": { "defaults": { "unit": "ops" }, "overrides": [] },
+      "gridPos": { "h": 8, "w": 12, "x": 0, "y": 0 },
+      "id": 1,
+      "options": { "legend": { "displayMode": "list", "placement": "bottom" } },
+      "targets": [
+        {
+          "expr": "sum(rate(conexa_payments_created_total[5m]))",
+          "legendFormat": "créés",
+          "refId": "A"
+        },
+        {
+          "expr": "sum(rate(conexa_payments_succeeded_total[5m]))",
+          "legendFormat": "réussis",
+          "refId": "B"
+        },
+        {
+          "expr": "sum(rate(conexa_payments_failed_total[5m]))",
+          "legendFormat": "échoués",
+          "refId": "C"
+        }
+      ],
+      "title": "Paiements (contrat `conexa_payments_*`)",
+      "type": "timeseries"
+    },
+    {
+      "datasource": { "type": "prometheus", "uid": "prometheus" },
+      "fieldConfig": { "defaults": { "unit": "percentunit" }, "overrides": [] },
+      "gridPos": { "h": 8, "w": 12, "x": 12, "y": 0 },
+      "id": 2,
+      "options": { "legend": { "displayMode": "list", "placement": "bottom" } },
+      "targets": [
+        {
+          "expr": "sum(rate(conexa_payments_succeeded_total[15m])) / clamp_min(sum(rate(conexa_payments_created_total[15m])), 0.001)",
+          "legendFormat": "taux de réussite",
+          "refId": "A"
+        }
+      ],
+      "title": "Taux de réussite Campay",
+      "type": "timeseries"
+    },
+    {
+      "datasource": { "type": "prometheus", "uid": "prometheus" },
+      "fieldConfig": { "defaults": { "unit": "short" }, "overrides": [] },
+      "gridPos": { "h": 8, "w": 12, "x": 0, "y": 8 },
+      "id": 3,
+      "options": { "legend": { "displayMode": "list", "placement": "bottom" } },
+      "targets": [
+        {
+          "expr": "sum(conexa_payments_escrowed_total)",
+          "legendFormat": "en séquestre",
+          "refId": "A"
+        }
+      ],
+      "title": "Séquestre",
+      "type": "timeseries"
+    },
+    {
+      "datasource": { "type": "loki", "uid": "loki" },
+      "gridPos": { "h": 8, "w": 12, "x": 12, "y": 8 },
+      "id": 4,
+      "options": { "showTime:": true, "sortOrder": "Descending", "wrapLogMessage": true },
+      "targets": [
+        {
+          "expr": "{service_name=\"payments\"} |~ \"error|failed|échec\"",
+          "refId": "A"
+        }
+      ],
+      "title": "Journaux d'erreur paiements",
+      "type": "logs"
+    }
+  ],
+  "schemaVersion": 39,
+  "tags": ["convexa", "money"],
+  "templating": { "list": [] },
+  "time": { "from": "now-6h", "to": "now" },
+  "timezone": "browser",
+  "title": "Convexa · Paiements",
+  "uid": "conexa-money",
+  "version": 1
+}

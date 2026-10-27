@@ -1,0 +1,40 @@
+{
+  "name": "@conexa/messaging",
+  "version": "0.1.0",
+  "private": true,
+  "description": "Messagerie des fils métier et notifications in-app",
+  "license": "MIT",
+  "type": "module",
+  "main": "./dist/main.js",
+  "scripts": {
+    "build": "tsc -p tsconfig.build.json",
+    "start": "node dist/main.js",
+    "dev": "tsc -w -p tsconfig.build.json",
+    "lint": "eslint .",
+    "typecheck": "tsc -p tsconfig.json",
+    "test": "vitest run",
+    "db:migrate": "node ../../tools/db-migrate.mjs messaging"
+  },
+  "dependencies": {
+    "@conexa/contracts": "workspace:*",
+    "@conexa/errors": "workspace:*",
+    "@conexa/events": "workspace:*",
+    "@conexa/service-kit": "workspace:*",
+    "@nestjs/common": "12.2.0",
+    "@nestjs/core": "12.2.0",
+    "@nestjs/platform-express": "12.2.0",
+    "kysely": "0.29.7",
+    "pg": "8.23.1",
+    "reflect-metadata": "0.2.2",
+    "rxjs": "7.8.2",
+    "zod": "4.6.7"
+  },
+  "devDependencies": {
+    "@conexa/config": "workspace:*",
+    "@types/express": "5.0.6",
+    "@types/node": "26.6.5",
+    "eslint": "10.13.0",
+    "typescript": "5.9.3",
+    "vitest": "5.0.5"
+  }
+}

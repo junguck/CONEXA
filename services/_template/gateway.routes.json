@@ -1,0 +1,10 @@
+{
+  "service": "template",
+  "base_path": "/template",
+  "upstream": "http://localhost:3010",
+  "internal": true,
+  "routes": [
+    { "method": "GET", "path": "/ping", "auth": false },
+    { "method": "GET", "path": "/me", "auth": true }
+  ]
+}

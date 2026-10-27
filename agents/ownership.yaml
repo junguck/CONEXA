@@ -24,7 +24,31 @@ agents:
       - packages/events/src/common/**
       - packages/messaging/**
       - packages/errors/**
+      - packages/service-kit/**
       - services/_template/**
+      - db/migrations/template/**
+      # Charpente des paquets partagés : manifeste, baril d'exports, outillage.
+      # Les sous-dossiers de domaine restent à leur agent (règle 1).
+      - packages/contracts/package.json
+      - packages/contracts/src/index.ts
+      - packages/contracts/src/openapi-document.ts
+      - packages/contracts/src/contracts.test.ts
+      - packages/contracts/src/v1-compat.test.ts
+      - packages/contracts/openapi/**
+      - packages/contracts/scripts/**
+      - packages/contracts/tsconfig.json
+      - packages/contracts/tsconfig.build.json
+      - packages/contracts/eslint.config.mjs
+      - packages/contracts/vitest.config.mts
+      - packages/events/package.json
+      - packages/events/scripts/**
+      - packages/events/src/index.ts
+      - packages/events/src/events.test.ts
+      - packages/events/src/v1-compat.test.ts
+      - packages/events/tsconfig.json
+      - packages/events/tsconfig.build.json
+      - packages/events/eslint.config.mjs
+      - packages/events/vitest.config.mts
       - docs/STACK.md
       - docs/product/**
       - docs/decisions/**
@@ -35,6 +59,10 @@ agents:
       - deploy/**
       - tools/**
       - services/_runtimes/**
+      - services/uploads/**
+      - db/migrations/uploads/**
+      - packages/contracts/src/uploads/**
+      - docs/domain/uploads.md
       - packages/config/**
       - docs/runbooks/**
       - turbo.json
@@ -45,7 +73,20 @@ agents:
       - .nvmrc
       - .editorconfig
       - .gitignore
+      - .gitattributes
       - .env.example
+      - .prettierignore
+      - .prettierrc.json
+      - eslint.config.mjs
+      - commitlint.config.cjs
+      - lefthook.yml
+      - LICENSE
+      - docs/domain/platform.md
+      - docs/vendor/**
+      - apps/.gitkeep
+      - services/.gitkeep
+      - db/migrations/.gitkeep
+      - docs/domain/.gitkeep
 
   gateway:
     owns:
@@ -164,8 +205,12 @@ agents:
   realtime:
     owns:
       - services/realtime/**
+      - services/messaging/**
+      - services/notifications/**
       - db/migrations/messaging/**
+      - db/migrations/notifications/**
       - packages/contracts/src/messaging/**
+      - packages/contracts/src/notifications/**
       - packages/events/src/messaging/**
       - apps/web/src/app/(app)/messages/**
       - apps/web/src/app/(app)/notifications/**
@@ -193,6 +238,7 @@ review_rules:
   architect_required:
     - packages/contracts/**
     - packages/events/**
+    - packages/service-kit/**
     - db/migrations/**
     - services/_template/**
   security_required:

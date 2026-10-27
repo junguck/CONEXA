@@ -1,0 +1,33 @@
+{
+  "id": "6f1c5f2e-3f0e-4a5a-9b4a-2f2f0c1d9a99",
+  "type": "dating.embedding_requested",
+  "version": 1,
+  "occurred_at": "2026-10-26T09:00:00.000Z",
+  "producer": "dating",
+  "traceparent": "00-4bf92f3577b34da6a3ce929d0e0e4736-00f067aa0ba902b7-01",
+  "payload": {
+    "user_id": "3d2b1f44-9c2a-4e8f-5b7a-1d2c3b4e5f60",
+    "profile_id": "3d2b1f44-9c2a-4e8f-5b7a-1d2c3b4e5f60",
+    "questionnaire_version": 1,
+    "answers": {
+      "values": {
+        "values_priority": "family",
+        "values_conflict": "talk_now",
+        "values_weekend": "friends",
+        "values_trust": 3
+      },
+      "personality": {
+        "personality_energy": "alone",
+        "personality_humour": "deadpan",
+        "personality_speaking": 3,
+        "personality_spontaneity": 3
+      },
+      "lifestyle": {
+        "lifestyle_rhythm": "early_bird",
+        "lifestyle_study": "revision",
+        "lifestyle_budget": 3,
+        "lifestyle_smoking": "never"
+      }
+    }
+  }
+}

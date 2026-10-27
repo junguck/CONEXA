@@ -1,10 +1,12 @@
 {
   "name": "@conexa/errors",
-  "version": "0.0.0",
+  "version": "0.1.0",
   "private": true,
   "description": "Codes d'erreur métier de l'API Convexa, leur code HTTP et l'enveloppe d'erreur",
   "license": "MIT",
   "type": "module",
+  "main": "./dist/index.js",
+  "types": "./dist/index.d.ts",
   "exports": {
     ".": {
       "types": "./dist/index.d.ts",

@@ -59,6 +59,13 @@ pnpm lint
 pnpm typecheck
 pnpm test
 pnpm build
+
+# Base de données locale : migrations par schéma, puis données de démonstration
+DATABASE_URL=postgres://conexa:conexa_dev@localhost:5432/conexa pnpm db:migrate identity
+DATABASE_URL=postgres://conexa:conexa_dev@localhost:5432/conexa pnpm seed:demo
+
+# Parcours de bout en bout (services et Gateway démarrés)
+pnpm test:e2e
 ```
 
 `pnpm dev` lance les applications et services du workspace qui disposent d'une

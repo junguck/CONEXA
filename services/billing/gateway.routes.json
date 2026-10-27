@@ -1,0 +1,15 @@
+{
+  "service": "billing",
+  "base_path": "",
+  "upstream": "http://localhost:3016",
+  "internal": false,
+  "routes": [
+    { "method": "GET", "path": "/health", "auth": false },
+    { "method": "GET", "path": "/ready", "auth": false },
+    { "method": "GET", "path": "/billing/plans", "auth": false },
+    { "method": "GET", "path": "/billing/me", "auth": true },
+    { "method": "POST", "path": "/billing/subscriptions", "auth": true },
+    { "method": "POST", "path": "/billing/subscriptions/:id/activate", "auth": true },
+    { "method": "POST", "path": "/billing/subscriptions/:id/cancel", "auth": true }
+  ]
+}

@@ -1,0 +1,74 @@
+# Étiquettes du dépôt. Source : agents/GIT_WORKFLOW.md §5-§6.
+# Synchronisation : .github/workflows/labels.yml (ou `gh label create` à la main).
+- name: needs-human
+  color: b60205
+  description: Décision ou validation humaine requise
+- name: blocked
+  color: d93f0b
+  description: Tâche arrêtée, demande à un autre agent ou à l'humain
+- name: human-ok
+  color: 0e8a16
+  description: Validation humaine posée (obligatoire sur deploy/, .github/, argent, auth)
+- name: review:architect-ok
+  color: 5319e7
+  description: Contrats, événements, migrations, gabarit relus
+- name: review:security-ok
+  color: 1d76db
+  description: Chemins sensibles relus (review_rules.security_required)
+- name: review:qa-ok
+  color: 006b75
+  description: Parcours critique couvert par un test de bout en bout
+- name: agent:platform
+  color: c5def5
+  description: Agent platform
+- name: agent:architect
+  color: c5def5
+  description: Agent architect
+- name: agent:gateway
+  color: c5def5
+  description: Agent gateway
+- name: agent:web-core
+  color: c5def5
+  description: Agent web-core
+- name: agent:identity
+  color: c5def5
+  description: Agent identity
+- name: agent:football
+  color: c5def5
+  description: Agent football
+- name: agent:dating
+  color: c5def5
+  description: Agent dating
+- name: agent:talents
+  color: c5def5
+  description: Agent talents
+- name: agent:marketplace
+  color: c5def5
+  description: Agent marketplace
+- name: agent:partners
+  color: c5def5
+  description: Agent partners
+- name: agent:money
+  color: c5def5
+  description: Agent money
+- name: agent:realtime
+  color: c5def5
+  description: Agent realtime
+- name: agent:ai
+  color: c5def5
+  description: Agent ai
+- name: agent:qa
+  color: c5def5
+  description: Agent qa
+- name: agent:security
+  color: c5def5
+  description: Agent security
+- name: size:S
+  color: ededed
+  description: Une session, une PR
+- name: size:M
+  color: ededed
+  description: Une à deux sessions
+- name: size:L
+  color: ededed
+  description: À découper avant de démarrer

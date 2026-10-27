@@ -1,0 +1,25 @@
+{
+  "service": "partners",
+  "base_path": "",
+  "upstream": "http://localhost:3019",
+  "internal": false,
+  "routes": [
+    { "method": "GET", "path": "/health", "auth": false },
+    { "method": "GET", "path": "/ready", "auth": false },
+    { "method": "GET", "path": "/partners/organisations", "auth": true },
+    { "method": "POST", "path": "/partners/organisations", "auth": true },
+    { "method": "GET", "path": "/partners/organisations/:id", "auth": true },
+    { "method": "POST", "path": "/partners/organisations/:id/status", "auth": true },
+    { "method": "POST", "path": "/partners/organisations/:id/venues", "auth": true },
+    { "method": "POST", "path": "/partners/organisations/:id/offers", "auth": true },
+    { "method": "GET", "path": "/partners/venues", "auth": true },
+    { "method": "GET", "path": "/partners/venues/:id", "auth": true },
+    { "method": "POST", "path": "/partners/venues/:id/status", "auth": true },
+    { "method": "GET", "path": "/partners/venues/:id/slots", "auth": true },
+    { "method": "POST", "path": "/partners/venues/:id/menu-items", "auth": true },
+    { "method": "POST", "path": "/partners/venues/:id/formulas", "auth": true },
+    { "method": "POST", "path": "/partners/venues/:id/slots", "auth": true },
+    { "method": "GET", "path": "/partners/offers", "auth": true },
+    { "method": "POST", "path": "/partners/offers/:id/redeem", "auth": true }
+  ]
+}

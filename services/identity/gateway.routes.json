@@ -1,0 +1,23 @@
+{
+  "service": "identity",
+  "base_path": "",
+  "upstream": "http://localhost:3001",
+  "internal": false,
+  "routes": [
+    { "method": "POST", "path": "/auth/otp/request", "auth": false },
+    { "method": "POST", "path": "/auth/otp/verify", "auth": false },
+    { "method": "POST", "path": "/auth/refresh", "auth": false },
+    { "method": "POST", "path": "/auth/logout", "auth": true },
+    { "method": "POST", "path": "/me/register", "auth": true },
+    { "method": "GET", "path": "/me", "auth": true },
+    { "method": "PATCH", "path": "/me", "auth": true },
+    { "method": "GET", "path": "/me/reliability", "auth": true },
+    { "method": "GET", "path": "/filieres", "auth": false },
+    { "method": "GET", "path": "/users/:id", "auth": true },
+    { "method": "POST", "path": "/reports", "auth": true },
+    { "method": "GET", "path": "/admin/users", "auth": true },
+    { "method": "POST", "path": "/admin/users/:id/approve", "auth": true },
+    { "method": "POST", "path": "/admin/users/:id/reject", "auth": true },
+    { "method": "GET", "path": "/.well-known/jwks.json", "auth": false }
+  ]
+}

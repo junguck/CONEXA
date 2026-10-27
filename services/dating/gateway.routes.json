@@ -1,0 +1,153 @@
+{
+  "service": "dating",
+  "base_path": "/",
+  "upstream": "http://localhost:3012",
+  "internal": false,
+  "routes": [
+    {
+      "method": "GET",
+      "path": "/dating/eligibility",
+      "auth": true
+    },
+    {
+      "method": "GET",
+      "path": "/dating/questions",
+      "auth": true
+    },
+    {
+      "method": "GET",
+      "path": "/dating/profile",
+      "auth": true
+    },
+    {
+      "method": "PUT",
+      "path": "/dating/profile",
+      "auth": true
+    },
+    {
+      "method": "PATCH",
+      "path": "/dating/preferences",
+      "auth": true
+    },
+    {
+      "method": "POST",
+      "path": "/dating/pause",
+      "auth": true
+    },
+    {
+      "method": "POST",
+      "path": "/dating/resume",
+      "auth": true
+    },
+    {
+      "method": "GET",
+      "path": "/dating/picks/current",
+      "auth": true
+    },
+    {
+      "method": "POST",
+      "path": "/dating/picks/:id/invite",
+      "auth": true
+    },
+    {
+      "method": "POST",
+      "path": "/dating/picks/:id/pass",
+      "auth": true
+    },
+    {
+      "method": "GET",
+      "path": "/dating/invites",
+      "auth": true
+    },
+    {
+      "method": "POST",
+      "path": "/dating/invites/:id/accept",
+      "auth": true
+    },
+    {
+      "method": "POST",
+      "path": "/dating/invites/:id/decline",
+      "auth": true
+    },
+    {
+      "method": "POST",
+      "path": "/dating/invites/:id/withdraw",
+      "auth": true
+    },
+    {
+      "method": "GET",
+      "path": "/dates",
+      "auth": true
+    },
+    {
+      "method": "GET",
+      "path": "/dates/card-catalog",
+      "auth": true
+    },
+    {
+      "method": "GET",
+      "path": "/dates/:id",
+      "auth": true
+    },
+    {
+      "method": "GET",
+      "path": "/dates/:id/cards",
+      "auth": true
+    },
+    {
+      "method": "POST",
+      "path": "/dates/:id/cards",
+      "auth": true
+    },
+    {
+      "method": "POST",
+      "path": "/dates/:id/slot",
+      "auth": true
+    },
+    {
+      "method": "POST",
+      "path": "/dates/:id/formula",
+      "auth": true
+    },
+    {
+      "method": "POST",
+      "path": "/dates/:id/orders",
+      "auth": true
+    },
+    {
+      "method": "POST",
+      "path": "/dates/:id/pay",
+      "auth": true
+    },
+    {
+      "method": "POST",
+      "path": "/dates/:id/cancel",
+      "auth": true
+    },
+    {
+      "method": "POST",
+      "path": "/dates/:id/checkin",
+      "auth": true
+    },
+    {
+      "method": "POST",
+      "path": "/dates/:id/sos",
+      "auth": true
+    },
+    {
+      "method": "POST",
+      "path": "/dates/:id/feedback",
+      "auth": true
+    },
+    {
+      "method": "GET",
+      "path": "/dates/:id/contact",
+      "auth": true
+    },
+    {
+      "method": "GET",
+      "path": "/me/credits",
+      "auth": true
+    }
+  ]
+}
