@@ -2,6 +2,7 @@ import {
   Body,
   Controller,
   Get,
+  Headers,
   HttpCode,
   Param,
   Patch,
@@ -51,8 +52,12 @@ export class DatingController {
   }
 
   @Put('dating/profile')
-  putProfile(@CurrentUser() user: JwtClaims, @Body() body: unknown) {
-    return this.dating.putProfile(user.sub, PutDatingProfileSchema.parse(body));
+  putProfile(
+    @CurrentUser() user: JwtClaims,
+    @Body() body: unknown,
+    @Headers('traceparent') traceparent?: string,
+  ) {
+    return this.dating.putProfile(user.sub, PutDatingProfileSchema.parse(body), { traceparent });
   }
 
   @Patch('dating/preferences')

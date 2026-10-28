@@ -14,6 +14,13 @@ import { sql } from 'kysely';
 
 import { db } from './db.js';
 import {
+  answersByBlock,
+  buildEmbeddingRequestedEvent,
+  hasSignal,
+  shouldRequestEmbedding,
+} from './embedding-request.js';
+import { DatingOutboxService } from './outbox.service.js';
+import {
   AGE_LIMITS_MESSAGE,
   DATING_CLOCK,
   assertKeysMatchQuestionnaire,
@@ -31,7 +38,10 @@ import {
 
 @Injectable()
 export class DatingService {
-  constructor(@Inject(DATING_CLOCK) private readonly now: () => Date) {}
+  constructor(
+    @Inject(DATING_CLOCK) private readonly now: () => Date,
+    private readonly outbox: DatingOutboxService,
+  ) {}
 
   // --- éligibilité et profil ---------------------------------------------
 
@@ -53,7 +63,11 @@ export class DatingService {
     return toProfile(row);
   }
 
-  async putProfile(userId: string, input: PutDatingProfileInput): Promise<DatingProfile> {
+  async putProfile(
+    userId: string,
+    input: PutDatingProfileInput,
+    options?: { traceparent?: string },
+  ): Promise<DatingProfile> {
     const now = this.now();
     const birthDate = new Date(`${input.birth_date}T00:00:00.000Z`);
     assertAdult(birthDate, now);
@@ -67,31 +81,52 @@ export class DatingService {
       throw validationError(AGE_LIMITS_MESSAGE);
     }
 
-    await db
-      .insertInto('dating_profiles')
-      .values({
-        user_id: userId,
-        birth_date: birthDate,
-        questionnaire_v: input.questionnaire_v,
-        answers: input.answers,
-        seeking: input.seeking,
-        age_min: input.age_min,
-        age_max: input.age_max,
-        updated_at: now,
-      })
-      .onConflict((oc) =>
-        oc.column('user_id').doUpdateSet({
+    // Construit et valide l'événement avant d'écrire : une réponse invalide ne
+    // doit jamais laisser un profil sans demande d'embedding. L'écriture du
+    // profil et celle de l'outbox partagent la même transaction.
+    const event =
+      shouldRequestEmbedding(existing, input) && hasSignal(answersByBlock(input.answers))
+        ? buildEmbeddingRequestedEvent({
+            userId,
+            profileId: userId,
+            questionnaireVersion: input.questionnaire_v,
+            answers: input.answers,
+            occurredAt: now,
+            ...(options?.traceparent === undefined ? {} : { traceparent: options.traceparent }),
+          })
+        : null;
+
+    await db.transaction().execute(async (trx) => {
+      await trx
+        .insertInto('dating_profiles')
+        .values({
+          user_id: userId,
           birth_date: birthDate,
           questionnaire_v: input.questionnaire_v,
           answers: input.answers,
           seeking: input.seeking,
           age_min: input.age_min,
           age_max: input.age_max,
-          status: 'active',
           updated_at: now,
-        }),
-      )
-      .execute();
+        })
+        .onConflict((oc) =>
+          oc.column('user_id').doUpdateSet({
+            birth_date: birthDate,
+            questionnaire_v: input.questionnaire_v,
+            answers: input.answers,
+            seeking: input.seeking,
+            age_min: input.age_min,
+            age_max: input.age_max,
+            status: 'active',
+            updated_at: now,
+          }),
+        )
+        .execute();
+
+      if (event) {
+        await this.outbox.enqueue(trx, event);
+      }
+    });
 
     return this.profile(userId);
   }
