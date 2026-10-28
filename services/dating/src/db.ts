@@ -152,8 +152,20 @@ export interface DateCreditsTable {
   created_at: ColumnType<Date, Date | undefined, never>;
 }
 
+export interface DatingOutboxTable {
+  id: string;
+  /** Enveloppe complète (`@conexa/events`) : rejeu = même id. */
+  envelope: unknown;
+  status: Generated<'pending' | 'published' | 'failed'>;
+  attempts: Generated<number>;
+  available_at: ColumnType<Date, Date, Date>;
+  last_error: string | null;
+  created_at: ColumnType<Date, Date | undefined, never>;
+}
+
 export interface DatingDb {
   dating_profiles: DatingProfilesTable;
+  dating_outbox: DatingOutboxTable;
   weekly_picks: WeeklyPicksTable;
   invites: InvitesTable;
   restaurants: RestaurantsTable;

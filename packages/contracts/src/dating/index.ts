@@ -31,7 +31,10 @@ export interface QuestionnaireQuestion {
   key: string;
   label: string;
   kind: 'choice' | 'scale';
+  /** Valeurs fermées et stables : minuscules, `[a-z0-9][a-z0-9_-]*`. Jamais un libellé. */
   options?: string[];
+  /** Libellés d'affichage, indexés par valeur stable. */
+  labels?: Record<string, string>;
 }
 
 export interface QuestionnaireBlock {
@@ -48,19 +51,37 @@ export const QUESTIONNAIRE_BLOCKS: QuestionnaireBlock[] = [
         key: 'values_priority',
         label: 'Ce qui compte le plus pour toi',
         kind: 'choice',
-        options: ['famille', 'études', 'amitié', 'foi', 'carrière'],
+        options: ['family', 'studies', 'friendship', 'faith', 'career'],
+        labels: {
+          family: 'La famille',
+          studies: 'Les études',
+          friendship: 'L’amitié',
+          faith: 'La foi',
+          career: 'La carrière',
+        },
       },
       {
         key: 'values_conflict',
         label: 'Face à un désaccord',
         kind: 'choice',
-        options: ['j’en parle tout de suite', 'je prends du temps', 'je laisse tomber'],
+        options: ['talk_now', 'take_time', 'let_go'],
+        labels: {
+          talk_now: 'J’en parle tout de suite',
+          take_time: 'Je prends du temps',
+          let_go: 'Je laisse tomber',
+        },
       },
       {
         key: 'values_weekend',
         label: 'Ton week-end idéal',
         kind: 'choice',
-        options: ['sortie entre amis', 'calme à la maison', 'sport', 'culture'],
+        options: ['friends', 'home', 'sport', 'culture'],
+        labels: {
+          friends: 'Sortie entre amis',
+          home: 'Calme à la maison',
+          sport: 'Sport',
+          culture: 'Culture',
+        },
       },
       {
         key: 'values_trust',
@@ -76,13 +97,24 @@ export const QUESTIONNAIRE_BLOCKS: QuestionnaireBlock[] = [
         key: 'personality_energy',
         label: 'Tu te ressource',
         kind: 'choice',
-        options: ['seul', 'avec quelques proches', 'dans un groupe'],
+        options: ['alone', 'close_ones', 'group'],
+        labels: {
+          alone: 'Seul(e)',
+          close_ones: 'Avec quelques proches',
+          group: 'Dans un groupe',
+        },
       },
       {
         key: 'personality_humour',
         label: 'Ton humour',
         kind: 'choice',
-        options: ['pince-sans-rire', 'jeux de mots', 'taquin', 'discret'],
+        options: ['deadpan', 'wordplay', 'teasing', 'quiet'],
+        labels: {
+          deadpan: 'Pince-sans-rire',
+          wordplay: 'Jeux de mots',
+          teasing: 'Taquin(e)',
+          quiet: 'Discret(e)',
+        },
       },
       {
         key: 'personality_speaking',
@@ -103,13 +135,24 @@ export const QUESTIONNAIRE_BLOCKS: QuestionnaireBlock[] = [
         key: 'lifestyle_rhythm',
         label: 'Ton rythme',
         kind: 'choice',
-        options: ['lève-tôt', 'nocturne', 'variable'],
+        options: ['early_bird', 'night_owl', 'variable'],
+        labels: {
+          early_bird: 'Lève-tôt',
+          night_owl: 'Nocturne',
+          variable: 'Variable',
+        },
       },
       {
         key: 'lifestyle_study',
         label: 'Tes soirées',
         kind: 'choice',
-        options: ['révisions', 'sport', 'sorties', 'associatif'],
+        options: ['revision', 'sport', 'outings', 'community'],
+        labels: {
+          revision: 'Révisions',
+          sport: 'Sport',
+          outings: 'Sorties',
+          community: 'Associatif',
+        },
       },
       {
         key: 'lifestyle_budget',
@@ -120,7 +163,12 @@ export const QUESTIONNAIRE_BLOCKS: QuestionnaireBlock[] = [
         key: 'lifestyle_smoking',
         label: 'Tabac',
         kind: 'choice',
-        options: ['jamais', 'occasionnel', 'régulier'],
+        options: ['never', 'occasional', 'regular'],
+        labels: {
+          never: 'Jamais',
+          occasional: 'Occasionnel',
+          regular: 'Régulier',
+        },
       },
     ],
   },
