@@ -3,7 +3,7 @@ id: T-0005
 title: "Gabarit de service NestJS et générateur"
 feature: F0.5
 agent: architect
-status: todo
+status: review
 depends_on: [T-0002, T-0004]
 size: M
 owned_paths:
@@ -25,7 +25,7 @@ reviewers: [architect, security]
 branch: ""
 worktree: ""
 pr: ""
-notes: "Dépend des contrats (T-0004) : ne pas démarrer avant leur fusion. Le gabarit est le seul endroit où le câblage d'un service est écrit ; chaque service généré en hérite, personne ne recopie à la main."
+notes: "Livré par la piste v1 : `services/_template`, `packages/service-kit` et `db/migrations/template/` sont en place et servent de base aux seize services. Tâche close côté code ; reste la relecture humaine."
 ---
 
 ## Objectif

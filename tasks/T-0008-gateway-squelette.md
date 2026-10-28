@@ -3,7 +3,7 @@ id: T-0008
 title: "Gateway : squelette"
 feature: F0.8
 agent: gateway
-status: todo
+status: review
 depends_on: [T-0005]
 size: M
 owned_paths:
@@ -21,7 +21,7 @@ reviewers: [architect, security]
 branch: ""
 worktree: ""
 pr: ""
-notes: "Ne pas démarrer avant la fusion de T-0005 (gabarit) : le gateway doit être routé par manifestes, sans fichier central à éditer. L'émission des jetons appartient à identity (F1.1) ; ici on ne fait que vérifier par JWKS avec des clés de test."
+notes: "Livré par la piste v1 (`v1/gateway`, T-0011) : routage par manifestes, vérification JWT par JWKS, limites de débit et `/internal/*` bloqué sont en place. Tâche close côté code ; reste la relecture humaine."
 ---
 
 ## Objectif

@@ -1,105 +1,125 @@
 # État du projet
 
-Mis à jour : **2026-10-27**. Tenu par l'`orchestrator` ; toute instance le lit **avant** de choisir une tâche. Le tableau des tâches fait foi sur `tasks/`.
+Mis à jour : **2026-10-29** (fusion complète des branches). Tenu par l'orchestrateur ; toute instance le lit avant de choisir une tâche.
 
 ## En un mot
 
-`main` (**c928ddb**) a la **CI verte** ([run #23](https://github.com/junguck/CONEXA/actions/runs/40546321487)) et contient les treize services v1, l'argent, le temps réel, les partenaires et le worker IA. **Le bus d'événements vient d'être fusionné** (T-0051) : les services peuvent enfin publier au-delà de leur processus, c'était le blocage n°1 des jalons J1 et J2. Le front reste **non fusionné** (trois branches `web-core` en vol) et **aucun écran n'est encore branché** sur l'API.
+**Toutes les branches livrées sont fusionnées dans `main` et vérifiées ensemble.** Le monorepo contient désormais les seize services, les trois applications web, les huit paquets partagés et neuf ADR. Les sept branches de la piste v1, le service IA, les paiements Campay, l'arbitrage et les compétitions de football, les trois coquilles web et le design system sont dans `main`. Ce qui reste n'est plus du code à fusionner : ce sont des **décisions humaines** (section « Décisions humaines ») et des tâches neuves (T-0026, T-0035+).
 
-## Vérifié le 2026-10-27 (preuves)
+## Ce qui est en place
 
-| Vérification | Résultat |
+| Élément | État |
 |---|---|
-| `pnpm turbo run lint typecheck test build --force` sur `main` | **76/76**, aucun cache, 1 min 56 |
-| `pnpm install --frozen-lockfile` | 0 (lockfile cohérent) |
-| `pnpm format:check`, `pnpm docs:verify` | verts |
-| `pnpm audit --audit-level=high` | **0 vulnérabilité** (override `multer >= 2.5.0`) |
-| `gitleaks detect --log-opts=--all` (v8.24.3, même image que la CI) | **0 fuite** |
-| `python3 -m unittest discover -s tests` (`services/ai-worker`) | 59 tests |
-| `pnpm ci:guards` (propriété, migrations, contrats, PII, secrets, outils) | vert |
-| `pnpm docs:verify` (53 IDs de roadmap, 53 prompts, 16 agents) | vert |
-| CI GitHub sur `c928ddb` | **success** (Qualité, PII et secrets, Services Python ; Garde-fous ignorés sur push, ils tournent en PR) |
+| `README.md`, `AGENTS.md`, `CLAUDE.md`, `agents/` (16 agents, ownership, prompts, workflow git) | en place |
+| `docs/ROADMAP.md` (53 fonctionnalités), `docs/STACK.md`, `tasks/_TEMPLATE.md` | en place |
+| `docs/product/` : `API.md`, `ARCHITECTURE.md`, `schema_extension.sql`, `design/` (maquettes) | en place |
+| `docs/decisions/` : ADR 0001 à 0009 | en place |
+| Outils : `tools/verify-docs.py`, `tools/check-*.py`, `gen-agent-ownership.py`, `db-migrate.mjs`, `seed-demo.mjs` | en place, verts |
+| CI : `.github/workflows/ci.yml` (qualité, garde-fous, PII/secrets, services Python) | en place, verte |
 
-## Ce qui vient d'être fusionné
+### Services (`services/`, 16 paquets NestJS sauf `ai-worker`)
 
-| Tâche | Contenu | Commit |
+`gateway`, `identity`, `football`, `dating`, `talents`, `marketplace`, `partners`, `payments`, `billing`, `messaging`, `notifications`, `uploads`, `ai`, `ai-worker` (Python), plus `_template` et `_runtimes`.
+
+### Applications (`apps/`)
+
+`web` (PWA étudiante), `partner-portal` (restaurateurs et partenaires), `backoffice` (administration et modération). Les trois compilent avec Next.js App Router.
+
+### Paquets (`packages/`)
+
+`config`, `contracts`, `entitlements`, `errors`, `events`, `messaging`, `service-kit`, `ui`.
+
+## Vérifications faites sur `main`
+
+Poste Windows, Node 22, pnpm 12.4.1, PostgreSQL 18 réel pour les migrations.
+
+| Preuve | Commande | Résultat |
 |---|---|---|
-| [T-0051](../tasks/T-0051-alignement-canonique.md) | **Bus d'événements** : `@conexa/errors` source unique du catalogue (le cycle avec `@conexa/contracts` disparaît), baril `@conexa/contracts` réunifié (primitives canoniques + contrats v1), `@conexa/events` (enveloppe, garde-fou PII, port **par lot**), `@conexa/event-messaging` (outbox transactionnelle, inbox idempotente, RabbitMQ), ADR **0007** | `ce942cd` |
-| [T-0028](../tasks/T-0028-ci-verte-de-main.md) | CI : override `multer`, `.gitleaksignore`, `fetch-depth: 0` sur le scan d'historique | `162eac6`, `422090f`, `c928ddb` |
+| Docs et roadmap | `pnpm docs:verify` | 53 identifiants, 53 prompts, 16 agents — OK |
+| Format | `pnpm format:check` | OK |
+| Lint | `pnpm lint` | 25 paquets — OK |
+| Types | `pnpm typecheck` | 32 paquets — OK |
+| Tests | `pnpm exec turbo run test --concurrency=1` | 32 suites — OK |
+| Build | `pnpm build` | 25 paquets dont les trois apps Next — OK |
+| Garde-fous | `python3 tools/check-{migrations,contracts,pii-logs,secrets}.py` | OK |
+| Tests des outils | `python3 -m unittest discover -s tools/tests` | OK |
 
-**Reste à faire sur ce socle** : brancher les producteurs sur l'outbox (football, identity, dating, marketplace, talents, partners, billing, payments) et les consommateurs sur l'inbox — tâche `architect` en cours de planification, elle débloque F2.4, F1.5 et toute la saga du date.
+**Piège Windows** : `pnpm test` en parallèle échoue parfois avec `EPERM … node_modules/.vitest-cache` — plusieurs vitest se disputent le même dossier de cache. Utiliser `pnpm exec turbo run test --concurrency=1`. Ce n'est pas un défaut du code ; la CI (Linux) tourne en parallèle sans problème.
 
-## Pistes parallèles en vol (ne pas recommencer)
+`pnpm ci:guards` ne s'exécute pas sur `main` : `check-ownership.py` exige une branche d'agent. C'est normal — en CI ce job ne tourne que sur les pull requests.
 
-| Branche | Agent | Contenu | Statut |
-|---|---|---|---|
-| `agent/web-core/T-0007-maquettes-complements` | web-core | `packages/ui`, `apps/web` (coquille PWA, 23 écrans maquettes, client API) | à fusionner |
-| `agent/web-core/T-0009-backoffice-portal` | web-core | `apps/backoffice`, `apps/partner-portal` | à fusionner après T-0007 |
-| `agent/architect/T-0004-shared-packages` | architect | **supersédée par T-0051** : à fermer sans fusionner | à clore |
-| `integration/v1` | — | `services/ai` (TypeScript) en concurrence de `services/ai-worker` (Python) | **décision humaine** |
-| worktree `v1-dating` (non commité) | dating | producteur `dating.embedding_requested` (outbox + schéma + test d'intégration) | **à récupérer** (moitié manquante du contrat IA) |
+## Piste v1 et branches d'agents : toutes fusionnées
 
-## Tâches
+| Branche | Contenu | État |
+|---|---|---|
+| `v1/socle` | Contrats, erreurs, événements, kit de service, gabarit, runner de migrations, compose dev | fusionnée |
+| `v1/gateway` | Routage par manifestes, JWT/JWKS, limites de débit, `/internal/*` bloqué | fusionnée |
+| `v1/identity` | OTP haché, JWT RS256 + rotation, profil, validation admin, fiabilité, contact interne | fusionnée |
+| `v1/football` | Équipes, défis, matchs, Elo, classements | fusionnée |
+| `v1/dating` | Profil, picks, quotas, dates par cartes, annulation 3 h, révélation du contact | fusionnée |
+| `v1/talents` | Compétences, publications, missions, avis, événements | fusionnée |
+| `v1/marketplace` | Offres à formules, commandes et machine à états, révisions, litiges | fusionnée |
+| `integration/v1` | Service IA : embeddings et classement par similarité | fusionnée |
+| `agent/money/T-0020` | Campay, grand livre, reversements, rapprochement, relève de secours | fusionnée |
+| `agent/football/T-0030` | Arbitrage admin, clôtures idempotentes, compétitions, outbox par lot | fusionnée |
+| `agent/web-core/T-0019` | Design system, 23 écrans maquettes, back-office, portail partenaire | fusionnée |
 
-| Tâche | Fonctionnalité | Agent | Statut |
-|---|---|---|---|
-| [T-0001](../tasks/T-0001-monorepo-pnpm-turborepo.md) | F0.1 Monorepo | platform | **done** |
-| [T-0002](../tasks/T-0002-environnement-dev-docker-compose.md) | F0.2 Compose dev | platform | **fusionnée** (clôturer) |
-| [T-0003](../tasks/T-0003-ci-et-garde-fous.md) | F0.3 CI et gardes | platform | **fusionnée** (clôturer) |
-| [T-0004](../tasks/T-0004-paquets-partages-contrats-evenements.md) | F0.4 Paquets partagés | architect | **supersédée par T-0051** |
-| [T-0005](../tasks/T-0005-gabarit-service-nestjs.md) | F0.5 Gabarit | architect | todo (livré via v1 ; `pnpm new:service` manque) |
-| [T-0006](../tasks/T-0006-observabilite-de-base.md) | F0.6 Observabilité | platform | **fusionnée** (clôturer) |
-| [T-0007](../tasks/T-0007-design-system-coquille-web-pwa.md) | F0.7 Design system + PWA | web-core | in vol |
-| [T-0008](../tasks/T-0008-gateway-squelette.md) | F0.8 Gateway | gateway | todo (livré via T-0011) |
-| [T-0009](../tasks/T-0009-coquilles-backoffice-portail.md) | F0.9 Consoles | web-core | in vol |
-| [T-0010](../tasks/T-0010-socle-v1-services.md) | Socle v1 | architect | fusionné dans `main` |
-| [T-0011](../tasks/T-0011-gateway-v1.md) … [T-0016](../tasks/T-0016-marketplace-v1.md) | Six services v1 | gateway…marketplace | fusionnés dans `main` |
-| [T-0017](../tasks/T-0017-service-uploads.md) | Fichiers | platform | fusionné dans `main` |
-| [T-0018](../tasks/T-0018-worker-ia-vecteurs-rencontres.md) | Worker IA | ai | fusionné dans `main` |
-| [T-0051](../tasks/T-0051-alignement-canonique.md) | F0.4 Bus d'événements | architect | **fusionné** (`ce942cd`) |
-| [T-0028](../tasks/T-0028-ci-verte-de-main.md) | F0.3 CI verte | orchestrator | **fusionné** (`c928ddb`) |
+Les branches `agent/web-core/T-0007-web-shell`, `T-0007-maquettes-complements` et `T-0009-backoffice-portal` sont **incluses** dans `T-0019-fusion-front` : les fusionner séparément n'apporterait rien et rouvrirait des conflits de `pnpm-lock.yaml`.
 
-**Numéros réservés** (ne pas les utiliser) : `T-0019` web-core (fusion du front) · `T-0020` à `T-0026` money (vague 3) · `T-0030` à `T-0034` football (litiges, clôtures, MVP, compétitions) · `T-0027`, `T-0029` architect/orchestrator.
+### Défauts trouvés par la fusion (corrigés)
 
-## Chemin critique vers J1 puis J2
+1. **Publication unitaire contre un port par lot.** `EventPublisher.publish` prend un **lot** d'enveloppes (ADR 0007). Payments, Billing et l'outbox de Football appelaient encore `publish(envelope)` : `pnpm typecheck` échouait. Tout passe désormais par `publish([envelope])`.
+2. **Migration IA non horodatée.** `db/migrations/ai/0001_init.sql` violait la règle `AAAAMMJJHHMM_description.sql` ; renommée `202610282322_init.sql`.
+3. **Frontmatter YAML invalide.** `tasks/T-0004-…md` contenait `C:\Users\…` dans une chaîne entre guillemets doubles (`\U` est une échappement invalide) : `check-ownership.py` plantait. Chemin réécrit en barres obliques.
 
-1. **Fusionner le front** (`T-0007` → `T-0009`) : sans `apps/`, aucun écran de J1 ni de J2 n'existe.
-2. **Brancher l'outbox** : c'est ce qui fait vivre F2.4 (chat des capitaines), F1.5 (notifications) et la saga du date.
-3. **J1** : arbitrage admin des litiges + crons de clôture (football) → e2e du parcours.
-4. **J2** : Campay réel → reversements et rapprochement → entitlements partagés → saga de réservation (dating + partners) → écrans → durcissement.
+## Décisions humaines (ne pas coder autour)
 
-## Blocages et décisions attendues (ne pas coder autour)
+1. **`docs/product/schema.sql` manquant.** Les migrations sont reconstituées ([ADR 0003](decisions/0003-schema-base-reconstitue.md)) ; le fichier d'origine reste attendu pour une comparaison table par table. **Décision attendue : fournir le fichier ou valider l'ADR 0003.**
+2. **`docs/product/README.md` manquant** — cité §4, §5, §6, §8, §12, §16.
+3. **OTP WhatsApp.** Le fournisseur est **choisi** : ETECH KEY pour WhatsApp, MBOASMS pour les SMS de repli. **Décision attendue : fournir les variables d'environnement** ; en attendant, le fournisseur « console » du développement reste actif et aucune ADR n'est encore écrite pour ce choix.
+4. **Campay.** La démonstration fonctionne (`.env` du poste, collecte réelle constatée). Restent non confirmés : format et signature du webhook, frais, remboursement natif, prélèvement récurrent, plafonds. **Décision attendue : trancher avant F3.2 en production.**
+5. **Protection de `main` sur GitHub.** Aucun ruleset n'est actif (`GET /repos/…/rulesets` renvoie `[]`). **Action humaine : activer PR obligatoire + CI verte + squash.** Tant qu'elle est absente, la discipline reste humaine.
+6. **`pgvector` sous Windows.** Non installable en local ; la v1 stocke `jsonb` et compare en mémoire. **Décision attendue : valider un environnement Linux/Docker pour F4.3** avant la production.
+7. **Grand livre à double écriture.** [ADR 0008](decisions/0008-grand-livre-double-ecriture.md) attend une validation humaine avant F3.1.
+8. **Jest → Vitest.** [ADR 0004](decisions/0004-nestjs-esm-vitest.md) : NestJS 12 est ESM-only. À valider, et `docs/STACK.md` §2 à corriger en conséquence.
+9. **Stockage des fichiers.** Le service uploads écrit sur disque local ; le fournisseur S3-compatible (R2, Scaleway, MinIO) et la sauvegarde restent à choisir avant toute mise en ligne.
+10. **Argent réel.** `FakePaymentsGateway` reste le défaut hors démonstration ; aucun encaissement, séquestre, remboursement ni abonnement n'est réellement possible en production avant F3.1 à F3.4.
+11. **Domaine.** `api.convexa.app` est une hypothèse ([ADR 0001](decisions/0001-marque-convexa.md)) ; le domaine réel est une tâche humaine.
+12. **Juridique.** Conservation de fonds pour des tiers, conditions générales, données personnelles, accord de l'école, contrat du restaurant : à faire valider par un juriste avant la production.
 
-1. **Worker IA** : Python (livré) ou TypeScript (`services/ai`) ? — humain.
-2. **Producteur d'embeddings de Dating** non commité dans le worktree `v1-dating` — à récupérer avant F4.3.
-3. **`docs/product/schema.sql` manquant** : migrations v1 reconstituées, ADR 0003 à valider.
-4. **Campay** : webhook, frais, remboursement, récurrent non confirmés (`docs/STACK.md` §3.2) — avant F3.2.
-5. **Fournisseur d'OTP WhatsApp** : ADR avant F1.1 en production.
-6. **Grand livre à double écriture** : ADR validé par un humain avant F3.1.
-7. **Protection de `main`** : toujours absente sur GitHub (PR obligatoire, CI verte, squash).
-8. **`CONEXA/` local sale** : `agents/ownership.yaml` et trois README d'agents sont modifiés non commités ; leur contenu est désormais **dans** `main` (T-0051) — après `git pull`, ces fichiers deviennent redondants.
-9. **`.github/**` touché** (fetch-depth, CI) : validation humaine demandée et accordée par l'humain le 2026-10-27.
+## Tâches encore ouvertes
+
+| Tâche | Sujet | État |
+|---|---|---|
+| [T-0026](../tasks/T-0026-factures-codes-promo-grace-expiration.md) | Factures, codes promo, grâce et expiration des abonnements | todo |
+| T-0035 et suivantes | Écrans branchés sur les contrats, messagerie temps réel, crons de clôture | à découper |
 
 ## Protocole multi-instances (à lire avant de coder)
 
-Une instance = une tâche = une branche = un worktree. **Personne ne travaille dans `CONEXA/` lui-même** (reste sur `main`, propre, réservé à l'humain et à l'orchestrateur).
+Une instance = une tâche = une branche = un worktree. **Personne ne travaille dans `CONEXA/` lui-même** : le répertoire principal reste sur `main`, propre, réservé à l'orchestrateur et à l'humain.
 
 ```bash
-git worktree add ../worktrees/T-xxxx -b agent/<agent>/T-xxxx-<slug> origin/main
-cd ../worktrees/T-xxxx && pnpm install
-# tasks/T-xxxx-*.md : status: in_progress, branch, worktree, puis commit + push immédiat
+# 1. Réclamer la tâche (le statut est le verrou)
+cd CONEXA
+git fetch origin
+git worktree add ../worktrees/T-0026 -b agent/money/T-0026-factures origin/main
+cd ../worktrees/T-0026
+pnpm install --frozen-lockfile
+# dans le fichier de tâche : status: in_progress, branch, worktree
+# puis commit "chore(tasks): claim T-0026" et push immédiat
 ```
 
-- **Verrou** : si le push de la réclamation est refusé, la tâche est prise — change de tâche.
-- **Chemins** : `agents/ownership.yaml` **et** les `owned_paths` de ta tâche. Un chemin d'autrui manque ? `status: blocked`, `notes: needs <agent>: <demande>`.
-- **Pas de `main`** hors bootstrap : tu pousses ta branche, l'orchestrateur fusionne.
-- **Deux échecs de CI sur la même cause** : tu t'arrêtes et tu expliques.
-- **Hooks** : `lefthook` lance eslint sur les fichiers staged et commitlint au commit ; un script Node qui utilise `fetch` doit déclarer `/* global fetch */` en tête (convention du dépôt).
+- **Verrou** : si le push de la réclamation est refusé, la tâche est déjà prise — en choisir une autre, ne pas forcer.
+- **Chemins** : n'écrire que dans `agents/ownership.yaml` **et** dans les `owned_paths` de la tâche.
+- **Contrat d'abord** : un endpoint ou un événement nouveau se publie avant d'être consommé.
+- **Pas de `main`** : jamais de commit direct sur `main` hors bootstrap ; on pousse sa branche, l'orchestrateur (ou l'humain) fusionne.
+- **Une seule tâche à la fois** par instance ; une seule instance par domaine à un instant donné.
+- **Clôture** : PR ouverte, CI verte, preuves jointes, statut `review`.
 
 ## Prochaines étapes
 
-1. Fusionner `T-0007-maquettes-complements` puis `T-0009-backoffice-portal` (web-core).
-2. Récupérer le producteur d'embeddings de Dating depuis le worktree `v1-dating`.
-3. Brancher les producteurs sur l'outbox (architect) — **préalable à F2.4, F1.5, F4.5**.
-4. Lancer les trois voies parallèles annoncées : web-core (front), money (vague 3), football (vague 2).
-5. Arbitrer le doublon `services/ai` vs `services/ai-worker`.
+1. Brancher réellement les écrans sur `@conexa/contracts` (les contrats sont la seule interface stable) et remplacer les données de maquette.
+2. Argent en production : confirmer les points Campay de la section 3.2, puis brancher le grand livre à double écriture et la facturation (T-0021 à T-0026).
+3. OTP réel : brancher ETECH KEY / MBOASMS dès que les variables sont fournies, puis écrire l'ADR du fournisseur.
+4. Messagerie temps réel, notifications et crons de clôture (validations 72 h, contestations 48 h, vote MVP).
+5. Uploads en production : choisir le stockage S3-compatible et la politique de sauvegarde.
