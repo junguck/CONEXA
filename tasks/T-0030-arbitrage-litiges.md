@@ -12,7 +12,7 @@ owned_paths:
   - tasks/T-0032-*.md
   - tasks/T-0033-*.md
   - tasks/T-0034-*.md
-  - docs/decisions/0008-fenetre-vote-mvp.md
+  - docs/decisions/0009-fenetre-vote-mvp.md
 reads:
   - agents/football/README.md
   - docs/ROADMAP.md

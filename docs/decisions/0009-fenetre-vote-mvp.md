@@ -1,4 +1,4 @@
-# ADR 0008 : fenêtre de vote du MVP fixée à 24 heures
+# ADR 0009 : fenêtre de vote du MVP fixée à 24 heures
 
 - **Statut** : proposé (agent `football`), à valider par l'architecte et l'humain
 - **Date** : 2026-10-27

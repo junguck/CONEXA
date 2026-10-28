@@ -12,7 +12,7 @@ owned_paths:
   - packages/contracts/src/football/**
   - packages/events/src/football/**
   - docs/domain/football.md
-  - docs/decisions/0008-fenetre-vote-mvp.md
+  - docs/decisions/0009-fenetre-vote-mvp.md
 reads:
   - agents/football/README.md
   - docs/ROADMAP.md#trous-connus
@@ -34,7 +34,7 @@ Clore automatiquement les matchs sans double déclaration, fermer la fenêtre de
 
 ## Contexte et règles métier
 
-Une seule déclaration au bout de 24 h est acceptée provisoirement, avec contestation possible 48 h (`agents/football/README.md`). La fenêtre de vote MVP n'était pas définie (trou n°7 de la roadmap) : l'ADR 0008 propose 24 h.
+Une seule déclaration au bout de 24 h est acceptée provisoirement, avec contestation possible 48 h (`agents/football/README.md`). La fenêtre de vote MVP n'était pas définie (trou n°7 de la roadmap) : l'ADR 0009 propose 24 h.
 
 ## À livrer
 
@@ -42,7 +42,7 @@ Une seule déclaration au bout de 24 h est acceptée provisoirement, avec contes
 2. Migration : colonnes `provisional`, `contest_closed_at`, `mvp_closed_at`, index de balayage.
 3. Code : `FootballJobsService` avec `finalizeStaleReports`, `closeContestWindows`, `closeMvpVotes` ; planificateur `setInterval` désactivable (`FOOTBALL_CRON_ENABLED`), routes `POST /internal/jobs/:name` réservées au rôle `service`.
 4. Tests : bornes 24 h / 48 h, idempotence (deux exécutions = un seul effet), vote refusé après clôture, égalité de votes départagée de façon déterministe.
-5. Documentation : ADR `docs/decisions/0008-fenetre-vote-mvp.md` (24 h), `docs/domain/football.md`.
+5. Documentation : ADR `docs/decisions/0009-fenetre-vote-mvp.md` (24 h), `docs/domain/football.md`.
 
 ## Critères d'acceptation
 
@@ -59,4 +59,4 @@ File d'attente externe (BullMQ), notifications de clôture, écrans.
 
 ## Preuves attendues dans la PR
 
-Sortie des tests de bornes, deux exécutions successives d'un cron (bilan identique), ADR 0008.
+Sortie des tests de bornes, deux exécutions successives d'un cron (bilan identique), ADR 0009.

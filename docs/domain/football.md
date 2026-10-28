@@ -22,7 +22,7 @@ Tâches : [T-0013](../../tasks/T-0013-football-v1.md),
 - Litiges : file admin, arbitrage `validated` / `void`, journal `match_adjudications`,
   correction Elo et statistiques d'un match déjà validé.
 - Clôtures automatiques : déclaration unique à H+24, contestation expirée à H+48,
-  dépouillement du vote MVP à H+24 (ADR [0008](../decisions/0008-fenetre-vote-mvp.md)).
+  dépouillement du vote MVP à H+24 (ADR [0009](../decisions/0009-fenetre-vote-mvp.md)).
 - Compétitions : formats `league`, `groups`, `knockout` ; inscription d'équipes,
   poules, tableau à élimination directe, classement de compétition.
 - Classements équipes et joueurs, statistiques, historique Elo, badges, historique joueur.
@@ -62,7 +62,7 @@ dans la même transaction.
 |---|---|---|---|
 | Déclaration | 24 h après le coup d'envoi | une seule déclaration → validation provisoire ; aucune → match annulé (`no_report`) | `REPORT_DEADLINE_HOURS` |
 | Contestation | 48 h après la finalisation | `POST /matches/:id/contest` accepté ; au-delà, refus puis `contest_closed_at` | `CONTEST_WINDOW_HOURS` |
-| Vote MVP | 24 h après la finalisation | vote de l'équipe adverse ; au-delà, refus puis dépouillement unique | `MVP_VOTE_WINDOW_HOURS`, ADR 0008 |
+| Vote MVP | 24 h après la finalisation | vote de l'équipe adverse ; au-delà, refus puis dépouillement unique | `MVP_VOTE_WINDOW_HOURS`, ADR 0009 |
 
 Les trois valeurs vivent dans `services/football/src/rules.ts` et sont testées sur
 leurs bornes exactes (`windows.test.ts`).
@@ -157,7 +157,7 @@ la ligne d'outbox, ce qui rend les reprises déduplicables par les consommateurs
    courant, ce qui préserve les matchs validés depuis mais reste une approximation si
    plusieurs corrections se croisent. Accepté pour la v1, à revoir si les litiges se
    multiplient.
-3. **MVP** : le vote est figé 24 h après la validation (ADR 0008), y compris quand une
+3. **MVP** : le vote est figé 24 h après la validation (ADR 0009), y compris quand une
    contestation reste ouverte : un litige tranché après la clôture ne rouvre pas le vote.
 4. **Classement « mois »** : accepté par l'API mais non différencié (Elo cumulatif).
 5. **Pas de FK inter-schémas** : `user_id`, `filiere_id` référencent Identity sans
