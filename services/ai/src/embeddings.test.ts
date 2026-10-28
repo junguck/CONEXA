@@ -56,7 +56,10 @@ describe('classement', () => {
       query,
       [
         { owner_id: 'b0000000-0000-4000-8000-000000000001', vector: hashEmbedding('couture') },
-        { owner_id: 'b0000000-0000-4000-8000-000000000002', vector: hashEmbedding('football musique') },
+        {
+          owner_id: 'b0000000-0000-4000-8000-000000000002',
+          vector: hashEmbedding('football musique'),
+        },
       ],
       1,
     );

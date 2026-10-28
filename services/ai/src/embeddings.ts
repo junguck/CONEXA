@@ -114,13 +114,17 @@ export function rankBySimilarity(
   exclude: string[] = [],
 ): Array<{ owner_id: string; score: number }> {
   const skip = new Set(exclude);
-  return candidates
-    .filter((candidate) => !skip.has(candidate.owner_id))
-    .map((candidate) => ({
-      owner_id: candidate.owner_id,
-      score: cosine(query, candidate.vector),
-    }))
-    // À score égal, l'ordre reste stable : le tri est déterministe.
-    .sort((left, right) => right.score - left.score || left.owner_id.localeCompare(right.owner_id))
-    .slice(0, limit);
+  return (
+    candidates
+      .filter((candidate) => !skip.has(candidate.owner_id))
+      .map((candidate) => ({
+        owner_id: candidate.owner_id,
+        score: cosine(query, candidate.vector),
+      }))
+      // À score égal, l'ordre reste stable : le tri est déterministe.
+      .sort(
+        (left, right) => right.score - left.score || left.owner_id.localeCompare(right.owner_id),
+      )
+      .slice(0, limit)
+  );
 }
