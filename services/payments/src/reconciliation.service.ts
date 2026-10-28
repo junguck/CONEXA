@@ -143,7 +143,7 @@ export class ReconciliationService implements OnModuleInit {
         operator,
         variance_fcfa: varianceFcfa,
       });
-      await this.events.publish(
+      await this.events.publish([
         createEvent({
           type: PAYMENTS_EVENTS.reconciliationMismatched,
           producer: 'payments',
@@ -155,7 +155,7 @@ export class ReconciliationService implements OnModuleInit {
             variance_fcfa: varianceFcfa,
           },
         }),
-      );
+      ]);
     }
 
     return {

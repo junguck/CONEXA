@@ -327,7 +327,8 @@ export class BillingService {
   }
 
   private async publish(type: string, payload: Record<string, unknown>): Promise<void> {
-    await this.events.publish(createEvent({ type, producer: 'billing', payload }));
+    // Le port de publication est strictement par lot : un événement = un lot d'un.
+    await this.events.publish([createEvent({ type, producer: 'billing', payload })]);
   }
 
   private toPlan(row: PlanRow): Plan {

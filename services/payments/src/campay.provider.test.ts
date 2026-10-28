@@ -4,6 +4,9 @@ import { describe, expect, it, vi } from 'vitest';
 
 import { CampayProvider } from './campay.provider.js';
 
+/** Arguments d'un appel enregistré par le double de `fetch`. */
+type FetchCall = [string, RequestInit?];
+
 const config = {
   // La console donne parfois l'URL avec `/api` : l'adaptateur doit la normaliser.
   baseUrl: 'https://demo.campay.net/api',
@@ -33,7 +36,9 @@ describe('Campay : authentification', () => {
     await provider.getStatus('ref-1');
     await provider.getStatus('ref-1');
 
-    const tokenCalls = fetchStub.mock.calls.filter(([url]) => url.endsWith('/api/token/'));
+    const tokenCalls = fetchStub.mock.calls.filter(([url]: FetchCall) =>
+      url.endsWith('/api/token/'),
+    );
     expect(tokenCalls).toHaveLength(1);
     const [, init] = tokenCalls[0] as [string, RequestInit];
     expect(JSON.parse(String(init.body))).toEqual({
@@ -61,7 +66,9 @@ describe('Campay : jeton permanent', () => {
     );
 
     expect(await provider.getBalance('mtn_momo')).toBe(5);
-    expect(fetchStub.mock.calls.some(([url]) => String(url).endsWith('/api/token/'))).toBe(false);
+    expect(
+      fetchStub.mock.calls.some(([url]: FetchCall) => String(url).endsWith('/api/token/')),
+    ).toBe(false);
     const [, init] = fetchStub.mock.calls[0]!;
     expect(init?.headers).toMatchObject({ authorization: 'Token jeton-permanent' });
   });
@@ -91,7 +98,9 @@ describe('Campay : collecte et statut', () => {
     });
 
     expect(result).toEqual({ reference: 'campay-ref', paymentUrl: null });
-    const [, init] = fetchStub.mock.calls.find(([url]) => url.endsWith('/api/collect/'))!;
+    const [, init] = fetchStub.mock.calls.find(([url]: FetchCall) =>
+      url.endsWith('/api/collect/'),
+    )!;
     expect(JSON.parse(String(init?.body))).toEqual({
       amount: '1500',
       currency: 'XAF',
@@ -152,7 +161,9 @@ describe('Campay : solde et décaissement', () => {
     });
 
     expect(result).toEqual({ reference: 'campay-withdraw' });
-    const [, init] = fetchStub.mock.calls.find(([url]) => url.endsWith('/api/withdraw/'))!;
+    const [, init] = fetchStub.mock.calls.find(([url]: FetchCall) =>
+      url.endsWith('/api/withdraw/'),
+    )!;
     expect(JSON.parse(String(init?.body))).toEqual({
       amount: '7360',
       currency: 'XAF',
