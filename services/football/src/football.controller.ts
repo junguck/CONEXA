@@ -11,6 +11,7 @@ import {
   UseGuards,
 } from '@nestjs/common';
 import {
+  CompetitionSearchSchema,
   CreateChallengeSchema,
   CreateTeamSchema,
   MatchReportSchema,
@@ -31,6 +32,7 @@ import {
 } from '@conexa/contracts';
 import { CurrentUser, JwtAuthGuard } from '@conexa/service-kit';
 
+import { CompetitionsService } from './competitions.service.js';
 import { db } from './db.js';
 import { MatchReportService } from './match-report.service.js';
 import { MatchesService } from './matches.service.js';
@@ -45,6 +47,7 @@ export class FootballController {
     private readonly matches: MatchesService,
     private readonly reports: MatchReportService,
     private readonly rankings: RankingsService,
+    private readonly competitions: CompetitionsService,
   ) {}
 
   // --- équipes -----------------------------------------------------------
@@ -304,6 +307,34 @@ export class FootballController {
   @HttpCode(204)
   async forfeit(@CurrentUser() user: JwtClaims, @Param('id') id: string): Promise<void> {
     await this.reports.forfeit(user.sub, id);
+  }
+
+  // --- compétitions ------------------------------------------------------
+
+  @Get('competitions')
+  listCompetitions(@Query() query: Record<string, string>) {
+    return this.competitions.list(CompetitionSearchSchema.parse(query));
+  }
+
+  @Get('competitions/:id')
+  competition(@Param('id') id: string) {
+    return this.competitions.get(id);
+  }
+
+  @Get('competitions/:id/teams')
+  competitionTeams(@Param('id') id: string) {
+    return this.competitions.teams(id);
+  }
+
+  @Get('competitions/:id/standings')
+  competitionStandings(@Param('id') id: string, @Query('group_no') groupNo?: string) {
+    const parsed = groupNo === undefined ? undefined : Number(groupNo);
+    return this.competitions.standings(id, parsed && Number.isFinite(parsed) ? parsed : undefined);
+  }
+
+  @Get('competitions/:id/bracket')
+  competitionBracket(@Param('id') id: string) {
+    return this.competitions.bracket(id);
   }
 
   // --- classements et statistiques --------------------------------------

@@ -46,6 +46,20 @@
     { "method": "GET", "path": "/rankings/players", "auth": true },
     { "method": "GET", "path": "/players/:id/stats", "auth": true },
     { "method": "GET", "path": "/players/:id/badges", "auth": true },
-    { "method": "GET", "path": "/me/match-history", "auth": true }
+    { "method": "GET", "path": "/me/match-history", "auth": true },
+    { "method": "GET", "path": "/competitions", "auth": true },
+    { "method": "GET", "path": "/competitions/:id", "auth": true },
+    { "method": "GET", "path": "/competitions/:id/teams", "auth": true },
+    { "method": "GET", "path": "/competitions/:id/standings", "auth": true },
+    { "method": "GET", "path": "/competitions/:id/bracket", "auth": true },
+    { "method": "GET", "path": "/admin/matches/disputed", "auth": true },
+    { "method": "GET", "path": "/admin/matches/:id/dispute", "auth": true },
+    { "method": "POST", "path": "/admin/matches/:id/resolve", "auth": true },
+    { "method": "POST", "path": "/admin/competitions", "auth": true },
+    { "method": "POST", "path": "/admin/competitions/:id/teams", "auth": true },
+    { "method": "POST", "path": "/admin/competitions/:id/groups", "auth": true },
+    { "method": "POST", "path": "/admin/competitions/:id/bracket", "auth": true },
+    { "method": "POST", "path": "/admin/competitions/:id/slots/:slotId/match", "auth": true },
+    { "method": "POST", "path": "/admin/competitions/:id/advance", "auth": true }
   ]
 }

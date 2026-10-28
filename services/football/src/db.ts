@@ -93,6 +93,11 @@ export interface MatchesTable {
   elo_away_after: number | null;
   finalized_at: Date | null;
   cancelled_reason: string | null;
+  /** Une seule déclaration acceptée faute de seconde (H+24). */
+  provisional: Generated<boolean>;
+  contest_closed_at: Date | null;
+  mvp_closed_at: Date | null;
+  competition_id: string | null;
   created_at: ColumnType<Date, Date | undefined, never>;
 }
 
@@ -155,6 +160,60 @@ export interface PlayerBadgesTable {
   awarded_at: ColumnType<Date, Date | undefined, never>;
 }
 
+export interface MatchAdjudicationsTable {
+  id: Generated<string>;
+  match_id: string;
+  admin_id: string;
+  decision: 'validated' | 'void';
+  score_a: number | null;
+  score_b: number | null;
+  reason: string;
+  evidence_upload_ids: Generated<string[]>;
+  created_at: ColumnType<Date, Date | undefined, never>;
+}
+
+export interface CompetitionsTable {
+  id: Generated<string>;
+  name: string;
+  format: 'league' | 'groups' | 'knockout';
+  status: Generated<'draft' | 'active' | 'finished'>;
+  starts_at: Date;
+  ends_at: Date | null;
+  created_by: string;
+  created_at: ColumnType<Date, Date | undefined, never>;
+}
+
+export interface CompetitionTeamsTable {
+  competition_id: string;
+  team_id: string;
+  group_no: number | null;
+  joined_at: ColumnType<Date, Date | undefined, never>;
+}
+
+export interface CompetitionSlotsTable {
+  id: Generated<string>;
+  competition_id: string;
+  stage: 'group' | 'round_of_16' | 'quarter_final' | 'semi_final' | 'final';
+  position: number;
+  match_id: string | null;
+  home_team_id: string | null;
+  away_team_id: string | null;
+  winner_team_id: string | null;
+  created_at: ColumnType<Date, Date | undefined, never>;
+}
+
+export interface EventOutboxTable {
+  id: Generated<string>;
+  type: string;
+  version: Generated<number>;
+  occurred_at: ColumnType<Date, Date | undefined, never>;
+  payload: unknown;
+  published_at: Date | null;
+  attempts: Generated<number>;
+  last_error: string | null;
+  created_at: ColumnType<Date, Date | undefined, never>;
+}
+
 export interface FootballDb {
   fields: FieldsTable;
   field_bookings: FieldBookingsTable;
@@ -170,6 +229,11 @@ export interface FootballDb {
   mvp_votes: MvpVotesTable;
   elo_history: EloHistoryTable;
   player_badges: PlayerBadgesTable;
+  match_adjudications: MatchAdjudicationsTable;
+  competitions: CompetitionsTable;
+  competition_teams: CompetitionTeamsTable;
+  competition_slots: CompetitionSlotsTable;
+  event_outbox: EventOutboxTable;
 }
 
 const handle = createDb<FootballDb>({ connectionString: env.DATABASE_URL, schema: 'football' });
