@@ -1,20 +1,26 @@
 import { createHmac } from 'node:crypto';
 
-import { AppError } from '@conexa/errors';
+import type { MobileMoneyOperator, ProviderStatus } from '@conexa/contracts';
+import { AppError, forbidden } from '@conexa/errors';
 
+import { CampayProvider } from './campay.provider.js';
 import { env } from './config.js';
 
 /**
  * Agrégateur mobile money derrière une interface : le service ne connaît ni
- * Campay ni ses particularités. `MockProvider` couvre le développement et les
- * tests ; `CampayProvider` n'accepte de tourner que si les clés existent, et
- * échoue explicitement sinon — jamais de faux succès en production.
+ * Campay ni ses particularités. `MockPaymentProvider` couvre le développement et
+ * les tests (aucun réseau) ; `CampayProvider` parle l'API documentée et refuse
+ * de démarrer sans ses quatre secrets.
  */
+
 export interface CollectRequest {
   paymentId: string;
   amountFcfa: number;
+  /** Numéro du payeur, normalisé `2376XXXXXXXX`. */
   phoneMsisdn: string;
+  operator: MobileMoneyOperator;
   description: string;
+  /** Notre clé d'idempotence : elle part en `external_reference`. */
   idempotencyKey: string;
 }
 
@@ -23,21 +29,61 @@ export interface CollectResult {
   paymentUrl: string | null;
 }
 
+export interface DisburseRequest {
+  payoutId: string;
+  amountFcfa: number;
+  /** Numéro du bénéficiaire, normalisé `2376XXXXXXXX`, jamais journalisé. */
+  msisdn: string;
+  operator: MobileMoneyOperator;
+  description: string;
+}
+
+export interface DisburseResult {
+  reference: string;
+}
+
+export interface WebhookVerificationInput {
+  /** Corps brut : nécessaire quand le fournisseur signe les octets reçus. */
+  rawBody: string;
+  /** Corps analysé : Campay y place un JWT de signature. */
+  body: unknown;
+  /** En-tête de signature, quand le fournisseur en utilise un. */
+  signature: string | undefined;
+}
+
 export interface PaymentProvider {
   readonly name: 'mock' | 'campay';
   collect(request: CollectRequest): Promise<CollectResult>;
-  /** Libération vers le bénéficiaire (payout mobile money). */
-  payout(reference: string, amountFcfa: number, beneficiaryRef: string | undefined): Promise<void>;
-  refund(reference: string, amountFcfa: number): Promise<void>;
-  /** Signature attendue sur le webhook. */
-  sign(payload: string): string;
-  verify(payload: string, signature: string | undefined): boolean;
+  /** Relecture du statut : un webhook seul ne fait jamais foi. */
+  getStatus(reference: string): Promise<ProviderStatus>;
+  /** Solde **par opérateur** : la vérification précède tout décaissement. */
+  getBalance(operator: MobileMoneyOperator): Promise<number>;
+  disburse(request: DisburseRequest): Promise<DisburseResult>;
+  verifyWebhook(input: WebhookVerificationInput): void;
+}
+
+export interface MockProviderOptions {
+  /** Statut rendu pour toute référence (par défaut : encaissement réussi). */
+  status?: ProviderStatus;
+  balanceFcfa?: number;
+}
+
+interface MockCall {
+  operation: 'collect' | 'getStatus' | 'getBalance' | 'disburse';
+  request: Record<string, unknown>;
 }
 
 export class MockPaymentProvider implements PaymentProvider {
   readonly name = 'mock' as const;
+  readonly calls: MockCall[] = [];
+
+  constructor(private readonly options: MockProviderOptions = {}) {}
 
   async collect(request: CollectRequest): Promise<CollectResult> {
+    this.calls.push({
+      operation: 'collect',
+      request: { paymentId: request.paymentId, amountFcfa: request.amountFcfa },
+    });
     // Référence déterministe : un webhook de test peut viser le paiement sans
     // deviner de suffixe. Aucun argent ne bouge.
     return {
@@ -46,131 +92,68 @@ export class MockPaymentProvider implements PaymentProvider {
     };
   }
 
-  async payout(): Promise<void> {
-    // Double : rien ne sort réellement.
+  async getStatus(reference: string): Promise<ProviderStatus> {
+    this.calls.push({ operation: 'getStatus', request: { reference } });
+    return this.options.status ?? 'successful';
   }
 
-  async refund(): Promise<void> {
-    // Double : rien ne sort réellement.
+  async getBalance(operator: MobileMoneyOperator): Promise<number> {
+    this.calls.push({ operation: 'getBalance', request: { operator } });
+    return this.options.balanceFcfa ?? 10_000_000;
   }
 
-  sign(payload: string): string {
+  async disburse(request: DisburseRequest): Promise<DisburseResult> {
+    // Le numéro n'est jamais conservé dans l'appel enregistré.
+    this.calls.push({
+      operation: 'disburse',
+      request: {
+        payoutId: request.payoutId,
+        amountFcfa: request.amountFcfa,
+        operator: request.operator,
+      },
+    });
+    return { reference: `mock-disburse-${request.payoutId}` };
+  }
+
+  /** Signature locale : HMAC du corps brut, jamais utilisée en production. */
+  signWebhook(payload: string): string {
     return createHmac('sha256', env.PAYMENTS_WEBHOOK_SECRET).update(payload).digest('hex');
   }
 
-  verify(payload: string, signature: string | undefined): boolean {
-    return signature !== undefined && signature === this.sign(payload);
+  verifyWebhook(input: WebhookVerificationInput): void {
+    if (input.signature === undefined || input.signature !== this.signWebhook(input.rawBody)) {
+      throw forbidden('Signature de webhook invalide');
+    }
   }
 }
 
-interface CampayConfig {
-  baseUrl: string;
-  appToken: string;
-  appSecret: string;
-}
-
-/** Adaptateur Campay : même interface, appels HTTP réels, clés obligatoires. */
-export class CampayPaymentProvider implements PaymentProvider {
-  readonly name = 'campay' as const;
-
-  constructor(private readonly config: CampayConfig) {}
-
-  private async token(): Promise<string> {
-    const response = await fetch(`${this.config.baseUrl}/token/`, {
-      method: 'POST',
-      headers: { 'content-type': 'application/json' },
-      body: JSON.stringify({
-        username: this.config.appToken,
-        password: this.config.appSecret,
-      }),
-    });
-    if (!response.ok) {
-      throw new AppError('INTERNAL_ERROR', 'Campay : authentification refusée');
-    }
-    const body = (await response.json()) as { token?: string };
-    if (!body.token) {
-      throw new AppError('INTERNAL_ERROR', 'Campay : jeton absent de la réponse');
-    }
-    return body.token;
-  }
-
-  async collect(request: CollectRequest): Promise<CollectResult> {
-    const token = await this.token();
-    const response = await fetch(`${this.config.baseUrl}/collect/`, {
-      method: 'POST',
-      headers: { 'content-type': 'application/json', authorization: `Token ${token}` },
-      body: JSON.stringify({
-        amount: String(request.amountFcfa),
-        currency: 'XAF',
-        from: request.phoneMsisdn,
-        description: request.description,
-        external_reference: request.idempotencyKey,
-      }),
-    });
-    if (!response.ok) {
-      throw new AppError('INTERNAL_ERROR', 'Campay : collecte refusée');
-    }
-    const body = (await response.json()) as { reference?: string; payment_url?: string };
-    if (!body.reference) {
-      throw new AppError('INTERNAL_ERROR', 'Campay : référence absente de la réponse');
-    }
-    return { reference: body.reference, paymentUrl: body.payment_url ?? null };
-  }
-
-  async payout(reference: string, amountFcfa: number, beneficiaryRef?: string): Promise<void> {
-    if (!beneficiaryRef) {
-      throw new AppError('VALIDATION_ERROR', 'Campay : bénéficiaire requis pour un reversement');
-    }
-    const token = await this.token();
-    const response = await fetch(`${this.config.baseUrl}/withdraw/`, {
-      method: 'POST',
-      headers: { 'content-type': 'application/json', authorization: `Token ${token}` },
-      body: JSON.stringify({
-        amount: String(amountFcfa),
-        currency: 'XAF',
-        to: beneficiaryRef,
-        description: reference,
-      }),
-    });
-    if (!response.ok) {
-      throw new AppError('INTERNAL_ERROR', 'Campay : reversement refusé');
-    }
-  }
-
-  async refund(reference: string, amountFcfa: number): Promise<void> {
-    const token = await this.token();
-    const response = await fetch(`${this.config.baseUrl}/refund/`, {
-      method: 'POST',
-      headers: { 'content-type': 'application/json', authorization: `Token ${token}` },
-      body: JSON.stringify({ reference, amount: String(amountFcfa) }),
-    });
-    if (!response.ok) {
-      throw new AppError('INTERNAL_ERROR', 'Campay : remboursement refusé');
-    }
-  }
-
-  sign(payload: string): string {
-    return createHmac('sha256', env.PAYMENTS_WEBHOOK_SECRET).update(payload).digest('hex');
-  }
-
-  verify(payload: string, signature: string | undefined): boolean {
-    return signature !== undefined && signature === this.sign(payload);
-  }
-}
+export { CampayProvider } from './campay.provider.js';
 
 /** Choisit l'adaptateur une seule fois au démarrage. */
 export function createPaymentProvider(): PaymentProvider {
   if (env.PAYMENT_PROVIDER === 'campay') {
     const baseUrl = env.CAMPAY_BASE_URL;
-    const appToken = env.CAMPAY_APP_TOKEN;
-    const appSecret = env.CAMPAY_APP_SECRET;
-    if (!baseUrl || !appToken || !appSecret) {
+    const webhookKey = env.CAMPAY_WEBHOOK_KEY;
+    const permanentToken = env.CAMPAY_PERMANENT_TOKEN ?? env.CAMPAY_JETON_DE_SERVICE;
+    if (!baseUrl || !webhookKey) {
       throw new AppError(
         'INTERNAL_ERROR',
-        'PAYMENT_PROVIDER=campay exige CAMPAY_BASE_URL, CAMPAY_APP_TOKEN et CAMPAY_APP_SECRET',
+        'PAYMENT_PROVIDER=campay exige CAMPAY_BASE_URL et CAMPAY_WEBHOOK_KEY',
       );
     }
-    return new CampayPaymentProvider({ baseUrl, appToken, appSecret });
+    if (!permanentToken && !(env.CAMPAY_APP_TOKEN && env.CAMPAY_APP_SECRET)) {
+      throw new AppError(
+        'INTERNAL_ERROR',
+        'PAYMENT_PROVIDER=campay exige CAMPAY_PERMANENT_TOKEN ou (CAMPAY_APP_TOKEN + CAMPAY_APP_SECRET)',
+      );
+    }
+    return new CampayProvider({
+      baseUrl,
+      webhookKey,
+      ...(permanentToken ? { permanentToken } : {}),
+      ...(env.CAMPAY_APP_TOKEN ? { appToken: env.CAMPAY_APP_TOKEN } : {}),
+      ...(env.CAMPAY_APP_SECRET ? { appSecret: env.CAMPAY_APP_SECRET } : {}),
+    });
   }
   return new MockPaymentProvider();
 }

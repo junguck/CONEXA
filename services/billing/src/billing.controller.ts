@@ -5,6 +5,7 @@ import {
   SubscribeSchema,
   type JwtClaims,
 } from '@conexa/contracts';
+import { AppError } from '@conexa/errors';
 import { CurrentUser, JwtAuthGuard, Public, createServiceTokenGuard } from '@conexa/service-kit';
 
 import { BillingService } from './billing.service.js';
@@ -65,5 +66,24 @@ export class BillingInternalController {
   entitlements(@Param('userId') userId: string, @Query('audience') audience: unknown) {
     const parsed = PlanAudienceSchema.safeParse(audience);
     return this.billing.entitlementsFor(userId, parsed.success ? parsed.data : undefined);
+  }
+
+  /**
+   * Forme demandée par `ARCHITECTURE.md` §7.1 : un sujet typé. `user` est le
+   * seul type réellement stocké aujourd'hui ; les autres sont refusés, pas
+   * inventés.
+   */
+  @UseGuards(ServiceTokenGuard)
+  @Get(':kind/:id')
+  entitlementsForSubject(
+    @Param('kind') kind: string,
+    @Param('id') id: string,
+    @Query('audience') audience: unknown,
+  ) {
+    if (kind !== 'user') {
+      throw new AppError('VALIDATION_ERROR', 'Type de sujet non géré par Billing', { kind });
+    }
+    const parsed = PlanAudienceSchema.safeParse(audience);
+    return this.billing.entitlementsFor(id, parsed.success ? parsed.data : undefined);
   }
 }

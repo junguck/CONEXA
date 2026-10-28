@@ -6,12 +6,13 @@ import {
   HttpCode,
   Param,
   Post,
+  Query,
   Req,
   UseGuards,
 } from '@nestjs/common';
 import {
   CreatePaymentSchema,
-  PaymentWebhookSchema,
+  PayoutStatusSchema,
   RefundPaymentSchema,
   ReleasePaymentSchema,
   type JwtClaims,
@@ -23,6 +24,7 @@ import type { Request } from 'express';
 
 import { env } from './config.js';
 import { PaymentsService } from './payments.service.js';
+import { ReconciliationService } from './reconciliation.service.js';
 
 const ServiceTokenGuard = createServiceTokenGuard(env.SERVICE_TOKEN);
 
@@ -42,7 +44,11 @@ export class PaymentsController {
     return this.payments.getForPayer(id, user.sub);
   }
 
-  /** Webhook de l'agrégateur : public mais signé (HMAC du corps brut). */
+  /**
+   * Webhook de l'agrégateur : public mais signé. Le corps brut est indispensable
+   * (la signature couvre les octets reçus), et le statut est relu par l'API
+   * avant toute transition.
+   */
   @Public()
   @Post('webhooks/campay')
   @HttpCode(200)
@@ -55,8 +61,7 @@ export class PaymentsController {
     if (!raw) {
       throw validationError('Corps brut indisponible pour vérifier la signature');
     }
-    this.payments.verifySignature(raw, signature);
-    return this.payments.confirmWebhook(PaymentWebhookSchema.parse(body), raw);
+    return this.payments.confirmWebhook(body, raw, signature);
   }
 }
 
@@ -71,9 +76,34 @@ export class MyPaymentsController {
   }
 }
 
+/**
+ * Compte de reversement : numéro mobile money **dédié**, distinct du WhatsApp.
+ * La réponse est toujours masquée ; le numéro en clair ne sort pas du service.
+ */
+@Controller('payout-accounts')
+export class PayoutAccountsController {
+  constructor(private readonly payments: PaymentsService) {}
+
+  @UseGuards(JwtAuthGuard)
+  @Get('me')
+  get(@CurrentUser() user: JwtClaims) {
+    return this.payments.payoutAccountFor(user.sub);
+  }
+
+  @UseGuards(JwtAuthGuard)
+  @Post()
+  @HttpCode(200)
+  upsert(@CurrentUser() user: JwtClaims, @Body() body: unknown) {
+    return this.payments.upsertPayoutAccount(user.sub, body);
+  }
+}
+
 @Controller('internal')
 export class PaymentsInternalController {
-  constructor(private readonly payments: PaymentsService) {}
+  constructor(
+    private readonly payments: PaymentsService,
+    private readonly reconciliation: ReconciliationService,
+  ) {}
 
   @UseGuards(ServiceTokenGuard)
   @Post('payments/:id/release')
@@ -100,5 +130,35 @@ export class PaymentsInternalController {
   @Get('ledger/balance')
   balance() {
     return this.payments.ledgerBalance();
+  }
+
+  /** File « à traiter » : les reversements qui demandent une action humaine. */
+  @UseGuards(ServiceTokenGuard)
+  @Get('payouts')
+  payouts(@Query('status') status: unknown) {
+    const parsed = PayoutStatusSchema.safeParse(status);
+    return this.payments.listPayouts(parsed.success ? parsed.data : 'queued');
+  }
+
+  @UseGuards(ServiceTokenGuard)
+  @Post('payouts/:id/retry')
+  @HttpCode(200)
+  retry(@Param('id') id: string) {
+    return this.payments.retryPayout(id);
+  }
+
+  @UseGuards(ServiceTokenGuard)
+  @Get('reconciliation/latest')
+  latest() {
+    return this.reconciliation.latest();
+  }
+
+  /** Déclenchement manuel du rapprochement (preuve sur l'environnement demo). */
+  @UseGuards(ServiceTokenGuard)
+  @Post('reconciliation/run')
+  @HttpCode(200)
+  run(@Body() body: { day?: string } | undefined) {
+    const day = body?.day ?? new Date().toISOString().slice(0, 10);
+    return this.reconciliation.run(day);
   }
 }
