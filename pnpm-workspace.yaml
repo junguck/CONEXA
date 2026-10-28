@@ -13,6 +13,14 @@ engineStrict: true
 # « Audit des dépendances » de la CI exige cette version.
 overrides:
   multer: '>=2.5.0'
+  # GHSA-wq5f-xc86-pv6w et CVE-2026-33327/33328/35590/35591, GHSA-g89c-p67h-r497 :
+  # Next embarque sharp en option ; l'étape « Audit des dépendances » exige >=0.35.5.
+  sharp: '>=0.35.5'
+  # GHSA-mrhx-c7xc-m3w5 : Zod avant 4.6.6 peut saturer la mémoire ; @serwist/build
+  # en embarque une copie ancienne.
+  zod: '>=4.6.6'
+  # GHSA-… (sourceMappingURL) : Next épingle postcss 8.4.x ; l'audit exige >=8.5.18.
+  postcss: '>=8.5.18'
 
 # Scripts d'installation autorisés (pnpm 12 bloque les build scripts par défaut).
 allowBuilds:
