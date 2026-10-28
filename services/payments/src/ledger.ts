@@ -10,7 +10,7 @@ import { AppError } from '@conexa/errors';
  * Grand livre à **double écriture** : chaque mouvement produit un débit et un
  * crédit de même montant, et la somme des lignes d'une écriture est nulle.
  * C'est la correction du trou n°1 de la roadmap (schéma d'origine à écriture
- * simple) — ADR 0007 à valider par un humain, mais l'invariant est déjà testé.
+ * simple) — ADR 0008 à valider par un humain, mais l'invariant est déjà testé.
  *
  * Règle de temps : on n'écrit **que** quand l'argent a bougé chez l'agrégateur.
  * Un paiement `pending` ou un reversement `queued` ne produit aucune écriture.

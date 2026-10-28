@@ -1,4 +1,4 @@
-# ADR 0007 : grand livre à double écriture
+# ADR 0008 : grand livre à double écriture
 
 - **Statut** : **proposé** — validation humaine obligatoire avant mise en service
 - **Date** : 2026-10-27

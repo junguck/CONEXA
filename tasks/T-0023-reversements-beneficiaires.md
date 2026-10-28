@@ -13,7 +13,7 @@ owned_paths:
 reads:
   - docs/STACK.md#3.3
   - agents/money/README.md
-  - docs/decisions/0007-grand-livre-double-ecriture.md
+  - docs/decisions/0008-grand-livre-double-ecriture.md
 contracts_touched:
   - packages/contracts/src/payments/index.ts
 deps_request: []

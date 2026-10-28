@@ -1,7 +1,7 @@
 import type { ReconciliationStatus } from '@conexa/contracts';
 
 /**
- * Rapprochement quotidien (`agents/money/README.md`, ADR 0007) : le compte
+ * Rapprochement quotidien (`agents/money/README.md`, ADR 0008) : le compte
  * `CASH` du grand livre, **par opérateur**, doit égaler le solde lu chez
  * l'agrégateur pour ce même opérateur. Aucune correction automatique.
  */
@@ -37,7 +37,7 @@ export function reconciliationStatus(varianceFcfa: number): ReconciliationStatus
   return varianceFcfa === 0 ? 'ok' : 'mismatch';
 }
 
-/** Un écart alerte toujours : c'est le point de l'ADR 0007. */
+/** Un écart alerte toujours : c'est le point de l'ADR 0008. */
 export function needsAlert(varianceFcfa: number): boolean {
   return varianceFcfa !== 0;
 }

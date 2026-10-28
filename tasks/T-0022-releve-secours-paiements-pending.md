@@ -11,7 +11,7 @@ owned_paths:
   - db/migrations/payments/**
 reads:
   - docs/STACK.md#3.3
-  - docs/decisions/0007-grand-livre-double-ecriture.md
+  - docs/decisions/0008-grand-livre-double-ecriture.md
 contracts_touched: []
 deps_request: []
 human_gate: true

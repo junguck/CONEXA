@@ -83,7 +83,7 @@ entiers en XAF, numéros avec indicatif pays `237…`.
 3. **Plafonds** par transaction et par jour, limites de débit.
 4. **Remboursement natif** : aucun endpoint de remboursement dans la collection
    officielle. Le remboursement est donc un **décaissement** vers le payeur
-   (ADR 0007).
+   (ADR 0008).
 5. **Prélèvement récurrent** : aucun endpoint documenté → période prépayée.
 6. **Séquestre natif** : aucun endpoint documenté → séquestre = écritures.
 7. **Disponibilité des fonds** après une collecte (délai avant décaissement).

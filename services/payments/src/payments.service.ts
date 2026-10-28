@@ -449,7 +449,7 @@ export class PaymentsService {
 
   /**
    * Remboursement = décaissement vers le payeur (pas de remboursement natif
-   * confirmé, ADR 0007). Un échec ne perd rien : il part dans la même file.
+   * confirmé, ADR 0008). Un échec ne perd rien : il part dans la même file.
    */
   async refund(paymentId: string): Promise<Payment> {
     const payment = await this.load(paymentId);
@@ -988,7 +988,8 @@ export class PaymentsService {
   }
 
   private async publish(type: string, payload: Record<string, unknown>): Promise<void> {
-    await this.events.publish(createEvent({ type, producer: 'payments', payload }));
+    // Le port de publication est strictement par lot : un événement = un lot d'un.
+    await this.events.publish([createEvent({ type, producer: 'payments', payload })]);
   }
 }
 

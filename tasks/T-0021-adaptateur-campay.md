@@ -65,7 +65,7 @@ deviner l'API du fournisseur.
 ## Hors périmètre
 
 - Production et identifiants réels.
-- Le remboursement natif s'il n'existe pas (voir ADR 0007 : décaissement).
+- Le remboursement natif s'il n'existe pas (voir ADR 0008 : décaissement).
 
 ## Preuves attendues dans la PR
 

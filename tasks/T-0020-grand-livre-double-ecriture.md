@@ -12,7 +12,7 @@ owned_paths:
   - packages/contracts/src/payments/**
   - packages/events/src/payments/**
   - docs/domain/money.md
-  - docs/decisions/0007-grand-livre-double-ecriture.md
+  - docs/decisions/0008-grand-livre-double-ecriture.md
   - docs/vendor/campay.md
   - tasks/T-0020-grand-livre-double-ecriture.md
   - tasks/T-0021-adaptateur-campay.md
@@ -59,7 +59,7 @@ invariants testés qui rendent l'argent vérifiable (`séquestre = écritures`,
 
 ## À livrer
 
-1. `docs/decisions/0007-grand-livre-double-ecriture.md`, statut **proposé** :
+1. `docs/decisions/0008-grand-livre-double-ecriture.md`, statut **proposé** :
    plan comptable, sens des écritures, arrondis FCFA, compensation d'une erreur,
    rapprochement, conséquences et points à valider par un humain.
 2. `docs/vendor/campay.md` : uniquement le confirmé, le reste en « ouvert » avec
@@ -71,7 +71,7 @@ invariants testés qui rendent l'argent vérifiable (`séquestre = écritures`,
 
 ## Critères d'acceptation
 
-- [ ] ADR 0007 présent, statut `proposé`, liste explicite de ce qu'un humain doit trancher.
+- [ ] ADR 0008 présent, statut `proposé`, liste explicite de ce qu'un humain doit trancher.
 - [ ] `docs/vendor/campay.md` ne contient aucun endpoint non sourcé ; chaque point
       ouvert renvoie à une tâche ou à un blocage nommé.
 - [ ] Toute écriture produite par `ledger.ts` est équilibrée (`assertBalanced`).

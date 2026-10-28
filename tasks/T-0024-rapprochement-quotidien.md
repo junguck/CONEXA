@@ -12,7 +12,7 @@ owned_paths:
   - packages/contracts/src/payments/**
 reads:
   - docs/STACK.md#3.3
-  - docs/decisions/0007-grand-livre-double-ecriture.md
+  - docs/decisions/0008-grand-livre-double-ecriture.md
 contracts_touched:
   - packages/contracts/src/payments/index.ts
 deps_request: []
@@ -36,7 +36,7 @@ nul sinon alerte.
   solde Campay ; tout écart alerte ».
 - `docs/STACK.md` §3.3.6 : solde consulté **par opérateur**.
 - Après un décaissement, `CASH` diminue : le solde fournisseur et le grand livre
-  doivent donc rester égaux (ADR 0007).
+  doivent donc rester égaux (ADR 0008).
 
 ## À livrer
 
