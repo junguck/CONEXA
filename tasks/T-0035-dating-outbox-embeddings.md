@@ -21,7 +21,7 @@ contracts_touched:
 deps_request: []
 human_gate: false
 reviewers: [architect, ai]
-branch: agent/dating/T-0035-dating-outbox-embeddings
+branch: agent/dating/T-0035-producteur-embeddings
 worktree: ../worktrees/T-0035
 pr: ""
 notes: "Récupère le producteur du worktree v1-dating : le schéma et la logique métier (slugs fermés, déclencheurs) sont conservés ; l'outbox est réécrite sur le modèle canonique ADR 0007 (enveloppe complète, publication par lot, disponibilité croissante)."
