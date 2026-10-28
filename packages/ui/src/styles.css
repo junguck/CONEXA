@@ -1,0 +1,173 @@
+/*
+ * Jetons de design Convexa (docs/product/design/DESIGN_HANDOFF.md §3).
+ * Source des valeurs : artifact « Convexa v2 », assets/cxa.css.
+ * Un univers = une classe (s-core, s-foot, s-meet, s-pro), un thème = une
+ * classe (dk, lt). Les composants ne lisent que ces variables.
+ */
+
+/* Repères d'angle des consoles desktop (maquette v1, .plate.tick). */
+.cxa-tick::before {
+  content: '';
+  position: absolute;
+  inset: -1px;
+  pointer-events: none;
+  background:
+    linear-gradient(var(--act), var(--act)) 0 0 / 12px 2px no-repeat,
+    linear-gradient(var(--act), var(--act)) 0 0 / 2px 12px no-repeat,
+    linear-gradient(var(--act), var(--act)) 100% 100% / 12px 2px no-repeat,
+    linear-gradient(var(--act), var(--act)) 100% 100% / 2px 12px no-repeat;
+}
+
+/* Accent plein : dégradé pour Meet, couleur unie ailleurs. */
+.cxa-gradient {
+  background: var(--grad);
+  color: var(--ac-ink);
+}
+
+:root,
+.s-core.dk {
+  --bg: #07070a;
+  --surf: #101014;
+  --surf2: #18181d;
+  --line: #2a2a31;
+  --tx: #f4f6f8;
+  --mu: #a0a0aa;
+  --ac: #45c4ff;
+  --ac-ink: #07070a;
+  --act: #45c4ff;
+  --live: #ff4d4d;
+  --ok: #2fbf7a;
+  --bad: #ff5a5f;
+  --r: 3px;
+  --rb: 3px;
+  --fd: 'Unbounded', 'Instrument Sans', sans-serif;
+  --fu: 'Instrument Sans', system-ui, sans-serif;
+  --fn: 'JetBrains Mono', monospace;
+  --grad: var(--ac);
+}
+
+.s-core.lt {
+  --bg: #eef2f6;
+  --surf: #ffffff;
+  --surf2: #e2e8ef;
+  --line: #cbd3dc;
+  --tx: #0b0c10;
+  --mu: #4a4f57;
+  --ac: #45c4ff;
+  --ac-ink: #07070a;
+  --act: #0a6ea6;
+  --live: #d62828;
+  --ok: #0b7a4b;
+  --bad: #c4262e;
+}
+
+.s-foot {
+  --fd: 'Barlow Condensed', 'Barlow Semi Condensed', sans-serif;
+  --fu: 'Barlow Semi Condensed', 'Barlow', system-ui, sans-serif;
+  --fn: 'Barlow Condensed', sans-serif;
+  --r: 6px;
+  --rb: 6px;
+  --live: #ff4545;
+  --ok: #2fbf7a;
+  --bad: #ff5a5f;
+  --grad: var(--ac);
+}
+
+.s-foot.dk {
+  --bg: #0c0e11;
+  --surf: #15181d;
+  --surf2: #1d2127;
+  --line: #272c34;
+  --tx: #f3f5f7;
+  --mu: #8e97a3;
+  --ac: #ffc93c;
+  --ac-ink: #14110a;
+  --act: #ffc93c;
+}
+
+.s-foot.lt {
+  --bg: #f1f3f5;
+  --surf: #ffffff;
+  --surf2: #e6e9ed;
+  --line: #d5dae0;
+  --tx: #101418;
+  --mu: #566070;
+  --ac: #ffc93c;
+  --ac-ink: #14110a;
+  --act: #8a5f00;
+  --live: #d62828;
+  --ok: #0b7a4b;
+  --bad: #c4262e;
+}
+
+.s-meet {
+  --fd: 'Outfit', 'Plus Jakarta Sans', sans-serif;
+  --fu: 'DM Sans', system-ui, sans-serif;
+  --fn: 'Outfit', sans-serif;
+  --r: 14px;
+  --rb: 24px;
+  --live: #ff3b5c;
+  --ok: #1fa971;
+  --bad: #e5233f;
+  --grad: linear-gradient(135deg, #ff4f6d 0%, #ff8a4c 100%);
+}
+
+.s-meet.lt {
+  --bg: #ffffff;
+  --surf: #f7f3f4;
+  --surf2: #eee8ea;
+  --line: #e6dee1;
+  --tx: #1b1417;
+  --mu: #6a5d63;
+  --ac: #ff4f6d;
+  --ac-ink: #ffffff;
+  --act: #d6204a;
+}
+
+.s-meet.dk {
+  --bg: #130b0f;
+  --surf: #1e1318;
+  --surf2: #2a1a21;
+  --line: #3a2530;
+  --tx: #fbf4f6;
+  --mu: #b9a5ad;
+  --ac: #ff5c79;
+  --ac-ink: #ffffff;
+  --act: #ff7c93;
+}
+
+.s-pro {
+  --fd: 'Inter', system-ui, sans-serif;
+  --fu: 'Inter', system-ui, sans-serif;
+  --fn: 'Inter', sans-serif;
+  --r: 8px;
+  --rb: 10px;
+  --live: #e5484d;
+  --ok: #1b8a5a;
+  --bad: #d23a3f;
+  --grad: var(--ac);
+}
+
+.s-pro.lt {
+  --bg: #edf0f4;
+  --surf: #ffffff;
+  --surf2: #f3f5f8;
+  --line: #dce1e8;
+  --tx: #17202b;
+  --mu: #566474;
+  --ac: #1469c7;
+  --ac-ink: #ffffff;
+  --act: #0f5bb0;
+}
+
+.s-pro.dk {
+  --bg: #0f1318;
+  --surf: #181d24;
+  --surf2: #202730;
+  --line: #2c3541;
+  --tx: #ebf0f5;
+  --mu: #93a1b1;
+  --ac: #4c9bf0;
+  --ac-ink: #07101c;
+  --act: #6ab0ff;
+}
