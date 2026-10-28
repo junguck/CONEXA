@@ -25,7 +25,7 @@ deps_request: []
 human_gate: false
 reviewers: [architect, security]
 branch: "agent/architect/T-0004-shared-packages"
-worktree: "C:\Users\EG\Desktop\Conexa\worktrees\T-0004"
+worktree: "C:/Users/EG/Desktop/Conexa/worktrees/T-0004"
 pr: ""
 notes: "Contrat d'abord : cette tache produit le langage commun dont dependent TOUS les services. Rien ne doit etre code contre ces contrats avant leur fusion. LIVRE : @conexa/errors (48 codes de API.md + INTERNAL_ERROR, table HTTP, AppError, enveloppe sure) ; @conexa/contracts (primitives FCFA/dates/UUID, pagination par curseur, enveloppe d'erreur Zod, OpenAPI 3.1 genere) ; @conexa/events (enveloppe id/type/version/occurred_at/producer/traceparent/payload, garde-fou PII, JSON Schema genere) ; @conexa/messaging (outbox transactionnelle, inbox idempotente, reprise a delai croissant, topologie RabbitMQ, DDL outbox/inbox) ; ADR 0006. PREUVES : 36 tests verts (errors 9, contracts 10, events 8, messaging 9), turbo lint+typecheck+test+build 20/20, prettier et docs:verify verts. LIMITES : tests d'integration vrai RabbitMQ + PostgreSQL non executes (Docker absent du poste, cf. T-0002) ; alias racine pnpm gen:contracts a creer par platform ; packages/{contracts,events}/package.json non declares dans ownership.yaml (needs-human) ; PR non ouverte, aucun acces gh/token depuis ce poste."
 ---
