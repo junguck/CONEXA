@@ -14,7 +14,7 @@ import { notFound, validationError } from '@conexa/errors';
 import { env } from './config.js';
 import { db } from './db.js';
 import { createEmbeddingProvider } from './embedding.provider.js';
-import { cosine, rankBySimilarity } from './embeddings.js';
+import { cosine, formatVector, parseVector, rankBySimilarity } from './embeddings.js';
 
 @Injectable()
 export class AiService {
@@ -39,14 +39,14 @@ export class AiService {
         owner_id: input.owner_id,
         model: this.provider.model,
         dimensions: vector.length,
-        vector: JSON.stringify(vector),
+        vector: formatVector(vector),
         updated_at: new Date(),
       })
       .onConflict((oc) =>
         oc.columns(['owner_type', 'owner_id']).doUpdateSet({
           model: this.provider.model,
           dimensions: vector.length,
-          vector: JSON.stringify(vector),
+          vector: formatVector(vector),
           updated_at: new Date(),
         }),
       )
@@ -78,7 +78,7 @@ export class AiService {
 
     const candidates = rows
       .filter((row) => row.model === this.provider.model && row.dimensions === query.length)
-      .map((row) => ({ owner_id: row.owner_id, vector: row.vector as number[] }));
+      .map((row) => ({ owner_id: row.owner_id, vector: parseVector(row.vector) }));
 
     return {
       results: rankBySimilarity(query, candidates, input.limit, [
@@ -116,7 +116,7 @@ export class AiService {
     if (row.dimensions !== env.EMBEDDING_DIMENSIONS) {
       throw validationError('Vecteur de référence d’une autre dimension : à réencoder');
     }
-    return row.vector as number[];
+    return parseVector(row.vector);
   }
 
   /** Utilisé par les tests et le diagnostic : deux vecteurs identiques valent 1. */

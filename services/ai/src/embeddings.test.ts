@@ -1,6 +1,13 @@
 import { describe, expect, it } from 'vitest';
 
-import { cosine, hashEmbedding, rankBySimilarity, tokenize } from './embeddings.js';
+import {
+  cosine,
+  formatVector,
+  hashEmbedding,
+  parseVector,
+  rankBySimilarity,
+  tokenize,
+} from './embeddings.js';
 
 describe('tokenisation', () => {
   it('ignore la casse et les accents', () => {
@@ -82,5 +89,26 @@ describe('classement', () => {
     expect(results.map((result) => result.owner_id)).toEqual([
       'a0000000-0000-4000-8000-000000000002',
     ]);
+  });
+});
+
+describe('littéral pgvector', () => {
+  it('écrit au format attendu par le type vector', () => {
+    expect(formatVector([0.5, -0.25, 1])).toBe('[0.5,-0.25,1]');
+  });
+
+  it('relit exactement ce qu’il a écrit', () => {
+    const vector = hashEmbedding('football au campus');
+    expect(parseVector(formatVector(vector))).toEqual(vector);
+  });
+
+  it('tolère les espaces du littéral rendu par PostgreSQL', () => {
+    expect(parseVector('[0.1, 0.2, -0.3]')).toEqual([0.1, 0.2, -0.3]);
+    expect(parseVector('[]')).toEqual([]);
+  });
+
+  it('refuse une valeur illisible plutôt que d’inventer un vecteur', () => {
+    expect(() => parseVector('0.1,0.2')).toThrow(/crochets/);
+    expect(() => parseVector('[0.1,x]')).toThrow(/non numérique/);
   });
 });

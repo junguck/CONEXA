@@ -128,3 +128,36 @@ export function rankBySimilarity(
       .slice(0, limit)
   );
 }
+
+/**
+ * Formate un vecteur au littéral attendu par `pgvector` : `[0.1,-0.2,...]`.
+ *
+ * C'est aussi le format que le type `vector` renvoie en lecture, d'où
+ * l'aller-retour sans transformation : un seul format, aucune conversion
+ * silencieuse entre l'écriture et la lecture.
+ */
+export function formatVector(vector: number[]): string {
+  return `[${vector.map((value) => Number(value.toFixed(9))).join(',')}]`;
+}
+
+/**
+ * Lit un vecteur tel que `pg` le rend pour une colonne `vector` (une chaîne
+ * `[0.1,-0.2]`). Tolère aussi un tableau, pour les tests et un retour
+ * temporaire au stockage JSON.
+ */
+export function parseVector(value: string | number[]): number[] {
+  if (Array.isArray(value)) return value;
+  const trimmed = value.trim();
+  if (!trimmed.startsWith('[') || !trimmed.endsWith(']')) {
+    throw new Error('Vecteur illisible : crochets attendus');
+  }
+  const body = trimmed.slice(1, -1).trim();
+  if (body === '') return [];
+  return body.split(',').map((part) => {
+    const parsed = Number(part.trim());
+    if (!Number.isFinite(parsed)) {
+      throw new Error('Vecteur illisible : composante non numérique');
+    }
+    return parsed;
+  });
+}

@@ -9,9 +9,12 @@ export interface EmbeddingsTable {
   owner_id: string;
   model: string;
   dimensions: number;
-  /** `pgvector` absent en local : le vecteur tient dans un tableau JSON. */
-  /** En écriture : JSON sérialisé (pg enverrait sinon un littéral de tableau). */
-  vector: ColumnType<number[], string, string>;
+  /**
+   * Colonne `vector` de `pgvector` : un littÃ©ral `[0.1,-0.2]` en base, rendu
+   * par `pg` sous forme de chaÃ®ne. `formatVector` / `parseVector` font
+   * l'aller-retour avec `number[]`.
+   */
+  vector: ColumnType<string, string, string>;
   updated_at: ColumnType<Date, Date | undefined, Date>;
 }
 
