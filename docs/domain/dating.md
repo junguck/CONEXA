@@ -83,7 +83,7 @@ les deux agents.
 
 - `pnpm --filter @conexa/dating typecheck && pnpm --filter @conexa/dating test` (21 tests).
 - `DATABASE_URL=… node tools/db-migrate.mjs dating` appliqué sur PostgreSQL 18 local
-  (migrations `0001_init.sql` et `0002_outbox.sql`).
+  (migrations `0001_init.sql` et `202610291100_outbox.sql`).
 - Test d'intégration outbox (atomicité, émission unique, rejeu) :
   `DATING_TEST_DATABASE_URL=postgres://…/conexa_dating_test pnpm --filter @conexa/dating test`.
 - Service démarré : `/health` 200, `/ready` `{ database: true }`, routes protégées 401.

@@ -39,7 +39,7 @@ Un changement de questionnaire produit la demande de calcul des vecteurs de renc
 
 ## À livrer
 
-1. Migration `db/migrations/dating/0002_outbox.sql` : `dating_outbox` au schéma canonique (`id`, `envelope` jsonb, `status`, `attempts`, `available_at`, `last_error`) + `dating_inbox` pour les futurs consommateurs du domaine.
+1. Migration `db/migrations/dating/202610291100_outbox.sql` : `dating_outbox` au schéma canonique (`id`, `envelope` jsonb, `status`, `attempts`, `available_at`, `last_error`) + `dating_inbox` pour les futurs consommateurs du domaine.
 2. Code : `DatingOutboxService` (`enqueue(trx, envelope)` dans la transaction métier, `relay(limit)` par lot avec repli par ligne pour une enveloppe invalide, référence `available_at` croissante 2^n minutes plafonnée à 15) ; branchement dans `DatingService.putProfile`, planificateur interne (`DATING_CRON_*`) et `POST /internal/dating/outbox/relay` (rôle `service`).
 3. Schéma producteur `packages/events/src/dating/` + `services/dating/src/embedding-request.ts` : co-signature du contrat v1 gelé côté `ai` (aucune divergence de sémantique).
 4. Tests : unitaires sur le schéma et les déclencheurs, test d'intégration opt-in PostgreSQL (`DATING_TEST_DATABASE_URL`) sur l'atomicité (rollback ne produit rien), l'émission unique par changement, le relais en échec puis repris.
