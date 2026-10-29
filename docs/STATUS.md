@@ -12,8 +12,10 @@ Mis à jour : **2026-10-29** (fusion complète des branches). Tenu par l'orchest
 |---|---|
 | `README.md`, `AGENTS.md`, `CLAUDE.md`, `agents/` (16 agents, ownership, prompts, workflow git) | en place |
 | `docs/ROADMAP.md` (53 fonctionnalités), `docs/STACK.md`, `tasks/_TEMPLATE.md` | en place |
-| `docs/product/` : `API.md`, `ARCHITECTURE.md`, `schema_extension.sql`, `design/` (maquettes) | en place |
-| `docs/decisions/` : ADR 0001 à 0009 | en place |
+| `docs/product/` : `README.md` (produit), `API.md`, `ARCHITECTURE.md`, `schema_extension.sql` (source du schéma), `design/` (maquettes) | en place |
+| `docs/decisions/` : ADR 0001 à 0010 | en place |
+| `docs/vendor/` : `campay.md`, `mboasms.md` | en place |
+| `legal/` : dossier juridique et liste des documents à produire | en place (à remplir par l'humain) |
 | Outils : `tools/verify-docs.py`, `tools/check-*.py`, `gen-agent-ownership.py`, `db-migrate.mjs`, `seed-demo.mjs` | en place, verts |
 | CI : `.github/workflows/ci.yml` (qualité, garde-fous, PII/secrets, services Python) | en place, verte |
 
@@ -48,6 +50,8 @@ Poste Windows, Node 22, pnpm 12.4.1, PostgreSQL 18 réel pour les migrations.
 
 `pnpm ci:guards` ne s'exécute pas sur `main` : `check-ownership.py` exige une branche d'agent. C'est normal — en CI ce job ne tourne que sur les pull requests.
 
+**Non vérifié le 2026-10-29** : la migration `ai/202610291500_pgvector.sql` n'a pas pu être exécutée — Docker Desktop ne démarre pas sur ce poste et le PostgreSQL Windows local n'a pas l'extension. Elle demande un `pnpm dev:infra` puis `node tools/db-migrate.mjs ai` sur l'image `pgvector/pgvector`.
+
 ## Piste v1 et branches d'agents : toutes fusionnées
 
 | Branche | Contenu | État |
@@ -63,6 +67,8 @@ Poste Windows, Node 22, pnpm 12.4.1, PostgreSQL 18 réel pour les migrations.
 | `agent/money/T-0020` | Campay, grand livre, reversements, rapprochement, relève de secours | fusionnée |
 | `agent/football/T-0030` | Arbitrage admin, clôtures idempotentes, compétitions, outbox par lot | fusionnée |
 | `agent/web-core/T-0019` | Design system, 23 écrans maquettes, back-office, portail partenaire | fusionnée |
+| `agent/dating/T-0035` | Producteur `dating.embedding_requested` : outbox transactionnelle canonique (ADR 0007), relais par lot, planificateur + `/internal/dating/outbox/relay`, schéma producteur co-signé avec l'agent `ai`, test d'intégration opt-in PostgreSQL | fusionnée dans `main` le 2026-10-29 |
+| T-0026 (facturation) | Factures (numéro séquentiel), codes promo plafonnés, `past_due` + 3 jours de grâce, expiration (`expired`), résiliation différée, balayage quotidien idempotent | **livré le 2026-10-29, en revue** — voir fiche ; migration `202610291200` avec `drop constraint` → PR étiquette `human-ok` exigée |
 
 Les branches `agent/web-core/T-0007-web-shell`, `T-0007-maquettes-complements` et `T-0009-backoffice-portal` sont **incluses** dans `T-0019-fusion-front` : les fusionner séparément n'apporterait rien et rouvrirait des conflits de `pnpm-lock.yaml`.
 
@@ -74,25 +80,25 @@ Les branches `agent/web-core/T-0007-web-shell`, `T-0007-maquettes-complements` e
 
 ## Décisions humaines (ne pas coder autour)
 
-1. **`docs/product/schema.sql` manquant.** Les migrations sont reconstituées ([ADR 0003](decisions/0003-schema-base-reconstitue.md)) ; le fichier d'origine reste attendu pour une comparaison table par table. **Décision attendue : fournir le fichier ou valider l'ADR 0003.**
-2. **`docs/product/README.md` manquant** — cité §4, §5, §6, §8, §12, §16.
-3. **OTP WhatsApp.** Le fournisseur est **choisi** : ETECH KEY pour WhatsApp, MBOASMS pour les SMS de repli. **Décision attendue : fournir les variables d'environnement** ; en attendant, le fournisseur « console » du développement reste actif et aucune ADR n'est encore écrite pour ce choix.
+1. ~~**`docs/product/schema.sql` manquant.**~~ **Close le 2026-10-29** : le fichier d'origine est `docs/product/schema_extension.sql` ([ADR 0003](decisions/0003-schema-base-reconstitue.md)). La comparaison table par table est faite ; les migrations v1 divergent sur les noms et sur des tables absentes (détail dans l'ADR). **Décision attendue : valider l'ordre d'alignement billing → partners → marketplace.**
+2. ~~**`docs/product/README.md` manquant**~~ **Écrit le 2026-10-29** : [docs/product/README.md](product/README.md), reconstitué depuis API.md et ARCHITECTURE.md, provenance indiquée en tête.
+3. ~~**OTP WhatsApp.**~~ **Tranché le 2026-10-29** : OTP par **SMS uniquement** via MBOASMS ([ADR 0010](decisions/0010-otp-sms-mboasms.md)). WhatsApp est écarté. La clé est en place localement ; il ne manque que l'**URL d'envoi** fournie par MBOASMS (`MBOASMS_URL`), seul point encore non confirmé (voir [docs/vendor/mboasms.md](vendor/mboasms.md)).
 4. **Campay.** La démonstration fonctionne (`.env` du poste, collecte réelle constatée). Restent non confirmés : format et signature du webhook, frais, remboursement natif, prélèvement récurrent, plafonds. **Décision attendue : trancher avant F3.2 en production.**
 5. **Protection de `main` sur GitHub.** Aucun ruleset n'est actif (`GET /repos/…/rulesets` renvoie `[]`). **Action humaine : activer PR obligatoire + CI verte + squash.** Tant qu'elle est absente, la discipline reste humaine.
-6. **`pgvector` sous Windows.** Non installable en local ; la v1 stocke `jsonb` et compare en mémoire. **Décision attendue : valider un environnement Linux/Docker pour F4.3** avant la production.
+6. ~~**`pgvector` sous Windows.**~~ **Réglé le 2026-10-29** : la colonne `ai.embeddings.vector` passe au type natif `vector(64)` avec index HNSW (`db/migrations/ai/202610291500_pgvector.sql`), et le service lit/écrit le littéral pgvector. Le développement utilise l'image `pgvector/pgvector:pg17` du compose ; un PostgreSQL Windows sans extension n'est plus supporté pour le service IA.
 7. **Grand livre à double écriture.** [ADR 0008](decisions/0008-grand-livre-double-ecriture.md) attend une validation humaine avant F3.1.
 8. **Jest → Vitest.** [ADR 0004](decisions/0004-nestjs-esm-vitest.md) : NestJS 12 est ESM-only. À valider, et `docs/STACK.md` §2 à corriger en conséquence.
 9. **Stockage des fichiers.** Le service uploads écrit sur disque local ; le fournisseur S3-compatible (R2, Scaleway, MinIO) et la sauvegarde restent à choisir avant toute mise en ligne.
 10. **Argent réel.** `FakePaymentsGateway` reste le défaut hors démonstration ; aucun encaissement, séquestre, remboursement ni abonnement n'est réellement possible en production avant F3.1 à F3.4.
 11. **Domaine.** `api.convexa.app` est une hypothèse ([ADR 0001](decisions/0001-marque-convexa.md)) ; le domaine réel est une tâche humaine.
-12. **Juridique.** Conservation de fonds pour des tiers, conditions générales, données personnelles, accord de l'école, contrat du restaurant : à faire valider par un juriste avant la production.
+12. **Juridique.** Le dossier [legal/](../legal/README.md) liste les dix documents à produire (séquestre, CGU/CGV, RGPD, accord de l'école, contrats prestataire et fournisseurs, mentions légales). **Action humaine : le remplir.** Rien n'est exploitable en production avant l'avis sur le séquestre.
 
 ## Tâches encore ouvertes
 
 | Tâche | Sujet | État |
 |---|---|---|
-| [T-0026](../tasks/T-0026-factures-codes-promo-grace-expiration.md) | Factures, codes promo, grâce et expiration des abonnements | todo |
-| T-0035 et suivantes | Écrans branchés sur les contrats, messagerie temps réel, crons de clôture | à découper |
+| [T-0026](../tasks/T-0026-factures-codes-promo-grace-expiration.md) | Factures, codes promo, grâce et expiration des abonnements | **review** (code livré, PR avec étiquette `human-ok` attendue) |
+| T-0035 et suivantes | Écrans branchés sur les contrats, messagerie temps réel, crons de clôture | partie outbox dating livrée ; reste à découper |
 
 ## Protocole multi-instances (à lire avant de coder)
 
