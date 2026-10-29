@@ -82,13 +82,16 @@ export function invoiceTotals(baseFcfa: number, discountPct: number) {
 
 /** Éligibilité d'un code promo, au moment de la souscription. */
 export function promoAcceptable(
-  promo: {
-    active: boolean;
-    starts_at: Date | null;
-    ends_at: Date | null;
-    max_redemptions: number | null;
-    redeemed_count: number;
-  } | null | undefined,
+  promo:
+    | {
+        active: boolean;
+        starts_at: Date | null;
+        ends_at: Date | null;
+        max_redemptions: number | null;
+        redeemed_count: number;
+      }
+    | null
+    | undefined,
   now: Date,
   expectedCode: string,
   foundCode: string,

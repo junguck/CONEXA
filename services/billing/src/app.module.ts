@@ -2,7 +2,11 @@ import { Module } from '@nestjs/common';
 import { InMemoryEventBus } from '@conexa/events';
 import { AuthModule, HealthModule, createJwtVerifier } from '@conexa/service-kit';
 
-import { BillingJobsController, BillingInternalController, BillingController } from './billing.controller.js';
+import {
+  BillingJobsController,
+  BillingInternalController,
+  BillingController,
+} from './billing.controller.js';
 import { BillingService } from './billing.service.js';
 import { env } from './config.js';
 import { BILLING_CLOCK, BILLING_EVENT_BUS } from './events.js';

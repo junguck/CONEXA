@@ -62,15 +62,14 @@ export class BillingController {
   cancel(@CurrentUser() user: JwtClaims, @Param('id') id: string, @Body() body: unknown) {
     // `at_period_end` : la résiliation devient effective à la fin de la
     // période en cours (§7.5), le balayage quotidien cloturera.
-    const parsed = z
-      .object({ at_period_end: z.boolean().optional() })
-      .safeParse(body);
+    const parsed = z.object({ at_period_end: z.boolean().optional() }).safeParse(body);
     if (!parsed.success) {
       throw new AppError('VALIDATION_ERROR', 'at_period_end doit être un booléen');
     }
     return this.billing.cancel(user.sub, id, parsed.data);
   }
-}@Controller('internal/entitlements')
+}
+@Controller('internal/entitlements')
 export class BillingInternalController {
   constructor(private readonly billing: BillingService) {}
 

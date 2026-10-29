@@ -43,7 +43,9 @@ export class BillingScheduler implements OnApplicationBootstrap, OnModuleDestroy
     try {
       const outcome = await this.billing.runDailySweep();
       if (outcome.examined > 0) {
-        this.logger.log(`balayage billing : examined=${outcome.examined} changed=${outcome.changed}`);
+        this.logger.log(
+          `balayage billing : examined=${outcome.examined} changed=${outcome.changed}`,
+        );
       }
     } catch (error) {
       this.logger.error(

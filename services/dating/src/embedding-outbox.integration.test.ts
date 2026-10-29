@@ -137,15 +137,10 @@ describe.skipIf(!TEST_DATABASE_URL)('outbox transactionnelle de dating', () => {
 
     // Même écriture : aucune nouvelle demande d'embedding.
     await service.putProfile(USER_ID, INPUT);
-    expect(
-      await db.selectFrom('dating_outbox').select('id').execute(),
-    ).toHaveLength(1);
+    expect(await db.selectFrom('dating_outbox').select('id').execute()).toHaveLength(1);
 
     // Réponses modifiées : une seconde demande.
-    await service.putProfile(
-      USER_ID,
-      { ...INPUT, answers: { ...ANSWERS, values_trust: 5 } },
-    );
+    await service.putProfile(USER_ID, { ...INPUT, answers: { ...ANSWERS, values_trust: 5 } });
     const rows = await db
       .selectFrom('dating_outbox')
       .selectAll()
@@ -173,10 +168,7 @@ describe.skipIf(!TEST_DATABASE_URL)('outbox transactionnelle de dating', () => {
       },
     };
     const recovering = new DatingOutboxService(clock, healthyBus);
-    await db
-      .updateTable('dating_outbox')
-      .set({ available_at: NOW })
-      .execute();
+    await db.updateTable('dating_outbox').set({ available_at: NOW }).execute();
     outcome = await recovering.relay();
     expect(outcome).toEqual({ examined: 2, changed: 2, failed: 0 });
     expect(busCalls).toHaveLength(1);
@@ -190,9 +182,9 @@ describe.skipIf(!TEST_DATABASE_URL)('outbox transactionnelle de dating', () => {
     ).toBe('published');
 
     // La première enveloppe publiée porte les données du profil.
-    const firstEvent = (busCalls[0] as Array<{ id: string; payload: Record<string, unknown> }>).find(
-      (candidate) => candidate.id === rows[0]!.id,
-    )!;
+    const firstEvent = (
+      busCalls[0] as Array<{ id: string; payload: Record<string, unknown> }>
+    ).find((candidate) => candidate.id === rows[0]!.id)!;
     expect(firstEvent.payload).toMatchObject({
       user_id: USER_ID,
       profile_id: USER_ID,

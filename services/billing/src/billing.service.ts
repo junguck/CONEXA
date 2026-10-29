@@ -521,7 +521,11 @@ export class BillingService {
    * Les factures ouvertes d'un ancien plan restent consultables mais le
    * paiement n'y est plus attendu.
    */
-  private async replaceWithFree(userId: string, planCode: string, id: string): Promise<SubscriptionRow> {
+  private async replaceWithFree(
+    userId: string,
+    planCode: string,
+    id: string,
+  ): Promise<SubscriptionRow> {
     return db.transaction().execute(async (trx) => {
       await trx
         .updateTable('subscriptions')

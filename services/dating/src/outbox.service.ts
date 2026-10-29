@@ -66,7 +66,11 @@ export class DatingOutboxService {
       } else {
         // Une enveloppe corrompue ne peut pas être publiée : elle part en
         // échec définitif (failed) plutôt que de bloquer son lot à chaque relais.
-        await this.fail(row.id, parsed.success ? 'id de ligne et enveloppe divergent' : parsed.error.message, true);
+        await this.fail(
+          row.id,
+          parsed.success ? 'id de ligne et enveloppe divergent' : parsed.error.message,
+          true,
+        );
         rejectedRows += 1;
       }
     }
@@ -113,7 +117,9 @@ export class DatingOutboxService {
       .set({
         attempts: sql`attempts + 1`,
         last_error: message,
-        ...(terminal ? { status: 'failed' as const } : { available_at: this.retryAfterInMinutes(1) }),
+        ...(terminal
+          ? { status: 'failed' as const }
+          : { available_at: this.retryAfterInMinutes(1) }),
       })
       .where('id', '=', id)
       .execute();

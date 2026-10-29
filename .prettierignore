@@ -5,6 +5,8 @@ agents/
 tasks/
 
 # Fichiers générés / tiers
+# Service worker produit par Serwist au build : minifié, jamais édité à la main.
+apps/web/public/sw.js
 pnpm-lock.yaml
 dist/
 .next/

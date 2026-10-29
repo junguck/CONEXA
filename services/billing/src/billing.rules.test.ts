@@ -92,9 +92,7 @@ describe('facture et code promo (T-0026)', () => {
     };
     expect(() => promoAcceptable(undefined, NOW, code, '')).toThrow(/inconnu/);
     expect(() => promoAcceptable(base, NOW, code, 'AUTRE')).toThrow(/incohérent/);
-    expect(() =>
-      promoAcceptable({ ...base, active: false }, NOW, code, code),
-    ).toThrow(/désactivé/);
+    expect(() => promoAcceptable({ ...base, active: false }, NOW, code, code)).toThrow(/désactivé/);
     expect(() =>
       promoAcceptable({ ...base, ends_at: new Date(NOW.getTime() - 1) }, NOW, code, code),
     ).toThrow(/expiré/);
@@ -117,34 +115,32 @@ describe('grâce de 3 jours et expiration (T-0026)', () => {
   });
 
   it('conserve les droits du plan pendant la grâce, puis plus du tout', () => {
-    const due = { status: 'past_due' as const, current_period_end: NOW, grace_until: graceUntil(NOW) };
+    const due = {
+      status: 'past_due' as const,
+      current_period_end: NOW,
+      grace_until: graceUntil(NOW),
+    };
     expect(hasRights(due, new Date(NOW.getTime() + 3 * 86_400_000 - 1))).toBe(true);
     expect(hasRights(due, new Date(NOW.getTime() + 3 * 86_400_000))).toBe(false);
-    expect(hasRights({ status: 'past_due', current_period_end: null, grace_until: null }, NOW)).toBe(
-      false,
-    );
+    expect(
+      hasRights({ status: 'past_due', current_period_end: null, grace_until: null }, NOW),
+    ).toBe(false);
     expect(hasRights({ status: 'expired', current_period_end: null }, NOW)).toBe(false);
   });
 
   it('classe les transitions du balayage quotidien', () => {
     const kicked = NOW.getTime() - 1;
-    expect(
-      dueTransition('active', new Date(kicked), null, false, NOW),
-    ).toBe('past_due');
+    expect(dueTransition('active', new Date(kicked), null, false, NOW)).toBe('past_due');
     // Résiliation demandée : la clôture est directe, sans grâce.
-    expect(
-      dueTransition('active', new Date(kicked), null, true, NOW),
-    ).toBe('cancelled');
+    expect(dueTransition('active', new Date(kicked), null, true, NOW)).toBe('cancelled');
     expect(
       dueTransition('active', new Date(NOW.getTime() + 86_400_000), null, false, NOW),
     ).toBeNull();
     // Grâce échue : l'abonnement passe à expired ; tant que la grâce court, rien.
-    expect(
-      dueTransition('past_due', new Date(kicked), new Date(kicked), false, NOW),
-    ).toBe('expired');
-    expect(
-      dueTransition('past_due', new Date(kicked), graceUntil(NOW), false, NOW),
-    ).toBeNull();
+    expect(dueTransition('past_due', new Date(kicked), new Date(kicked), false, NOW)).toBe(
+      'expired',
+    );
+    expect(dueTransition('past_due', new Date(kicked), graceUntil(NOW), false, NOW)).toBeNull();
     expect(dueTransition('expired', null, null, false, NOW)).toBeNull();
   });
 });
