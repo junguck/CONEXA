@@ -6,7 +6,7 @@ import type {
 } from '@conexa/contracts';
 import { assertEntitlements } from '@conexa/entitlements';
 import { createDb } from '@conexa/service-kit';
-import type { ColumnType, Selectable } from 'kysely';
+import type { ColumnType, Generated, Selectable } from 'kysely';
 
 import { env } from './config.js';
 
@@ -26,6 +26,7 @@ export interface PlansTable {
 }
 
 export type PlanRow = Selectable<PlansTable>;
+export type SubscriptionRow = Selectable<SubscriptionsTable>;
 
 export interface SubscriptionsTable {
   id: string;
@@ -35,14 +36,47 @@ export interface SubscriptionsTable {
   payment_id: string | null;
   started_at: Date | null;
   current_period_end: Date | null;
+  grace_until: Date | null;
+  cancel_at_period_end: boolean;
   cancelled_at: Date | null;
   created_at: ColumnType<Date, Date | undefined, never>;
   updated_at: ColumnType<Date, Date | undefined, Date>;
 }
 
+export interface InvoicesTable {
+  id: string;
+  subscription_id: string;
+  user_id: string;
+  /** Numéro séquentiel attribué par la base : jamais choisi par le service. */
+  number: Generated<string>;
+  plan_code: string;
+  base_fcfa: number;
+  discount_fcfa: number;
+  total_fcfa: number;
+  promo_code: string | null;
+  status: 'open' | 'paid' | 'void';
+  payment_id: string | null;
+  issued_at: Date;
+  paid_at: Date | null;
+  created_at: ColumnType<Date, Date | undefined, never>;
+}
+
+export interface PromoCodesTable {
+  code: string;
+  discount_pct: number;
+  max_redemptions: number | null;
+  redeemed_count: Generated<number>;
+  starts_at: Date | null;
+  ends_at: Date | null;
+  active: boolean;
+  created_at: ColumnType<Date, Date | undefined, never>;
+}
+
 export interface Database {
   plans: PlansTable;
   subscriptions: SubscriptionsTable;
+  invoices: InvoicesTable;
+  promo_codes: PromoCodesTable;
 }
 
 const handle = createDb<Database>({ connectionString: env.DATABASE_URL, schema: 'billing' });

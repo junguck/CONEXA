@@ -10,6 +10,13 @@ export const EnvSchema = BaseEnvSchema.extend({
   SERVICE_TOKEN: z.string().min(16).optional(),
   /** Durée d'une période payée, en jours (mensuel). */
   BILLING_PERIOD_DAYS: z.coerce.number().int().positive().default(30),
+  /** Planificateur interne du balayage quotidien (T-0026) ; à couper en tests. */
+  BILLING_CRON_ENABLED: z
+    .enum(['true', 'false'])
+    .default('true')
+    .transform((value) => value === 'true'),
+  BILLING_CRON_INTERVAL_MS: z.coerce.number().int().min(1_000).default(3_600_000),
+  BILLING_CRON_INITIAL_DELAY_MS: z.coerce.number().int().min(0).default(30_000),
 });
 
 export type Env = z.infer<typeof EnvSchema>;

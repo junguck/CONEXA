@@ -2,11 +2,12 @@ import { Module } from '@nestjs/common';
 import { InMemoryEventBus } from '@conexa/events';
 import { AuthModule, HealthModule, createJwtVerifier } from '@conexa/service-kit';
 
-import { BillingInternalController, BillingController } from './billing.controller.js';
+import { BillingJobsController, BillingInternalController, BillingController } from './billing.controller.js';
 import { BillingService } from './billing.service.js';
 import { env } from './config.js';
-import { BILLING_EVENT_BUS } from './events.js';
+import { BILLING_CLOCK, BILLING_EVENT_BUS } from './events.js';
 import { pingDatabase } from './db.js';
+import { BillingScheduler } from './scheduler.js';
 
 @Module({
   imports: [
@@ -15,7 +16,12 @@ import { pingDatabase } from './db.js';
     ),
     HealthModule.forRoot(pingDatabase),
   ],
-  controllers: [BillingController, BillingInternalController],
-  providers: [{ provide: BILLING_EVENT_BUS, useValue: new InMemoryEventBus() }, BillingService],
+  controllers: [BillingController, BillingInternalController, BillingJobsController],
+  providers: [
+    { provide: BILLING_CLOCK, useValue: () => new Date() },
+    { provide: BILLING_EVENT_BUS, useValue: new InMemoryEventBus() },
+    BillingService,
+    BillingScheduler,
+  ],
 })
 export class AppModule {}

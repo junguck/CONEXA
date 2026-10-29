@@ -3,7 +3,7 @@ id: T-0026
 title: "Factures, codes promo, période de grâce et expiration des abonnements"
 feature: F3.4
 agent: money
-status: todo
+status: review
 depends_on: [T-0025]
 size: L
 owned_paths:
@@ -21,10 +21,10 @@ contracts_touched:
 deps_request: []
 human_gate: true
 reviewers: [architect, qa]
-branch: ""
+branch: main (travail direct, vague 3)
 worktree: ""
 pr: ""
-notes: "Découpée avant démarrage : la tâche est L. Prochaine action : contrat facture + code promo, puis jobs de grâce/expiration, puis écrans (F3.5)."
+notes: "Livré en code le 2026-10-29 : factures (numéro séquentiel), codes promo plafonnés, past_due + 3 jours de grâce, expiration (statut `expired`), résiliation différée, balayage quotidien idempotent + `/internal/billing/jobs/daily-sweep`. Tests : règles pures (promo, grâce aux bornes exactes, transitions) — 14 verts. ATTENTION : la migration `202610291200_invoices_promo_grace.sql` contient un `drop constraint` (élargissement du statut à `expired`) ; la PR exigera l'étiquette `human-ok` (garde migrations, `ALLOW_DESTRUCTIVE`)."
 ---
 
 ## Objectif
@@ -72,3 +72,19 @@ qui met en pause ce qui dépasse la nouvelle limite.
 ## Preuves attendues dans la PR
 
 - Tests : promo, grâce, expiration, idempotence du job.
+
+## Livré (2026-10-29)
+
+- Contrat : `Invoice`, `PromoCode`, `SubscribeInput.promo_code`, statuts
+  `expired`, événements `invoice.issued`, `subscription.past_due`,
+  `subscription.expired`, `subscription.cancelled`
+  (`packages/contracts/src/billing/index.ts`).
+- Migration `db/migrations/billing/202610291200_invoices_promo_grace.sql` :
+  `invoices`, `promo_codes`, `grace_until` et `cancel_at_period_end`, statut
+  `expired` (drop/readd de la contrainte — voir `human-ok` ci-dessus).
+- Service : facture dans la transaction de souscription, activation contre le
+  total de facture, promo (plancier client, plafond, fenêtre), grâce 3 jours,
+  expiration avec droits au plan gratuit, résiliation différée,
+  `runDailySweep()` idempotent + `POST /internal/billing/jobs/daily-sweep`.
+- Doc : [docs/domain/money.md](../docs/domain/money.md) § « Factures, codes
+  promo, grâce et expiration ».

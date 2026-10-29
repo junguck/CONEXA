@@ -1,6 +1,6 @@
 # Domaine argent (payments et billing)
 
-> État réel au 2026-10-27. Ce document décrit ce qui tourne, pas ce qui est prévu :
+> État réel au 2026-10-29. Ce document décrit ce qui tourne, pas ce qui est prévu :
 > le prévu est dans [docs/ROADMAP.md](../ROADMAP.md), les choix dans
 > [l'ADR 0008](../decisions/0008-grand-livre-double-ecriture.md).
 
@@ -15,6 +15,9 @@
 - **Rembourser** : décaissement vers le payeur (pas de remboursement natif).
 - **Rapprocher** chaque jour le grand livre et le solde par opérateur.
 - **Vendre des droits** : plans, abonnements, droits effectifs, `entitlements.changed`.
+- **Facturer** (T-0026) : facture à chaque souscription payante, codes promo
+  plafonnés, 3 jours de grâce (`past_due`) puis expiration, résiliation
+  différée à la fin de période, balayage quotidien idempotent.
 
 ## Invariants (testés sans base)
 
@@ -82,7 +85,38 @@ côté billing `entitlements.changed`, `subscription.activated`,
   `FixedEntitlementsGateway` (chemins d'un autre agent) ; la lecture réelle de
   `/internal/entitlements` est livrée côté Billing.
 - **Factures, codes promo, grâce, expiration** :
-  [T-0026](../../tasks/T-0026-factures-codes-promo-grace-expiration.md), non démarrée.
+  [T-0026](../../tasks/T-0026-factures-codes-promo-grace-expiration.md),
+  **implémenté** (statut `review`), en attente de revue ; la migration
+  `202610291200_invoices_promo_grace.sql` contient un `drop constraint`
+  (élargissement des statuts à `expired`), donc la PR exigera l'étiquette
+  `human-ok`.
+
+## Factures, codes promo, grâce et expiration (T-0026)
+
+- **Facture** : toute souscription d'un plan payant ouvre une facture (numéro
+  séquentiel attribué par la base, `INV-…`), écrite dans la même transaction
+  que l'abonnement ; `invoice.issued` est publié. L'activation compare le
+  paiement au **total de facture** (promo déduite), plus au prix du plan.
+- **Codes promo** : pourcentage en points entiers, plancher au client, plafond
+  d'usages et fenêtre vérifiés à la souscription ; un code inconnu, expiré ou
+  épuisé est refusé avant tout paiement. Le compteur d'usages s'incrémente
+  dans la transaction de la facture.
+- **Grâce** : abonnement `active` échu → `past_due` avec `grace_until = now +
+  3 jours` exactement ; les droits du plan restent effectifs pendant la grâce.
+- **Expiration** : grâce échue → `expired` ; les droits retombent au plan
+  gratuit de l'audience et `entitlements.changed` (raison `expired`) est
+  publié. Rien n'est supprimé (§7.4).
+- **Résiliation différée** : `cancel` avec `at_period_end` tourne jusqu'à la
+  fin de la période, le balayage quotidien clôt (`cancelled`).
+- **Balayage quotidien** : `runDailySweep()` (50 lignes max par passage,
+  transitions idempotentes), déclenché par `POST
+  /internal/billing/jobs/daily-sweep` (rôle `service`) ou par le planificateur
+  interne (`BILLING_CRON_*`).
+- **Événements** : `invoice.issued`, `subscription.past_due`,
+  `subscription.expired`, `subscription.cancelled` (
+  `packages/contracts/src/billing/index.ts`).
+- **Hors périmètre** : aucun prélèvement automatique, aucun remboursement de
+  facture payée en cas de résiliation.
 
 ## Preuves sur l'environnement demo
 

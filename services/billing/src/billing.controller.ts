@@ -7,6 +7,7 @@ import {
 } from '@conexa/contracts';
 import { AppError } from '@conexa/errors';
 import { CurrentUser, JwtAuthGuard, Public, createServiceTokenGuard } from '@conexa/service-kit';
+import { z } from 'zod';
 
 import { BillingService } from './billing.service.js';
 import { env } from './config.js';
@@ -38,7 +39,13 @@ export class BillingController {
   @Post('subscriptions')
   subscribe(@CurrentUser() user: JwtClaims, @Body() body: unknown) {
     const input = SubscribeSchema.parse(body);
-    return this.billing.subscribe(user.sub, input.plan_code, primaryRole(user));
+    return this.billing.subscribe(user.sub, input.plan_code, primaryRole(user), input.promo_code);
+  }
+
+  @UseGuards(JwtAuthGuard)
+  @Get('invoices')
+  invoices(@CurrentUser() user: JwtClaims) {
+    return this.billing.listInvoices(user.sub);
   }
 
   @UseGuards(JwtAuthGuard)
@@ -52,12 +59,18 @@ export class BillingController {
   @UseGuards(JwtAuthGuard)
   @Post('subscriptions/:id/cancel')
   @HttpCode(200)
-  cancel(@CurrentUser() user: JwtClaims, @Param('id') id: string) {
-    return this.billing.cancel(user.sub, id);
+  cancel(@CurrentUser() user: JwtClaims, @Param('id') id: string, @Body() body: unknown) {
+    // `at_period_end` : la résiliation devient effective à la fin de la
+    // période en cours (§7.5), le balayage quotidien cloturera.
+    const parsed = z
+      .object({ at_period_end: z.boolean().optional() })
+      .safeParse(body);
+    if (!parsed.success) {
+      throw new AppError('VALIDATION_ERROR', 'at_period_end doit être un booléen');
+    }
+    return this.billing.cancel(user.sub, id, parsed.data);
   }
-}
-
-@Controller('internal/entitlements')
+}@Controller('internal/entitlements')
 export class BillingInternalController {
   constructor(private readonly billing: BillingService) {}
 
@@ -85,5 +98,19 @@ export class BillingInternalController {
     }
     const parsed = PlanAudienceSchema.safeParse(audience);
     return this.billing.entitlementsFor(id, parsed.success ? parsed.data : undefined);
+  }
+}
+
+/** Déclencheurs exploit billing : appels par un compte de service. */
+@UseGuards(ServiceTokenGuard)
+@Controller('internal/billing/jobs')
+export class BillingJobsController {
+  constructor(private readonly billing: BillingService) {}
+
+  /** Balayage quotidien : grâce, expiration, résiliations différées. */
+  @Post('daily-sweep')
+  @HttpCode(200)
+  dailySweep() {
+    return this.billing.runDailySweep();
   }
 }

@@ -2,12 +2,19 @@ import { describe, expect, it } from 'vitest';
 import { AppError } from '@conexa/errors';
 
 import {
+  GRACE_DAYS,
   assertCanActivate,
   assertPaymentMatchesPlan,
   canSubscribe,
+  dueTransition,
   fallbackAudience,
+  graceUntil,
+  hasRights,
+  invoiceTotals,
   isActive,
   periodEnd,
+  promoAcceptable,
+  promoDiscount,
 } from './billing.rules.js';
 
 const NOW = new Date('2026-10-26T12:00:00Z');
@@ -52,6 +59,93 @@ describe('activation d’un abonnement', () => {
     expect(() => assertPaymentMatchesPlan(0, false)).not.toThrow();
     expect(() => assertPaymentMatchesPlan(2000, false)).toThrow(/paiement requis/);
     expect(() => assertPaymentMatchesPlan(0, true)).toThrow(/aucun paiement/);
+  });
+});
+
+describe('facture et code promo (T-0026)', () => {
+  it('applique une remise en plancher FCFA entier, jamais négative', () => {
+    expect(promoDiscount(2000, 10)).toBe(200);
+    expect(promoDiscount(1999, 10)).toBe(199); // plancher au client
+    expect(invoiceTotals(2000, 25)).toEqual({
+      base_fcfa: 2000,
+      discount_fcfa: 500,
+      total_fcfa: 1500,
+    });
+    // Une remise de 100 % ou plus ne descend jamais sous 0.
+    expect(invoiceTotals(2000, 100).total_fcfa).toBe(0);
+    expect(invoiceTotals(0, 50).total_fcfa).toBe(0);
+  });
+
+  it('refuse une base non entière ou négative', () => {
+    expect(() => invoiceTotals(199.99, 10)).toThrow(/entier/);
+    expect(() => invoiceTotals(-1, 10)).toThrow(/entier/);
+  });
+
+  it('refuse un code inconnu, désactivé, expiré, pas encore ouvert ou épuisé', () => {
+    const code = 'BIENVENUE';
+    const base = {
+      active: true,
+      starts_at: null,
+      ends_at: null,
+      max_redemptions: null,
+      redeemed_count: 0,
+    };
+    expect(() => promoAcceptable(undefined, NOW, code, '')).toThrow(/inconnu/);
+    expect(() => promoAcceptable(base, NOW, code, 'AUTRE')).toThrow(/incohérent/);
+    expect(() =>
+      promoAcceptable({ ...base, active: false }, NOW, code, code),
+    ).toThrow(/désactivé/);
+    expect(() =>
+      promoAcceptable({ ...base, ends_at: new Date(NOW.getTime() - 1) }, NOW, code, code),
+    ).toThrow(/expiré/);
+    expect(() =>
+      promoAcceptable({ ...base, starts_at: new Date(NOW.getTime() + 1) }, NOW, code, code),
+    ).toThrow(/pas encore ouvert/);
+    expect(() =>
+      promoAcceptable({ ...base, max_redemptions: 5, redeemed_count: 5 }, NOW, code, code),
+    ).toThrow(/épuisé/);
+    expect(() =>
+      promoAcceptable({ ...base, max_redemptions: 5, redeemed_count: 4 }, NOW, code, code),
+    ).not.toThrow();
+  });
+});
+
+describe('grâce de 3 jours et expiration (T-0026)', () => {
+  it('compte exactement 3 jours, au franc près sur les dates', () => {
+    expect(GRACE_DAYS).toBe(3);
+    expect(graceUntil(NOW).toISOString()).toBe('2026-10-29T12:00:00.000Z');
+  });
+
+  it('conserve les droits du plan pendant la grâce, puis plus du tout', () => {
+    const due = { status: 'past_due' as const, current_period_end: NOW, grace_until: graceUntil(NOW) };
+    expect(hasRights(due, new Date(NOW.getTime() + 3 * 86_400_000 - 1))).toBe(true);
+    expect(hasRights(due, new Date(NOW.getTime() + 3 * 86_400_000))).toBe(false);
+    expect(hasRights({ status: 'past_due', current_period_end: null, grace_until: null }, NOW)).toBe(
+      false,
+    );
+    expect(hasRights({ status: 'expired', current_period_end: null }, NOW)).toBe(false);
+  });
+
+  it('classe les transitions du balayage quotidien', () => {
+    const kicked = NOW.getTime() - 1;
+    expect(
+      dueTransition('active', new Date(kicked), null, false, NOW),
+    ).toBe('past_due');
+    // Résiliation demandée : la clôture est directe, sans grâce.
+    expect(
+      dueTransition('active', new Date(kicked), null, true, NOW),
+    ).toBe('cancelled');
+    expect(
+      dueTransition('active', new Date(NOW.getTime() + 86_400_000), null, false, NOW),
+    ).toBeNull();
+    // Grâce échue : l'abonnement passe à expired ; tant que la grâce court, rien.
+    expect(
+      dueTransition('past_due', new Date(kicked), new Date(kicked), false, NOW),
+    ).toBe('expired');
+    expect(
+      dueTransition('past_due', new Date(kicked), graceUntil(NOW), false, NOW),
+    ).toBeNull();
+    expect(dueTransition('expired', null, null, false, NOW)).toBeNull();
   });
 });
 
