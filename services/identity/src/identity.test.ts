@@ -22,7 +22,7 @@ import {
 import { assessRefresh, generateRefreshToken, hashToken } from './tokens.js';
 import { assertServiceToken, serviceTokenMatches } from '@conexa/service-kit';
 
-import { ConsoleOtpSender, buildWhatsappPayload, createOtpSender } from './otp-sender.js';
+import { ConsoleOtpSender, buildSmsPayload, createOtpSender } from './otp-sender.js';
 
 const SECRET = 'secret-de-test';
 
@@ -155,27 +155,24 @@ describe('fournisseur OTP', () => {
     expect(sender).toBeInstanceOf(ConsoleOtpSender);
   });
 
-  it('refuse de démarrer en mode WhatsApp sans URL ni jeton', () => {
-    expect(() => createOtpSender({ provider: 'whatsapp', templateName: 'convexa_otp' })).toThrow(
-      /WHATSAPP_OTP_URL/,
-    );
+  it('refuse de démarrer en mode SMS sans URL ni clé', () => {
+    expect(() => createOtpSender({ provider: 'sms', sender: 'CONEXA' })).toThrow(/MBOASMS_URL/);
     expect(() =>
       createOtpSender({
-        provider: 'whatsapp',
-        baseUrl: 'https://graph.example.test/v1',
-        token: 'jeton-de-test',
-        templateName: 'convexa_otp',
+        provider: 'sms',
+        url: 'https://sms.example.test/v1/send',
+        apiKey: 'fake-sms-key-for-tests',
+        sender: 'CONEXA',
       }),
     ).not.toThrow();
   });
 
-  it('construit une charge utile de gabarit WhatsApp fermée', () => {
-    const payload = buildWhatsappPayload('+237655443312', '123456', 'convexa_otp');
-    expect(payload).toMatchObject({
-      messaging_product: 'whatsapp',
-      to: '+237655443312',
-      type: 'template',
-      template: { name: 'convexa_otp', language: { code: 'fr' } },
+  it('construit un SMS qui ne contient que le code et sa durée de vie', () => {
+    const payload = buildSmsPayload('+237655443312', '123456', 'CONEXA');
+    expect(payload).toEqual({
+      sender: 'CONEXA',
+      recipient: '+237655443312',
+      message: 'Convexa : votre code est 123456. Il expire dans 10 minutes.',
     });
   });
 });

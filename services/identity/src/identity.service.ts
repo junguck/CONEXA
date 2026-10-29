@@ -28,9 +28,9 @@ export class IdentityService {
   // dépendances à injecter (il n'existe aucun provider `OtpSender`).
   private readonly sender: OtpSender = createOtpSender({
     provider: env.OTP_PROVIDER,
-    baseUrl: env.WHATSAPP_OTP_URL,
-    token: env.WHATSAPP_OTP_TOKEN,
-    templateName: env.WHATSAPP_OTP_TEMPLATE,
+    url: env.MBOASMS_URL,
+    apiKey: env.MBOASMS_API_KEY,
+    sender: env.MBOASMS_SENDER,
   });
   private readonly now: () => Date = () => new Date();
 

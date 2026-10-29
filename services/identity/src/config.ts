@@ -14,11 +14,13 @@ export const EnvSchema = BaseEnvSchema.extend({
    * routes internes répondent une erreur explicite au lieu d'un faux contact.
    */
   SERVICE_TOKEN: z.string().min(16).optional(),
-  /** Fournisseur d'OTP : `console` en développement, `whatsapp` en production. */
-  OTP_PROVIDER: z.enum(['console', 'whatsapp']).default('console'),
-  WHATSAPP_OTP_URL: z.string().url().optional(),
-  WHATSAPP_OTP_TOKEN: z.string().min(8).optional(),
-  WHATSAPP_OTP_TEMPLATE: z.string().min(2).default('convexa_otp'),
+  /** Fournisseur d'OTP : `console` en développement, `sms` (MBOASMS) en production. */
+  OTP_PROVIDER: z.enum(['console', 'sms']).default('console'),
+  /** URL d'envoi MBOASMS ; aucune valeur par défaut, elle vient du fournisseur. */
+  MBOASMS_URL: z.string().url().optional(),
+  MBOASMS_API_KEY: z.string().min(8).optional(),
+  /** Émetteur affiché sur le téléphone du destinataire. */
+  MBOASMS_SENDER: z.string().min(2).default('CONEXA'),
 });
 
 export type Env = z.infer<typeof EnvSchema>;

@@ -3,10 +3,13 @@ import { createLogger, maskPhone } from '@conexa/service-kit';
 
 /**
  * Envoi des codes OTP derrière une interface : le service ne dépend d'aucun
- * fournisseur. Tant que le fournisseur WhatsApp n'est pas choisi (décision
- * humaine), `console` journalise le code masqué ; `whatsapp` exige une URL et un
- * jeton, et refuse de démarrer sans eux plutôt que d'échouer à la première
+ * fournisseur. `console` journalise le code masqué pour le développement ;
+ * `sms` passe par MBOASMS (voir `docs/vendor/mboasms.md` et l'ADR 0010) et
+ * refuse de démarrer sans URL ni clé, plutôt que d'échouer à la première
  * inscription.
+ *
+ * WhatsApp n'est pas branché : la décision produit du 2026-10-29 est un OTP
+ * par SMS uniquement.
  */
 export interface OtpSender {
   send(whatsapp: string, code: string): Promise<void>;
@@ -21,46 +24,51 @@ export class ConsoleOtpSender implements OtpSender {
   }
 }
 
-export interface WhatsappSenderOptions {
-  baseUrl: string;
-  token: string;
-  templateName: string;
+export interface SmsSenderOptions {
+  /** URL d'envoi fournie par MBOASMS (aucune valeur par défaut : jamais devinée). */
+  url: string;
+  apiKey: string;
+  /** Émetteur affiché sur le téléphone. */
+  sender: string;
 }
 
-/** Charge utile d'un envoi WhatsApp Cloud API, isolée pour être testée. */
-export function buildWhatsappPayload(
+/**
+ * Corps de l'envoi SMS, isolé pour être testé sans réseau.
+ *
+ * Le format exact n'est **pas encore confirmé** par la documentation MBOASMS :
+ * il est concentré ici pour qu'une seule fonction change quand elle arrivera
+ * (voir `docs/vendor/mboasms.md`, « à confirmer »).
+ */
+export function buildSmsPayload(
   to: string,
   code: string,
-  templateName: string,
+  sender: string,
+  ttlMinutes = 10,
 ): Record<string, unknown> {
   return {
-    messaging_product: 'whatsapp',
-    to,
-    type: 'template',
-    template: {
-      name: templateName,
-      language: { code: 'fr' },
-      components: [{ type: 'body', parameters: [{ type: 'text', text: code }] }],
-    },
+    sender,
+    recipient: to,
+    message: `Convexa : votre code est ${code}. Il expire dans ${ttlMinutes} minutes.`,
   };
 }
 
-export class WhatsappOtpSender implements OtpSender {
-  constructor(private readonly options: WhatsappSenderOptions) {}
+export class MboaSmsSender implements OtpSender {
+  constructor(private readonly options: SmsSenderOptions) {}
 
   async send(whatsapp: string, code: string): Promise<void> {
-    const response = await fetch(`${this.options.baseUrl}/messages`, {
+    const response = await fetch(this.options.url, {
       method: 'POST',
       headers: {
         'content-type': 'application/json',
-        authorization: `Bearer ${this.options.token}`,
+        // MBOASMS remet la clé d'API en en-tête `Authorization`.
+        authorization: `Bearer ${this.options.apiKey}`,
       },
-      body: JSON.stringify(buildWhatsappPayload(whatsapp, code, this.options.templateName)),
+      body: JSON.stringify(buildSmsPayload(whatsapp, code, this.options.sender)),
     });
 
     if (!response.ok) {
-      // Le numéro n'apparaît pas dans l'erreur : seul un statut est journalisé.
-      throw new AppError('INTERNAL_ERROR', 'Envoi WhatsApp refusé', {
+      // Le numéro n'apparaît jamais dans l'erreur : seul un statut est journalisé.
+      throw new AppError('INTERNAL_ERROR', 'Envoi SMS refusé', {
         status: response.status,
       });
     }
@@ -68,22 +76,18 @@ export class WhatsappOtpSender implements OtpSender {
 }
 
 export type OtpSenderConfig =
-  | { provider: 'console' }
-  | { provider: 'whatsapp'; baseUrl?: string; token?: string; templateName: string };
+  { provider: 'console' } | { provider: 'sms'; url?: string; apiKey?: string; sender: string };
 
 export function createOtpSender(config: OtpSenderConfig): OtpSender {
   if (config.provider === 'console') {
     return new ConsoleOtpSender();
   }
-  if (!config.baseUrl || !config.token) {
-    throw new AppError(
-      'INTERNAL_ERROR',
-      'OTP_PROVIDER=whatsapp exige WHATSAPP_OTP_URL et WHATSAPP_OTP_TOKEN',
-    );
+  if (!config.url || !config.apiKey) {
+    throw new AppError('INTERNAL_ERROR', 'OTP_PROVIDER=sms exige MBOASMS_URL et MBOASMS_API_KEY');
   }
-  return new WhatsappOtpSender({
-    baseUrl: config.baseUrl,
-    token: config.token,
-    templateName: config.templateName,
+  return new MboaSmsSender({
+    url: config.url,
+    apiKey: config.apiKey,
+    sender: config.sender,
   });
 }
