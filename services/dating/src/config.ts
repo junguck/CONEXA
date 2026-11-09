@@ -7,6 +7,9 @@ export const EnvSchema = BaseEnvSchema.extend({
   JWT_ISSUER: z.string().default('conexa-identity'),
   /** Passerelle interne vers Identity pour la révélation du numéro (optionnelle en dev). */
   IDENTITY_URL: z.string().url().optional(),
+  /** Services appelés par la saga de réservation (routes internes, jeton de service). */
+  PARTNERS_URL: z.string().url().optional(),
+  PAYMENTS_URL: z.string().url().optional(),
   SERVICE_TOKEN: z.string().min(16).optional(),
   /** Planificateur interne du relais outbox (patron football, T-0035). */
   DATING_CRON_ENABLED: z

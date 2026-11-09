@@ -179,7 +179,7 @@ describe.skipIf(!TEST_DATABASE_URL)('outbox transactionnelle de dating', () => {
         .select('status')
         .where('id', '=', rows[0]!.id)
         .executeTakeFirstOrThrow(),
-    ).toBe('published');
+    ).toEqual({ status: 'published' });
 
     // La première enveloppe publiée porte les données du profil.
     const firstEvent = (

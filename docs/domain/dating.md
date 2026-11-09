@@ -61,6 +61,44 @@ les deux agents.
 | Cycle de vie | pause et préférences ne changent pas les réponses, donc n'émettent rien ; une suppression de compte devra purger les vecteurs côté dating (hors v1) |
 | Journalisation | jamais de réponses, de vecteurs, de numéro ni de nom |
 
+## Saga de réservation d'un date (T-0058, F4.5)
+
+Implémentation de `ARCHITECTURE.md` §6.1 : `services/dating/src/reservation.*`. **Pas encore branchée** au parcours
+actuel (voir « Reste à faire »).
+
+```text
+holding ─hold_ok→ awaiting_payment ─payment_escrowed→ confirming ─hold_confirmed→ confirmed
+   │                   │                                   │
+hold_rejected     payment_failed / hold_expired       confirm_failed
+   ▼                   ▼                                   ▼
+failed(SLOT_LOST)  failed(PAYMENT_FAILED|HOLD_EXPIRED)  failed(HOLD_EXPIRED) + remboursement
+```
+
+- **Machine pure** (`reservation.machine.ts`) : (état, événement) → (état, actions). Rejouer un événement ne change rien.
+- **Persistance** : `reservation_sagas` (état, `hold_ref` = `<date>:<tentative>`) et `reservation_actions` (file d'actions)
+  écrites dans la même transaction. L'exécuteur (`runDue`) réclame les actions avec `skip locked`, les rejoue avec un délai
+  croissant (8 essais), et reprend une action « en cours » dont le travailleur a disparu (2 min). Un crash ne perd rien.
+- **Ports** (`reservation.ports.ts`) : Partners (`hold`, `confirm`, `release`) et Payments (`refund`), par routes internes
+  et jeton de service. Variables `PARTNERS_URL`, `PAYMENTS_URL`, `SERVICE_TOKEN`.
+- **Le débit n'est pas une action de la saga** : le payeur lance `POST /payments` avec son numéro mobile money, que dating ne
+  détient jamais. La saga attend `payment.escrowed` (`object_type = date`, `object_id` = id du date).
+- **Entrées** : `POST /internal/dating/reservations/events` (`slot.released` expiré, `payment.escrowed|failed`) et
+  `POST /internal/dating/reservations/run`. Un `slot.released` d'une tentative précédente est écarté par son `hold_ref`.
+- **Compensations** : paiement refusé → table libérée ; retenue expirée → échec, et un paiement arrivé ensuite est remboursé ;
+  table perdue à la confirmation → paiement remboursé ; second paiement sur un date confirmé → remboursé ; annulation d'un
+  date confirmé → table libérée et paiement remboursé. Une réservation échouée peut être retentée (nouveau `hold_ref`).
+
+**Reste à faire pour F4.5** (décisions humaines ou autres agents) :
+
+1. **Brancher la saga** sur `pay`, `cancel` et `lockSlot` de `dates.service.ts`. Aujourd'hui dating réserve dans sa table
+   locale `restaurant_slots` et simule le paiement (`pay_<date>`). Brancher exige de faire pointer `dates.slot_id` vers les
+   créneaux de Partners : **choix d'architecture à valider** (migration de clé étrangère, abandon des tables locales).
+2. **Commission figée** : appeler `GET /internal/partners/venues/:id/commission` (T-0056) au démarrage et copier le taux dans
+   `dates.commission_fcfa`.
+3. **Crédit restaurant** (trou n°4) : ADR humain requis avant F4.6.
+4. Bus réel (`slot.released`, `payment.*` arrivent aujourd'hui par l'endpoint interne).
+5. Les routes de Partners (#11) et la création de paiement `object_type = date` côté front doivent exister.
+
 ## Écarts et points à valider
 
 1. **Embeddings non consommés (ADR 0003, T-0014)** : dating publie la demande,

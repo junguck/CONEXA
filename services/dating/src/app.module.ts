@@ -10,6 +10,9 @@ import { pingDatabase } from './db.js';
 import { DatingInternalController } from './internal.controller.js';
 import { DATING_EVENTS, DatingOutboxService } from './outbox.service.js';
 import { DATING_CLOCK } from './profile.js';
+import { HttpPartnersPort, HttpPaymentsPort } from './reservation.http-ports.js';
+import { PARTNERS_PORT, PAYMENTS_PORT } from './reservation.ports.js';
+import { ReservationSagaService } from './reservation.service.js';
 import { DatingScheduler } from './scheduler.js';
 
 @Module({
@@ -26,6 +29,21 @@ import { DatingScheduler } from './scheduler.js';
     DatingService,
     DatesService,
     DatingOutboxService,
+    {
+      provide: PARTNERS_PORT,
+      useValue: new HttpPartnersPort(
+        env.PARTNERS_URL ?? 'http://localhost:3014',
+        env.SERVICE_TOKEN ?? '',
+      ),
+    },
+    {
+      provide: PAYMENTS_PORT,
+      useValue: new HttpPaymentsPort(
+        env.PAYMENTS_URL ?? 'http://localhost:3015',
+        env.SERVICE_TOKEN ?? '',
+      ),
+    },
+    ReservationSagaService,
     DatingScheduler,
   ],
 })
