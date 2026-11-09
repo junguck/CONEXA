@@ -77,6 +77,30 @@ export interface RedemptionsTable {
   redeemed_at: ColumnType<Date, Date | undefined, never>;
 }
 
+export interface SlotHoldsTable {
+  id: string;
+  slot_id: string;
+  hold_ref: string;
+  status: 'held' | 'confirmed' | 'released' | 'expired';
+  expires_at: Date;
+  created_at: ColumnType<Date, Date | undefined, never>;
+  updated_at: Date;
+}
+
+export interface PartnersOutboxTable {
+  id: string;
+  envelope: unknown;
+  status: ColumnType<
+    'pending' | 'published' | 'failed',
+    undefined,
+    'pending' | 'published' | 'failed'
+  >;
+  attempts: ColumnType<number, undefined, number | ReturnType<typeof import('kysely').sql<number>>>;
+  available_at: Date;
+  last_error: ColumnType<string | null, string | null | undefined, string | null>;
+  created_at: ColumnType<Date, Date | undefined, never>;
+}
+
 export interface Database {
   organisations: OrganisationsTable;
   venues: VenuesTable;
@@ -85,6 +109,8 @@ export interface Database {
   slots: SlotsTable;
   offers: OffersTable;
   offer_redemptions: RedemptionsTable;
+  slot_holds: SlotHoldsTable;
+  partners_outbox: PartnersOutboxTable;
 }
 
 const handle = createDb<Database>({ connectionString: env.DATABASE_URL, schema: 'partners' });

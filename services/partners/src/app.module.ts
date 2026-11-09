@@ -1,4 +1,5 @@
 import { Module } from '@nestjs/common';
+import { InMemoryEventBus } from '@conexa/events';
 import { AuthModule, HealthModule, createJwtVerifier } from '@conexa/service-kit';
 
 import { env } from './config.js';
@@ -8,7 +9,11 @@ import {
   OrganisationsController,
   VenuesController,
 } from './partners.controller.js';
+import { SlotHoldsService } from './holds.service.js';
+import { PartnersInternalController } from './internal.controller.js';
+import { PARTNERS_CLOCK, PARTNERS_EVENTS, PartnersOutboxService } from './outbox.service.js';
 import { PartnersService } from './partners.service.js';
+import { PartnersScheduler } from './scheduler.js';
 
 @Module({
   imports: [
@@ -17,7 +22,19 @@ import { PartnersService } from './partners.service.js';
     ),
     HealthModule.forRoot(pingDatabase),
   ],
-  controllers: [OrganisationsController, VenuesController, OffersController],
-  providers: [PartnersService],
+  controllers: [
+    OrganisationsController,
+    VenuesController,
+    OffersController,
+    PartnersInternalController,
+  ],
+  providers: [
+    { provide: PARTNERS_CLOCK, useValue: () => new Date() },
+    { provide: PARTNERS_EVENTS, useValue: new InMemoryEventBus() },
+    PartnersService,
+    PartnersOutboxService,
+    SlotHoldsService,
+    PartnersScheduler,
+  ],
 })
 export class AppModule {}

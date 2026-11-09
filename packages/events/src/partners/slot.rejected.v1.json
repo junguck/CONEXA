@@ -1,0 +1,55 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://conexa.app/events/partners/slot.rejected.v1.json",
+  "title": "slot.rejected v1",
+  "description": "La retenue est refusée ; aucune place n'est consommée.",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["id", "type", "version", "occurred_at", "producer", "payload"],
+  "properties": {
+    "id": {
+      "type": "string",
+      "minLength": 1
+    },
+    "type": {
+      "const": "slot.rejected"
+    },
+    "version": {
+      "const": 1
+    },
+    "occurred_at": {
+      "type": "string",
+      "format": "date-time",
+      "pattern": "(Z|[+-][0-9]{2}:[0-9]{2})$"
+    },
+    "producer": {
+      "const": "partners"
+    },
+    "traceparent": {
+      "type": "string"
+    },
+    "payload": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["hold_ref", "slot_id", "venue_id", "reason"],
+      "properties": {
+        "hold_ref": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 128
+        },
+        "slot_id": {
+          "type": "string",
+          "minLength": 1
+        },
+        "venue_id": {
+          "type": "string",
+          "minLength": 1
+        },
+        "reason": {
+          "enum": ["SLOT_NOT_OPEN", "SLOT_STARTED", "SLOT_FULL"]
+        }
+      }
+    }
+  }
+}
