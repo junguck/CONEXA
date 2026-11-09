@@ -118,6 +118,13 @@ côté billing `entitlements.changed`, `subscription.activated`,
 - **Hors périmètre** : aucun prélèvement automatique, aucun remboursement de
   facture payée en cas de résiliation.
 
+## Back-office finance : bloqué (T-0053)
+
+Les routes admin de l'argent (rapprochement, reversements, remboursements, solde) ne sont
+exposées que sur `/internal/*`, hors Gateway. Les écrans `apps/backoffice/src/features/finance`
+restent des maquettes. Prérequis : publier des routes `/admin/money/*` (contrat d'abord, rôle
+admin, revue `security`), puis reprendre [T-0053](../../tasks/T-0053-backoffice-finance.md).
+
 ## Preuves sur l'environnement demo
 
 | Date | Contrôle | Résultat |
