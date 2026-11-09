@@ -61,12 +61,32 @@ les deux agents.
 | Cycle de vie | pause et préférences ne changent pas les réponses, donc n'émettent rien ; une suppression de compte devra purger les vecteurs côté dating (hors v1) |
 | Journalisation | jamais de réponses, de vecteurs, de numéro ni de nom |
 
+## Vecteurs IA et propositions classées (T-0057, F4.3/F4.4)
+
+Dating consomme `embedding.computed` (producteur `ai`, v1) et classe les propositions hebdomadaires.
+
+- **Consommation** : `POST /internal/dating/embeddings/computed` (rôle `service`) → `EmbeddingsConsumer`.
+  Idempotent par identifiant d'événement (`dating_inbox`) ; un résultat calculé pour un questionnaire
+  **plus ancien** que celui du profil est ignoré (`stale`) ; profil inconnu : rien n'est enregistré, l'événement
+  peut être rejoué. Vecteur invalide (≠ 64 nombres finis) : rejeté. Les vecteurs ne sont jamais journalisés.
+- **Stockage** : `profile_vectors` (3 × 64 réels, migration `202611091200`), un par profil.
+- **Classement** (`matching.ts`, fonctions pures) : ressemblance = 0,5·cos(valeurs) + 0,3·cos(personnalité)
+  + 0,2·cos(mode de vie). Deux « ressemblants » (meilleurs scores), puis un « complémentaire » : parmi les restants
+  partageant ≥ 0,3 de cosinus de valeurs, la personnalité la plus éloignée. Égalités départagées par identifiant :
+  tirage reproductible. Sans vecteur, un profil reste proposable après ceux qui en ont.
+- **Filtres** : âge, préférences, éligibilité, déjà vus, **quarantaine de 60 jours** après un refus d'invitation
+  (dans les deux sens, borne exacte à 60 jours).
+- Propositions stables pour la semaine (inchangé) ; quotas jamais augmentés par un abonnement (inchangé).
+
+**Écarts à valider** : (1) le classement est calculé dans le service sur tableaux de réels, pas par `pgvector`
+comme l'écrit la spec F4.4 — décision prise car la base de test n'a pas l'extension ; la migration vers un type
+`vector` reste additive. (2) Poids 0,5/0,3/0,2 et seuil 0,3 sont des hypothèses de l'agent, à confirmer par le produit.
+(3) Filtre « blocages » : aucune table de blocage n'existe encore. (4) Mesure d'équité (taux de « oui » par segment,
+côté `ai`) : non faite.
+
 ## Écarts et points à valider
 
-1. **Embeddings non consommés (ADR 0003, T-0014)** : dating publie la demande,
-   mais sans pgvector ni relais de bus en v1 il ne stocke pas encore les vecteurs
-   renvoyés par le worker. Les propositions restent tirées parmi les profils
-   éligibles ; le classement cosinus viendra avec la persistance des vecteurs.
+1. **Embeddings** : consommés et classés depuis T-0057 (voir section ci-dessus). Reste le branchement du bus réel.
 2. **Paiement simulé** : aucune passerelle Payments en v1. `POST /dates/{id}/pay`
    renvoie une intention `pay_<date>` et confirme le date ; le séquestre réel viendra
    avec le service Payments sans changer les transitions.

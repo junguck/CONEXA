@@ -7,6 +7,7 @@ import { DatesService } from './dates.service.js';
 import { DatingController } from './dating.controller.js';
 import { DatingService } from './dating.service.js';
 import { pingDatabase } from './db.js';
+import { EmbeddingsConsumer } from './embeddings.consumer.js';
 import { DatingInternalController } from './internal.controller.js';
 import { DATING_EVENTS, DatingOutboxService } from './outbox.service.js';
 import { DATING_CLOCK } from './profile.js';
@@ -26,6 +27,7 @@ import { DatingScheduler } from './scheduler.js';
     DatingService,
     DatesService,
     DatingOutboxService,
+    EmbeddingsConsumer,
     DatingScheduler,
   ],
 })

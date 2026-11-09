@@ -19,6 +19,7 @@ import {
   hasSignal,
   shouldRequestEmbedding,
 } from './embedding-request.js';
+import { inQuarantine, rankPicks, type ProfileVectors } from './matching.js';
 import { DatingOutboxService } from './outbox.service.js';
 import {
   AGE_LIMITS_MESSAGE,
@@ -384,9 +385,11 @@ export class DatingService {
   }
 
   /**
-   * Sans pgvector en v1 (T-0014), les propositions sont tirées parmi les profils
-   * éligibles : deux « similaires » puis une « complémentaire ». Le worker IA
-   * remplacera ce tirage par le classement d’embeddings.
+   * Propositions de la semaine : deux « ressemblants » et un « complémentaire »
+   * classés par similarité cosinus pondérée des vecteurs IA (matching.ts). Filtres :
+   * âge, préférences, éligibilité, déjà vus, quarantaine de 60 jours après un refus.
+   * Un profil sans vecteur (worker pas encore passé) reste proposable, après ceux
+   * qui en ont ; sans aucun vecteur le tirage est stable par identifiant.
    */
   private async generatePicks(userId: string, week: string) {
     const me = await this.requireProfile(userId);
@@ -403,45 +406,79 @@ export class DatingService {
       .selectFrom('dating_profiles')
       .selectAll()
       .where('status', '=', 'active')
-      .limit(100)
+      .limit(500)
       .execute();
 
-    const chosen = candidates
-      .filter((candidate) => {
-        if (excluded.has(candidate.user_id)) {
-          return false;
-        }
-        const gender = candidate.gender;
-        if (
-          !gender ||
-          !me.seeking.includes(gender) ||
-          !candidate.seeking.includes(me.gender ?? '')
-        ) {
-          return false;
-        }
-        const age = ageAt(candidate.birth_date, now);
-        if (age < me.age_min || age > me.age_max) {
-          return false;
-        }
-        return eligibilityOf({
-          birthDate: candidate.birth_date,
-          questionnaireVersion: candidate.questionnaire_v,
-          reliability: candidate.reliability,
-          now,
-        }).eligible;
-      })
-      .slice(0, 3);
+    // Refus récents dans les deux sens : la personne reste hors de portée 60 jours.
+    const declines = await db
+      .selectFrom('invites')
+      .select(['from_user_id', 'to_user_id', 'resolved_at'])
+      .where('status', '=', 'declined')
+      .where((eb) => eb.or([eb('from_user_id', '=', userId), eb('to_user_id', '=', userId)]))
+      .execute();
+    const lastDecline = new Map<string, Date>();
+    for (const row of declines) {
+      if (!row.resolved_at) continue;
+      const other = row.from_user_id === userId ? row.to_user_id : row.from_user_id;
+      const known = lastDecline.get(other);
+      if (!known || row.resolved_at > known) lastDecline.set(other, row.resolved_at);
+    }
+
+    const eligible = candidates.filter((candidate) => {
+      if (excluded.has(candidate.user_id)) {
+        return false;
+      }
+      if (inQuarantine(lastDecline.get(candidate.user_id) ?? null, now)) {
+        return false;
+      }
+      const gender = candidate.gender;
+      if (!gender || !me.seeking.includes(gender) || !candidate.seeking.includes(me.gender ?? '')) {
+        return false;
+      }
+      const age = ageAt(candidate.birth_date, now);
+      if (age < me.age_min || age > me.age_max) {
+        return false;
+      }
+      return eligibilityOf({
+        birthDate: candidate.birth_date,
+        questionnaireVersion: candidate.questionnaire_v,
+        reliability: candidate.reliability,
+        now,
+      }).eligible;
+    });
+
+    const ids = [userId, ...eligible.map((candidate) => candidate.user_id)];
+    const vectorRows = await db
+      .selectFrom('profile_vectors')
+      .select(['user_id', 'values_vec', 'personality_vec', 'lifestyle_vec'])
+      .where('user_id', 'in', ids)
+      .execute();
+    const vectors = new Map<string, ProfileVectors>(
+      vectorRows.map((row) => [
+        row.user_id,
+        { values: row.values_vec, personality: row.personality_vec, lifestyle: row.lifestyle_vec },
+      ]),
+    );
+
+    const chosen = rankPicks(
+      vectors.get(userId) ?? null,
+      eligible.map((candidate) => ({
+        user_id: candidate.user_id,
+        vectors: vectors.get(candidate.user_id) ?? null,
+      })),
+    );
 
     if (chosen.length === 0) {
       return [];
     }
 
-    const values = chosen.map((candidate, index) => ({
+    const values = chosen.map((candidate) => ({
       user_id: userId,
       candidate_id: candidate.user_id,
       week_start: week,
-      kind: index === 2 ? ('complementary' as const) : ('similar' as const),
-      compat_label: index === 2 ? 'Profil complémentaire' : 'Très compatible',
+      kind: candidate.kind,
+      compat_label:
+        candidate.kind === 'complementary' ? 'Profil complémentaire' : 'Très compatible',
     }));
 
     await db

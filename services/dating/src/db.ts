@@ -163,9 +163,27 @@ export interface DatingOutboxTable {
   created_at: ColumnType<Date, Date | undefined, never>;
 }
 
+export interface ProfileVectorsTable {
+  user_id: string;
+  questionnaire_version: number;
+  model_version: string;
+  values_vec: number[];
+  personality_vec: number[];
+  lifestyle_vec: number[];
+  computed_at: ColumnType<Date, Date | undefined, Date>;
+}
+
+export interface DatingInboxTable {
+  consumer: string;
+  message_id: string;
+  processed_at: ColumnType<Date, Date | undefined, never>;
+}
+
 export interface DatingDb {
   dating_profiles: DatingProfilesTable;
   dating_outbox: DatingOutboxTable;
+  profile_vectors: ProfileVectorsTable;
+  dating_inbox: DatingInboxTable;
   weekly_picks: WeeklyPicksTable;
   invites: InvitesTable;
   restaurants: RestaurantsTable;
