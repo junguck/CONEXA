@@ -9,6 +9,7 @@
     { "method": "GET", "path": "/billing/plans", "auth": false },
     { "method": "GET", "path": "/billing/me", "auth": true },
     { "method": "POST", "path": "/billing/subscriptions", "auth": true },
+    { "method": "GET", "path": "/billing/invoices", "auth": true },
     { "method": "POST", "path": "/billing/subscriptions/:id/activate", "auth": true },
     { "method": "POST", "path": "/billing/subscriptions/:id/cancel", "auth": true }
   ]

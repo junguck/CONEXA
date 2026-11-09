@@ -118,6 +118,29 @@ côté billing `entitlements.changed`, `subscription.activated`,
 - **Hors périmètre** : aucun prélèvement automatique, aucun remboursement de
   facture payée en cas de résiliation.
 
+## Écrans étudiant : abonnement et factures (T-0052, F3.5)
+
+Code : `apps/web/src/features/money/`, routes `/billing` et `/billing/invoices`.
+
+- **Le serveur décide.** Prix, remise, droits, grâce et expiration viennent des réponses de
+  `GET /billing/plans`, `/billing/me` et `/billing/invoices`. Le front ne calcule rien
+  (`view.ts` ne fait que traduire en libellés).
+- **Parcours d'achat** : `POST /billing/subscriptions` (abonnement `pending` + facture ouverte) →
+  `POST /payments` (`object_type: subscription`, montant = total de la facture, clé
+  d'idempotence stable par tentative) → relecture de `GET /me/payments` toutes les 3 s →
+  paiement `escrow` : `POST /billing/subscriptions/:id/activate`.
+- **Reprise** : la phase d'achat (`purchasePhase`) est déduite de l'abonnement `pending` et du
+  dernier paiement serveur, pas d'un état local. Fermer l'application puis la rouvrir retombe
+  sur « paiement en attente de confirmation sur votre téléphone ».
+- **Échec ou expiration** : paiement `failed`/remboursé → message « aucun droit ajouté », bouton
+  de nouvelle tentative (nouvelle clé d'idempotence). Aucun droit n'est donné avant `activate`.
+- **Données personnelles** : le numéro de paiement n'est ni stocké localement, ni journalisé, ni
+  envoyé à l'analytique ; il ne part que dans `POST /payments`.
+- `GET /billing/invoices` est exposé par le Gateway (ligne ajoutée au manifeste de billing).
+- **Pas encore fait** : page d'équipe Pro (billing n'a pas d'abonnement d'équipe), saisie du
+  numéro de reversement (aucun endpoint serveur), parcours Playwright et captures mobile
+  (aucune infrastructure e2e dans `apps/web`).
+
 ## Preuves sur l'environnement demo
 
 | Date | Contrôle | Résultat |

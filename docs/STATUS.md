@@ -1,6 +1,6 @@
 # État du projet
 
-Mis à jour : **2026-10-29** (fusion complète des branches). Tenu par l'orchestrateur ; toute instance le lit avant de choisir une tâche.
+Mis à jour : **2026-11-09** (vague 3 : écrans étudiant en revue, back-office bloqué). Tenu par l'orchestrateur ; toute instance le lit avant de choisir une tâche.
 
 ## En un mot
 
@@ -69,6 +69,8 @@ Poste Windows, Node 22, pnpm 12.4.1, PostgreSQL 18 réel pour les migrations.
 | `agent/web-core/T-0019` | Design system, 23 écrans maquettes, back-office, portail partenaire | fusionnée |
 | `agent/dating/T-0035` | Producteur `dating.embedding_requested` : outbox transactionnelle canonique (ADR 0007), relais par lot, planificateur + `/internal/dating/outbox/relay`, schéma producteur co-signé avec l'agent `ai`, test d'intégration opt-in PostgreSQL | fusionnée dans `main` le 2026-10-29 |
 | T-0026 (facturation) | Factures (numéro séquentiel), codes promo plafonnés, `past_due` + 3 jours de grâce, expiration (`expired`), résiliation différée, balayage quotidien idempotent | **livré le 2026-10-29, en revue** — voir fiche ; migration `202610291200` avec `drop constraint` → PR étiquette `human-ok` exigée |
+| T-0052 (écrans étudiant, F3.5) | `/billing` (plans, achat, paiement en attente avec reprise, résiliation différée) et `/billing/invoices` ; `GET /billing/invoices` ajouté au manifeste Gateway ; 18 tests de vue | **en revue** — PR [#9](https://github.com/junguck/CONEXA/pull/9) ; validation humaine requise (F3.x) |
+| T-0053 (back-office finance, F3.5) | Rapprochement, remboursements à traiter, plans, codes promo | **bloquée** — PR [#10](https://github.com/junguck/CONEXA/pull/10) : aucune API admin d'argent exposée par le Gateway |
 
 Les branches `agent/web-core/T-0007-web-shell`, `T-0007-maquettes-complements` et `T-0009-backoffice-portal` sont **incluses** dans `T-0019-fusion-front` : les fusionner séparément n'apporterait rien et rouvrirait des conflits de `pnpm-lock.yaml`.
 
@@ -98,6 +100,9 @@ Les branches `agent/web-core/T-0007-web-shell`, `T-0007-maquettes-complements` e
 | Tâche | Sujet | État |
 |---|---|---|
 | [T-0026](../tasks/T-0026-factures-codes-promo-grace-expiration.md) | Factures, codes promo, grâce et expiration des abonnements | **review** (code livré, PR avec étiquette `human-ok` attendue) |
+| [T-0052](../tasks/T-0052-ecrans-abonnement-etudiant.md) | Écrans étudiant : abonnement, paiement, factures | **review** (PR #9) |
+| T-0053 (fiche dans la PR #10) | Back-office finance | **blocked** : attend T-0054 (routes `/admin/money/*`, contrat d'abord, revue `security`) |
+| T-0054 (à créer) | Routes admin d'argent exposées par le Gateway (rapprochement, reversements, remboursements, plans, codes promo) | à créer, validation humaine |
 | T-0035 et suivantes | Écrans branchés sur les contrats, messagerie temps réel, crons de clôture | partie outbox dating livrée ; reste à découper |
 
 ## Protocole multi-instances (à lire avant de coder)
