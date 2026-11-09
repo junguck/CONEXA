@@ -1,0 +1,56 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://conexa.app/events/partners/slot.held.v1.json",
+  "title": "slot.held v1",
+  "description": "Une table est retenue 15 minutes pour une réservation. `hold_ref` est l'identifiant opaque de la réservation du demandeur.",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["id", "type", "version", "occurred_at", "producer", "payload"],
+  "properties": {
+    "id": {
+      "type": "string",
+      "minLength": 1
+    },
+    "type": {
+      "const": "slot.held"
+    },
+    "version": {
+      "const": 1
+    },
+    "occurred_at": {
+      "type": "string",
+      "format": "date-time",
+      "pattern": "(Z|[+-][0-9]{2}:[0-9]{2})$"
+    },
+    "producer": {
+      "const": "partners"
+    },
+    "traceparent": {
+      "type": "string"
+    },
+    "payload": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["hold_ref", "slot_id", "venue_id", "expires_at"],
+      "properties": {
+        "hold_ref": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 128
+        },
+        "slot_id": {
+          "type": "string",
+          "minLength": 1
+        },
+        "venue_id": {
+          "type": "string",
+          "minLength": 1
+        },
+        "expires_at": {
+          "type": "string",
+          "format": "date-time"
+        }
+      }
+    }
+  }
+}

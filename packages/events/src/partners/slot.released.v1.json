@@ -1,0 +1,55 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://conexa.app/events/partners/slot.released.v1.json",
+  "title": "slot.released v1",
+  "description": "La retenue est rendue : annulation, ou expiration au bout de 15 minutes.",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["id", "type", "version", "occurred_at", "producer", "payload"],
+  "properties": {
+    "id": {
+      "type": "string",
+      "minLength": 1
+    },
+    "type": {
+      "const": "slot.released"
+    },
+    "version": {
+      "const": 1
+    },
+    "occurred_at": {
+      "type": "string",
+      "format": "date-time",
+      "pattern": "(Z|[+-][0-9]{2}:[0-9]{2})$"
+    },
+    "producer": {
+      "const": "partners"
+    },
+    "traceparent": {
+      "type": "string"
+    },
+    "payload": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["hold_ref", "slot_id", "venue_id", "reason"],
+      "properties": {
+        "hold_ref": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 128
+        },
+        "slot_id": {
+          "type": "string",
+          "minLength": 1
+        },
+        "venue_id": {
+          "type": "string",
+          "minLength": 1
+        },
+        "reason": {
+          "enum": ["cancelled", "expired"]
+        }
+      }
+    }
+  }
+}

@@ -7,6 +7,12 @@ export const EnvSchema = BaseEnvSchema.extend({
   JWT_ISSUER: z.string().default('conexa-identity'),
   /** Écriture côté partenaire (lieux, menus, créneaux, offres). */
   SERVICE_TOKEN: z.string().min(16).optional(),
+  /** Balayage des retenues échues et relais de l'outbox (désactivable en test). */
+  PARTNERS_CRON_ENABLED: z
+    .enum(['true', 'false'])
+    .default('true')
+    .transform((value) => value === 'true'),
+  PARTNERS_CRON_INTERVAL_MS: z.coerce.number().int().min(1000).default(30_000),
   PARTNERS_PAGE_SIZE: z.coerce.number().int().min(1).max(100).default(20),
   /** Nombre de créneaux renvoyés dans le détail d'un lieu. */
   PARTNERS_NEXT_SLOTS: z.coerce.number().int().min(1).max(50).default(10),

@@ -172,3 +172,38 @@ export const VenueDetailSchema = VenueSchema.extend({
 export type VenueDetail = z.infer<typeof VenueDetailSchema>;
 
 export type OfferBlockedReason = 'expired' | 'exhausted';
+
+/**
+ * Contrats partenaires versionnés (F4.1) : une organisation n'a qu'un contrat
+ * actif. Un nouveau contrat est proposé par l'administration (`pending_signature`),
+ * puis signé par le propriétaire ; sa signature remplace l'ancien (`superseded`).
+ * La commission d'une réservation est copiée du contrat actif à cet instant et ne
+ * change plus, même si un nouveau contrat est signé ensuite.
+ */
+export const AGREEMENT_STATUSES = ['pending_signature', 'active', 'superseded'] as const;
+export const AgreementStatusSchema = z.enum(AGREEMENT_STATUSES);
+export type AgreementStatus = z.infer<typeof AgreementStatusSchema>;
+
+export const ProposeAgreementSchema = z.object({
+  commission_pct: z.number().int().min(0).max(30),
+});
+export type ProposeAgreementInput = z.infer<typeof ProposeAgreementSchema>;
+
+export const AgreementSchema = z.object({
+  id: z.uuid(),
+  organisation_id: z.uuid(),
+  version: z.number().int().min(1),
+  commission_pct: z.number().int().min(0).max(30),
+  status: AgreementStatusSchema,
+  created_at: z.iso.datetime(),
+  signed_at: z.iso.datetime().nullable(),
+});
+export type Agreement = z.infer<typeof AgreementSchema>;
+
+/** Instantané de commission remis à la saga de réservation (appel interne). */
+export const CommissionSnapshotSchema = z.object({
+  agreement_id: z.uuid(),
+  version: z.number().int().min(1),
+  commission_pct: z.number().int().min(0).max(30),
+});
+export type CommissionSnapshot = z.infer<typeof CommissionSnapshotSchema>;
