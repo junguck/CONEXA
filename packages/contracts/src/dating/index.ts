@@ -363,6 +363,13 @@ export const DateFeedbackSchema = z.object({
 });
 export type DateFeedbackInput = z.infer<typeof DateFeedbackSchema>;
 
+export const CurrentPicksSchema = z.object({
+  week_start: z.iso.date(),
+  quota_left: z.number().int().nonnegative(),
+  picks: z.array(DatingPickSchema),
+});
+export type CurrentPicks = z.infer<typeof CurrentPicksSchema>;
+
 /**
  * Choix du créneau d'un date. `restaurant_id` désigne un lieu Partners et
  * `slot_id` un de ses créneaux : Dating ne stocke que des références opaques.

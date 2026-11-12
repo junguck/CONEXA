@@ -143,11 +143,6 @@
       "method": "GET",
       "path": "/dates/:id/contact",
       "auth": true
-    },
-    {
-      "method": "GET",
-      "path": "/me/credits",
-      "auth": true
     }
   ]
 }
