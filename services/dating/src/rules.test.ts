@@ -72,13 +72,24 @@ describe('payeur', () => {
     expect(resolvePayer({ from_user_id: 'a', to_user_id: 'b' })).toBe('a');
   });
 
-  it('refuse les invitations incohérentes', () => {
+  it('refuse les cas non couverts par la règle produit', () => {
     expect(() => resolvePayer({ from_user_id: 'a', to_user_id: 'a' })).toThrowError(
       /même personne/,
     );
     expect(() => resolvePayer({ from_user_id: '', to_user_id: 'b' })).toThrowError(
       /payeur indéterminable/,
     );
+    expect(() => resolvePayer({ from_user_id: 'a', to_user_id: '   ' })).toThrowError(
+      /payeur indéterminable/,
+    );
+    expect(() => resolvePayer({ from_user_id: '   ', to_user_id: 'b' })).toThrowError(
+      /payeur indéterminable/,
+    );
+    // Identifiants identiques après normalisation des blancs : toujours refusé.
+    expect(() => resolvePayer({ from_user_id: ' a ', to_user_id: 'a' })).toThrowError(
+      /même personne/,
+    );
+    expect(() => resolvePayer({ from_user_id: 'a', to_user_id: 'b' })).not.toThrow();
   });
 });
 
@@ -92,20 +103,43 @@ describe('annulation', () => {
   });
 });
 
-describe('révélation du contact', () => {
-  it('exige deux « oui » et un date honoré', () => {
-    const yes = { wants_contact: true };
-    const no = { wants_contact: false };
-    expect(canRevealContact({ status: 'checked_in', myFeedback: yes, partnerFeedback: yes })).toBe(
-      true,
-    );
-    expect(canRevealContact({ status: 'checked_in', myFeedback: yes, partnerFeedback: no })).toBe(
-      false,
-    );
-    expect(canRevealContact({ status: 'confirmed', myFeedback: yes, partnerFeedback: yes })).toBe(
-      false,
-    );
-    expect(canRevealContact({ status: 'completed', myFeedback: yes, partnerFeedback: null })).toBe(
+describe('révélation du contact (décision 15B)', () => {
+  const checkedAt = new Date('2026-11-16T16:02:00Z');
+
+  it('exige le check-in des deux participants', () => {
+    expect(
+      canRevealContact({
+        status: 'checked_in',
+        checkedInAAt: checkedAt,
+        checkedInBAt: checkedAt,
+      }),
+    ).toBe(true);
+    expect(
+      canRevealContact({
+        status: 'completed',
+        checkedInAAt: checkedAt,
+        checkedInBAt: checkedAt,
+      }),
+    ).toBe(true);
+  });
+
+  it('ne révèle rien avec un seul check-in', () => {
+    expect(
+      canRevealContact({ status: 'confirmed', checkedInAAt: checkedAt, checkedInBAt: null }),
+    ).toBe(false);
+    expect(
+      canRevealContact({ status: 'checked_in', checkedInAAt: null, checkedInBAt: checkedAt }),
+    ).toBe(false);
+  });
+
+  it('ne révèle rien après une annulation ou une absence', () => {
+    expect(
+      canRevealContact({ status: 'cancelled', checkedInAAt: checkedAt, checkedInBAt: checkedAt }),
+    ).toBe(false);
+    expect(
+      canRevealContact({ status: 'no_show', checkedInAAt: checkedAt, checkedInBAt: null }),
+    ).toBe(false);
+    expect(canRevealContact({ status: 'confirmed', checkedInAAt: null, checkedInBAt: null })).toBe(
       false,
     );
   });

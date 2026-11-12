@@ -363,6 +363,23 @@ export const DateFeedbackSchema = z.object({
 });
 export type DateFeedbackInput = z.infer<typeof DateFeedbackSchema>;
 
+/**
+ * Choix du créneau d'un date. `restaurant_id` désigne un lieu Partners et
+ * `slot_id` un de ses créneaux : Dating ne stocke que des références opaques.
+ */
+export const SetDateSlotSchema = z.object({
+  restaurant_id: IdSchema,
+  slot_id: IdSchema,
+});
+export type SetDateSlotInput = z.infer<typeof SetDateSlotSchema>;
+
+/** Réponse de `POST /dates/{id}/pay` : aucune donnée de carte, jamais. */
+export const DatePaymentIntentSchema = z.object({
+  payment_id: IdSchema.nullable(),
+  status: z.enum(['holding', 'awaiting_payment', 'confirming', 'confirmed', 'failed', 'cancelled']),
+});
+export type DatePaymentIntent = z.infer<typeof DatePaymentIntentSchema>;
+
 export const CheckinSchema = z.object({ code: z.string().trim().min(4).max(8) });
 
 export const ContactSchema = z.object({ whatsapp: z.string() });

@@ -1,5 +1,10 @@
-import { PaymentPending } from '../../../../../shell/maquettes/payment-flow';
+import { PaymentPendingScreen } from '../../../../../features/dating/screens/date-screens';
 
-export default function MeetPayPendingPage() {
-  return <PaymentPending />;
+export default async function MeetPayPendingPage({
+  searchParams,
+}: {
+  searchParams: Promise<{ id?: string }>;
+}) {
+  const { id } = await searchParams;
+  return <PaymentPendingScreen dateId={id ?? null} />;
 }

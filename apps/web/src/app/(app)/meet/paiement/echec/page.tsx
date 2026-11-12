@@ -1,5 +1,10 @@
-import { PaymentFailure } from '../../../../../shell/maquettes/payment-flow';
+import { PaymentFailureScreen } from '../../../../../features/dating/screens/date-screens';
 
-export default function MeetPayFailurePage() {
-  return <PaymentFailure />;
+export default async function MeetPayFailurePage({
+  searchParams,
+}: {
+  searchParams: Promise<{ id?: string }>;
+}) {
+  const { id } = await searchParams;
+  return <PaymentFailureScreen dateId={id ?? null} />;
 }

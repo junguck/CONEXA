@@ -20,6 +20,7 @@ import {
   QUESTIONNAIRE_BLOCKS,
   QUESTIONNAIRE_VERSION,
   SendCardSchema,
+  SetDateSlotSchema,
   type JwtClaims,
 } from '@conexa/contracts';
 import { validationError } from '@conexa/errors';
@@ -145,15 +146,9 @@ export class DatingController {
   }
 
   @Post('dates/:id/slot')
-  async setSlot(
-    @CurrentUser() user: JwtClaims,
-    @Param('id') id: string,
-    @Body() body: { slot_id?: string },
-  ) {
-    if (!body?.slot_id) {
-      throw validationError('slot_id requis');
-    }
-    return this.dates.setSlot(user.sub, id, body.slot_id);
+  setSlot(@CurrentUser() user: JwtClaims, @Param('id') id: string, @Body() body: unknown) {
+    const input = SetDateSlotSchema.parse(body);
+    return this.dates.setSlot(user.sub, id, input.slot_id, input.restaurant_id);
   }
 
   @Post('dates/:id/formula')
@@ -234,10 +229,5 @@ export class DatingController {
   @Get('dates/:id/contact')
   contact(@CurrentUser() user: JwtClaims, @Param('id') id: string) {
     return this.dates.contact(user.sub, id);
-  }
-
-  @Get('me/credits')
-  credits(@CurrentUser() user: JwtClaims) {
-    return this.dating.credits(user.sub);
   }
 }

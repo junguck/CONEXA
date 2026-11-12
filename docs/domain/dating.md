@@ -1,89 +1,167 @@
-# Domaine Rencontres (v1)
+# Domaine Rencontres (dating)
 
-Service `@conexa/dating`, schéma PostgreSQL `dating`, branche `v1/dating`.
-Source produit : `docs/product/API.md` §3.7 à §3.9, `ARCHITECTURE.md` §2, §5.
-Tâche : `tasks/T-0014-dating-v1.md`.
+Service `@conexa/dating`, schéma PostgreSQL `dating`.
+Source produit : `docs/product/API.md` §3.7 à §3.9, `ARCHITECTURE.md` §2, §5 et §6.1.
+Tâches : `tasks/T-0014-dating-v1.md`, `T-0035`, `T-0057`, `T-0058`.
+
+## Décisions appliquées au 12/11/2026
+
+| Sujet | Décision | Où |
+|---|---|---|
+| Créneaux du date | Un créneau est un **créneau Partners**. Dating ne duplique plus les créneaux du restaurant : `dates.slot_id` porte l'identifiant opaque Partners et `dates.slot_starts_at` l'heure de début recopiée à la retenue | migration `202611120900_slots_partners_no_credits.sql` |
+| Révélation du contact | **Décision 15B** : uniquement après le **check-in des deux participants**. La règle « deux oui » est supprimée du domaine et des tests | `canRevealContact`, `DatesService.contact` |
+| Crédit restaurant | **Décision 16C** : supprimé. Table `date_credits`, route `GET /me/credits` et tout solde restaurant ont disparu | migration `202611120900…` |
+| Paiement | La saga de réservation est branchée sur `pay` / `cancel` / `setSlot` | `DatesService`, `ReservationSagaService` |
 
 ## Périmètre livré
 
-- Éligibilité : 18 ans révolus, questionnaire rempli, fiabilité ≥ 60.
-- Questionnaire fermé (valeurs, personnalité, mode de vie) : 12 questions, aucune
-  réponse libre, donc aucun texte à fuiter.
-- Profil, préférences (genres recherchés, bornes d'âge), pause et reprise.
-- Trois propositions par semaine (deux « similaires », une « complémentaire »),
-  invitation ou passage, trois invitations maximum par semaine, expiration le lundi.
-- Demande de calcul des vecteurs de rencontre (`dating.embedding_requested` v1)
-  écrite dans l'outbox transactionnelle à chaque changement de questionnaire.
-- Invitations reçues/envoyées, acceptation → création du date, refus, retrait.
-- Date : cartes fermées uniquement, verrouillage du créneau, formule choisie par le
-  payeur, commandes plafonnées par la formule, paiement (double), annulation,
-  check-in par code, SOS, retour à deux, révélation du contact.
+- Éligibilité : 18 ans révolus, questionnaire rempli, fiabilité ≥ 60 (mineur refusé partout).
+- Questionnaire fermé (12 questions, valeurs et notes 1–5), aucun texte libre.
+- Profil, préférences, pause et reprise.
+- Trois propositions par semaine (deux « ressemblantes », une « complémentaire »),
+  classées par **similarité cosinus pondérée** des vecteurs IA, avec quarantaine de
+  60 jours après un refus et filtration des profils déjà proposés.
+- Invitations : trois par semaine maximum, jamais augmentées par un abonnement ;
+  un refus n'est jamais montré à l'émetteur.
+- Date : cartes fermées, créneau Partners retenu par la saga, formule choisie par le
+  payeur, commandes plafonnées, paiement par saga, annulation à 3 h, check-in par code,
+  SOS, retour privé, révélation du contact.
+- Outbox transactionnelle pour `dating.embedding_requested`, consommation idempotente
+  de `embedding.computed` dans `profile_vectors`.
 
-## Règles produit appliquées
+## Règles produit et implémentation
 
 | Règle | Implémentation |
 |---|---|
-| 18 ans révolus | `assertAdult` sur l'inscription, refus `AGE_RESTRICTED` |
-| Mineur exclu partout | l'âge est la première raison, avant questionnaire et fiabilité |
-| 3 propositions / semaine | `PICKS_PER_WEEK`, tirage par semaine ISO (lundi UTC) |
-| 3 invitations / semaine | `assertInviteQuota`, jamais augmenté par un abonnement |
-| L'invitant paie | `resolvePayer()` : refuse auto-invitation et invitation incomplète |
-| Annulation gratuite jusqu'à 3 h | `canCancelDate`, sinon `CANCEL_WINDOW_CLOSED` |
+| 18 ans révolus | `assertAdult`, refus `AGE_RESTRICTED` (prioritaire sur toute autre raison) |
+| 3 propositions / semaine | `PICKS_PER_WEEK`, semaine ISO (lundi UTC) |
+| 3 invitations / semaine | `assertInviteQuota` → `WEEKLY_QUOTA_EXCEEDED` |
+| L'invitant paie | `resolvePayer()` : refuse identifiant manquant, blanc ou participants identiques |
+| Annulation gratuite jusqu'à 3 h | `canCancelDate(date.slot_starts_at, now)` → `CANCEL_WINDOW_CLOSED` |
 | Cartes seulement | `payloadFor()` : charge utile fermée, aucun texte libre |
-| Contact après « oui » mutuel | `canRevealContact` : deux `wants_contact` + date honoré |
+| **Contact après check-in des deux** | `canRevealContact({ status, checkedInAAt, checkedInBAt })` ; un seul check-in, un `no_show` ou une annulation ne révèlent rien |
+| Pas de crédit restaurant | aucune table, aucune route, aucun écran de solde |
 | Machine d'états | `negotiating → awaiting_payment → confirmed → checked_in → completed`, sorties `cancelled`, `no_show`, `disputed` |
-| Catalogues stables | les valeurs d'option sont des slugs (`family`, `early_bird`…), jamais un libellé ; les libellés d'affichage vivent dans `labels` |
-| Embeddings | demande publiée seulement si les réponses ou `questionnaire_v` changent, dans la transaction du profil |
 
-## Événement `dating.embedding_requested` v1
+Le retour (`date_feedback`) reste **privé** : il alimente la qualité des propositions et
+n'ouvre plus la révélation. `wants_contact` y est conservé comme signal produit, sans
+effet sur l'accès au numéro.
 
-Schéma canonique : `packages/events/src/dating/dating.embedding_requested.v1.json`.
-Producteur : `services/dating/src/embedding-request.ts` (validation et mapping)
-et `services/dating/src/outbox.service.ts` (outbox et relais, ADR 0007).
+## Réservation : saga et frontières de service
 
-**Co-signature dating du contrat v1** : le schéma producteur reprend sans écart le
-contrat consommateur gelé par l'agent `ai` (enveloppe, trois blocs, grammaire des
-slugs, échelles 1–5, rejeu par `type:id`). Dating ne demande aucune modification de
-sémantique de la v1 ; toute évolution cassante passera par une v2 co-signée par
-les deux agents.
+`ReservationSagaService` (machine pure dans `reservation.machine.ts`, actions
+persistées dans `reservation_sagas` / `reservation_actions`) orchestre :
 
-| Décision | Choix v1 |
+```
+holding ─hold_ok→ awaiting_payment ─payment_escrowed→ confirming ─hold_confirmed→ confirmed
+   │                    │                                  │
+hold_rejected      payment_failed / hold_expired       confirm_failed
+   ▼                    ▼                                  ▼
+failed(SLOT_LOST)   failed(PAYMENT_FAILED|HOLD_EXPIRED)  failed(HOLD_EXPIRED) + remboursement
+```
+
+- `setSlot` et `pay` **démarrent** la saga (`start` est idempotent : rejouer ne crée pas
+  une seconde tentative).
+- `pay` ne confirme **rien** : il retient la table et attend `payment.escrowed`.
+  C'est la saga qui confirme la table puis le date (`confirm_date`).
+- `cancel` envoie `cancel_requested` : la retenue est libérée, un séquestre éventuel est
+  remboursé une seule fois.
+- Chaque appel sortant est idempotent chez le destinataire ; un crash entre deux appels
+  laisse l'action due et le planificateur la reprend (`DatingScheduler` → `saga.runDue`).
+- Dating n'écrit jamais dans le schéma `partners` ni `payments` : uniquement
+  `/internal/partners/*` et `/internal/payments/*` par jeton de service
+  (`PARTNERS_URL`, `PAYMENTS_URL`, `SERVICE_TOKEN`).
+
+### Contrat attendu de Partners (dépendance ouverte)
+
+`POST /internal/partners/slots/:id/hold` doit renvoyer, en plus de `expires_at`,
+**`starts_at`** : sans lui, la fenêtre d'annulation de 3 h ne peut pas être calculée.
+Dating refuse alors la retenue (`contrat Partners incomplet`) plutôt que de deviner.
+`deps_request` : ajouter `starts_at` à la réponse de retenue (T-0055).
+
+## Boucle IA vérifiée
+
+1. `PUT /dating/profile` change les réponses → `dating.embedding_requested` écrit dans
+   `dating_outbox` **dans la même transaction** que le profil.
+2. Le relais publie l'enveloppe (par lot, disponibilité croissante).
+3. Le worker Python `services/ai-worker` calcule trois vecteurs de 64 dimensions.
+4. `POST /internal/dating/embeddings/computed` (rôle `service`) remet
+   `embedding.computed` : `EmbeddingsConsumer` stocke dans `profile_vectors`,
+   idempotent par `type:id` (inbox), et ignore un résultat plus ancien que le profil.
+5. Un changement de profil ultérieur réémet une demande ; le classement des
+   propositions utilise le vecteur le plus récent.
+
+Preuve exécutée le 12/11 : `dating.embedding_requested` réel produit par le service →
+worker Python → `embedding.computed` (3 × 64) → `stored`, rejeu → `duplicate`.
+
+## Écrans (`apps/web/src/app/(app)/meet/**`)
+
+Tous les écrans consomment `features/dating/api.ts` (client partagé de `shell/api`) :
+
+| Écran | Source réelle |
 |---|---|
-| Identifiants de questions et d'options | clés du catalogue `QUESTIONNAIRE_BLOCKS`, en minuscules `[a-z0-9][a-z0-9_-]{0,63}` ; aucune traduction ne les remplace |
-| Version de questionnaire | `questionnaire_v` du profil, recopiée en `questionnaire_version` ; incrémenter la constante dès qu'un slug change, puis réémettre les profils |
-| Déclencheur | `PUT /dating/profile` accepté, uniquement si `answers` ou `questionnaire_v` changent (comparaison canonique, ordre des clés indifférent) |
-| Profil incomplet | pas d'émission si un bloc est vide : aucun signal ne serait calculable |
-| `profile_id` | identifiant du profil ; en v1 la clé primaire est `user_id`, les deux champs portent la même valeur opaque |
-| Publication | outbox `dating_outbox` écrite dans la même transaction que le profil ; relais assurée par `DatingOutboxService` : publication **par lot** (port `EventPublisher`, ADR 0007), disponibilité croissante 2^n minutes plafonnée à 15, déclencheur planifié (`DATING_CRON_*`) ou `POST /internal/dating/outbox/relay` (rôle `service`). Un rollback ne produit rien |
-| Rejeu | le relais réutilise l'`id` de la ligne ; l'IA mémorise `type:id` et renvoie la même sortie |
-| Concurrence | dernière écriture gagnante ; deux requêtes simultanées peuvent produire deux événements, l'IA les calcule indépendamment et dating conserve le profil le plus récent |
-| Trace | `traceparent` de la requête HTTP recopié dans l'événement |
-| Cycle de vie | pause et préférences ne changent pas les réponses, donc n'émettent rien ; une suppression de compte devra purger les vecteurs côté dating (hors v1) |
-| Journalisation | jamais de réponses, de vecteurs, de numéro ni de nom |
+| `/meet` propositions | `GET /dating/picks/current`, `POST …/invite`, `POST …/pass` |
+| `/meet/profil` questionnaire | `GET /dating/questions`, `GET/PUT /dating/profile` |
+| `/meet/dates` | `GET /dates`, invitations reçues, acceptation / refus |
+| `/meet/lieu` | `GET /partners/venues`, `GET …/slots`, `POST /dates/:id/slot` |
+| `/meet/paiement` (+ attente, échec, reçu) | `POST /dates/:id/pay`, `GET /dates/:id` |
+| `/meet/jour` | `GET /dates/:id`, check-in, `POST …/sos`, `GET …/contact`, annulation |
+| `/meet/feedback` | `POST /dates/:id/feedback` |
+| `/meet/match` | date créé à l'acceptation |
 
-## Écarts et points à valider
+Le jeton d'authentification n'existe pas encore côté web (Identity front, T-0061) :
+les appels partent sans `Authorization` et répondent 401 tant que ce jeton n'est pas
+fourni par le client partagé.
 
-1. **Embeddings non consommés (ADR 0003, T-0014)** : dating publie la demande,
-   mais sans pgvector ni relais de bus en v1 il ne stocke pas encore les vecteurs
-   renvoyés par le worker. Les propositions restent tirées parmi les profils
-   éligibles ; le classement cosinus viendra avec la persistance des vecteurs.
-2. **Paiement simulé** : aucune passerelle Payments en v1. `POST /dates/{id}/pay`
-   renvoie une intention `pay_<date>` et confirme le date ; le séquestre réel viendra
-   avec le service Payments sans changer les transitions.
-3. **Révélation du contact** : le numéro reste dans Identity. Dating appelle
-   `IDENTITY_URL/internal/users/{id}/contact` avec `SERVICE_TOKEN` ; sans ces variables,
-   la route répond `INTERNAL_ERROR` explicite. L'endpoint interne Identity reste à créer.
-4. **Projection Identity** : `birth_date` et `reliability` sont copiés dans le profil de
-   rencontres (alimentés par les événements Identity en production).
-5. **Restaurants** : seules les tables minimales (salles, créneaux, formules) existent ;
-   la console restaurant et les commandes menu viendront avec Partners.
-6. **Crédits** : la table existe, la consommation n'est pas encore branchée.
+`/meet/chat` **n'est pas branché** : le fil d'un date appartient au service `realtime`,
+qui n'expose pas encore de conversation liée à un date. L'écran l'annonce explicitement
+(et continue d'appliquer la règle « aucun numéro ni lien »).
+`deps_request` : endpoint de fil par `date_id` côté realtime.
+
+## Événements
+
+Produit : `dating.embedding_requested` (outbox).
+Consomme : `embedding.computed`, `payment.escrowed`, `payment.failed`, `slot.released`.
+Prévus mais non produits en v1 : `date.*` (le bus réel reste à brancher).
+
+## Écarts connus
+
+1. **Paiement** : aucun appel de collecte Campay n'est fait par dating. `pay` retient la
+   table ; le séquestre doit arriver par `payment.escrowed`. Brancher la collecte réelle
+   appartient au domaine `money` (`deps_request`).
+2. **Formules et menu** : encore locaux (`restaurants`, `restaurant_formulas`), à
+   remplacer par le menu Partners. `dates.restaurant_id` n'a plus de clé étrangère
+   locale : c'est un identifiant de lieu Partners.
+3. **Contact** : le numéro reste dans Identity ; `GET /internal/users/:id/contact`
+   demeure à créer côté identity (`deps_request`).
+4. **Bus réel** : `InMemoryEventBus` encore injecté ; l'outbox et l'inbox sont écrites
+   au format canonique ADR 0007, le relais RabbitMQ arrive avec T-0059.
+5. **Enveloppe de `pay`** : la réponse `{ payment_id, status }` est publiée dans les
+   contrats (`DatePaymentIntentSchema`) mais pas encore dans l'OpenAPI généré.
+6. **Projection Identity** : `birth_date`, `gender` et `reliability` restent copiés
+   dans le profil de rencontres par les événements Identity.
 
 ## Vérification
 
-- `pnpm --filter @conexa/dating typecheck && pnpm --filter @conexa/dating test` (21 tests).
-- `DATABASE_URL=… node tools/db-migrate.mjs dating` appliqué sur PostgreSQL 18 local
-  (migrations `0001_init.sql` et `202610291100_outbox.sql`).
-- Test d'intégration outbox (atomicité, émission unique, rejeu) :
-  `DATING_TEST_DATABASE_URL=postgres://…/conexa_dating_test pnpm --filter @conexa/dating test`.
-- Service démarré : `/health` 200, `/ready` `{ database: true }`, routes protégées 401.
+```bash
+pnpm --filter @conexa/dating test          # 70 tests unitaires
+DATING_TEST_DATABASE_URL=postgres://…/conexa_dating_test \
+  pnpm --filter @conexa/dating test        # 70 tests, dont 19 d'intégration PostgreSQL
+node tools/db-migrate.mjs dating           # 5 migrations appliquées
+```
+
+Couvert par les tests, sur base réelle :
+
+- parcours complet invitation → date → créneau (retenue) → paiement → séquestre →
+  check-in des deux → contact → retour (`dating.journey.integration.test.ts`) ;
+- contact refusé avant check-in et avec un seul check-in, refusé après un `no_show` ;
+- annulation refusée à 2 h 30 d'un créneau, autorisée à 3 h ;
+- saga : paiement refusé, table perdue, retenue expirée + argent tardif remboursé une
+  seule fois, rejeu d'événement, crash et reprise sans doublon, une seule confirmation
+  de table sous événements simultanés ;
+- outbox : atomicité, émission unique par changement, relais en échec puis repris ;
+- vecteurs : stockage idempotent, résultat périmé ignoré, classement cosinus et
+  quarantaine de 60 jours (59 j / 60 j).
+
+Non couvert : UI (aucun test d'écran, aucun jeton d'authentification disponible) ;
+paiement Campay réel ; bus RabbitMQ réel ; fil de discussion d'un date.

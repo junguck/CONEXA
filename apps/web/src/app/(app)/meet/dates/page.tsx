@@ -1,5 +1,5 @@
-import { DatesList } from '../../../../shell/maquettes/dates-list';
+import { DatesScreen } from '../../../../features/dating/screens/date-screens';
 
 export default function MeetDatesPage() {
-  return <DatesList />;
+  return <DatesScreen />;
 }

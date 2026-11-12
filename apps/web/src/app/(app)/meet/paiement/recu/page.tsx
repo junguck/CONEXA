@@ -1,5 +1,10 @@
-import { PaymentReceipt } from '../../../../../shell/maquettes/payment-flow';
+import { PaymentReceiptScreen } from '../../../../../features/dating/screens/date-screens';
 
-export default function MeetPayReceiptPage() {
-  return <PaymentReceipt />;
+export default async function MeetPayReceiptPage({
+  searchParams,
+}: {
+  searchParams: Promise<{ id?: string }>;
+}) {
+  const { id } = await searchParams;
+  return <PaymentReceiptScreen dateId={id ?? null} />;
 }
