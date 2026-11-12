@@ -8,6 +8,10 @@ export const EnvSchema = BaseEnvSchema.extend({
   /** Passerelle interne vers Identity pour la révélation du numéro (optionnelle en dev). */
   IDENTITY_URL: z.string().url().optional(),
   SERVICE_TOKEN: z.string().min(16).optional(),
+  /** Partners : retenues de créneaux (T-0055), appels internes signés. */
+  PARTNERS_URL: z.string().url().optional(),
+  /** Payments : remboursements de compensation (T-0021). */
+  PAYMENTS_URL: z.string().url().optional(),
   /** Planificateur interne du relais outbox (patron football, T-0035). */
   DATING_CRON_ENABLED: z
     .enum(['true', 'false'])

@@ -47,14 +47,6 @@ export interface RestaurantsTable {
   commission_pct: Generated<string>;
 }
 
-export interface RestaurantSlotsTable {
-  id: Generated<string>;
-  restaurant_id: string;
-  starts_at: Date;
-  capacity: Generated<number>;
-  booked: Generated<number>;
-}
-
 export interface RestaurantFormulasTable {
   id: Generated<string>;
   restaurant_id: string;
@@ -79,7 +71,10 @@ export interface DatesTable {
     | 'disputed'
   >;
   restaurant_id: string | null;
+  /** Identifiant opaque du créneau Partners (T-0055) : Dating ne lit jamais `partners.slots`. */
   slot_id: string | null;
+  /** Début du créneau recopié à la retenue : nécessaire à la fenêtre d'annulation de 3 h. */
+  slot_starts_at: Date | null;
   formula_id: string | null;
   total_fcfa: Generated<number>;
   commission_fcfa: Generated<number>;
@@ -142,16 +137,6 @@ export interface DateSosTable {
   created_at: ColumnType<Date, Date | undefined, never>;
 }
 
-export interface DateCreditsTable {
-  id: Generated<string>;
-  user_id: string;
-  amount_fcfa: number;
-  reason: string;
-  expires_at: Date | null;
-  used_at: Date | null;
-  created_at: ColumnType<Date, Date | undefined, never>;
-}
-
 export interface DatingOutboxTable {
   id: string;
   /** Enveloppe complète (`@conexa/events`) : rejeu = même id. */
@@ -163,20 +148,64 @@ export interface DatingOutboxTable {
   created_at: ColumnType<Date, Date | undefined, never>;
 }
 
+export interface ProfileVectorsTable {
+  user_id: string;
+  questionnaire_version: number;
+  model_version: string;
+  values_vec: number[];
+  personality_vec: number[];
+  lifestyle_vec: number[];
+  computed_at: ColumnType<Date, Date | undefined, Date>;
+}
+
+export interface DatingInboxTable {
+  consumer: string;
+  message_id: string;
+  processed_at: ColumnType<Date, Date | undefined, never>;
+}
+
+export interface ReservationSagasTable {
+  date_id: string;
+  state: 'holding' | 'awaiting_payment' | 'confirming' | 'confirmed' | 'failed' | 'cancelled';
+  failure_reason: 'SLOT_LOST' | 'PAYMENT_FAILED' | 'HOLD_EXPIRED' | null;
+  hold_ref: string;
+  slot_id: string;
+  venue_id: string;
+  payment_id: string | null;
+  attempt: Generated<number>;
+  created_at: ColumnType<Date, Date | undefined, never>;
+  updated_at: ColumnType<Date, Date | undefined, Date>;
+}
+
+export interface ReservationActionsTable {
+  id: string;
+  date_id: string;
+  kind: 'request_hold' | 'confirm_hold' | 'release_hold' | 'confirm_date' | 'refund_payment';
+  payload: Generated<unknown>;
+  status: Generated<'pending' | 'running' | 'done' | 'failed'>;
+  attempts: Generated<number>;
+  available_at: ColumnType<Date, Date, Date>;
+  last_error: string | null;
+  dedupe_key: string;
+  created_at: ColumnType<Date, Date | undefined, never>;
+}
+
 export interface DatingDb {
   dating_profiles: DatingProfilesTable;
   dating_outbox: DatingOutboxTable;
+  dating_inbox: DatingInboxTable;
+  profile_vectors: ProfileVectorsTable;
   weekly_picks: WeeklyPicksTable;
   invites: InvitesTable;
   restaurants: RestaurantsTable;
-  restaurant_slots: RestaurantSlotsTable;
   restaurant_formulas: RestaurantFormulasTable;
   dates: DatesTable;
   date_cards: DateCardsTable;
   date_orders: DateOrdersTable;
   date_feedback: DateFeedbackTable;
   date_sos: DateSosTable;
-  date_credits: DateCreditsTable;
+  reservation_sagas: ReservationSagasTable;
+  reservation_actions: ReservationActionsTable;
 }
 
 const handle = createDb<DatingDb>({ connectionString: env.DATABASE_URL, schema: 'dating' });

@@ -9,6 +9,7 @@ import { env } from './config.js';
 import { db } from './db.js';
 import type { DatesTable } from './db.js';
 import { DATING_CLOCK } from './profile.js';
+import { ReservationSagaService } from './reservation.service.js';
 import { cancellableUntil, canCancelDate, canRevealContact } from './rules.js';
 
 export type DateRow = Selectable<DatesTable>;
@@ -19,9 +20,17 @@ export interface DateOrderInput {
   unit_price_fcfa: number;
 }
 
+export interface PaymentIntent {
+  payment_id: string | null;
+  status: string;
+}
+
 @Injectable()
 export class DatesService {
-  constructor(@Inject(DATING_CLOCK) private readonly now: () => Date) {}
+  constructor(
+    @Inject(DATING_CLOCK) private readonly now: () => Date,
+    private readonly saga: ReservationSagaService,
+  ) {}
 
   async list(userId: string, status?: string): Promise<DatingDate[]> {
     let select = db
@@ -64,7 +73,7 @@ export class DatesService {
       throw forbidden('Seul le payeur choisit la formule');
     }
     if (input.card_type === 'SLOT_ACCEPT') {
-      await this.lockSlot(dateId, payload.slot_id as string);
+      await this.setSlot(userId, dateId, payload.slot_id as string, date.restaurant_id ?? '');
     }
 
     const row = await db
@@ -82,10 +91,29 @@ export class DatesService {
     };
   }
 
-  /** Verrouille un créneau : capacité décrémentée une seule fois. */
-  async setSlot(userId: string, dateId: string, slotId: string): Promise<DatingDate> {
-    await this.requireDate(userId, dateId);
-    await this.lockSlot(dateId, slotId);
+  /**
+   * Choisit un créneau Partners et démarre la saga de réservation (retenue).
+   * Le créneau n'existe que chez Partners : Dating stocke son identifiant et
+   * l'heure de début recopiée à la retenue, jamais le schéma d'un autre service.
+   */
+  async setSlot(
+    userId: string,
+    dateId: string,
+    slotId: string,
+    restaurantId: string,
+  ): Promise<DatingDate> {
+    const date = await this.requireDate(userId, dateId);
+    if (!restaurantId) {
+      throw new AppError('VALIDATION_ERROR', 'Choisis un restaurant avant un créneau');
+    }
+    if (date.status === 'cancelled' || date.status === 'completed') {
+      throw new AppError('INVALID_STATE', 'Ce date ne peut plus changer de créneau');
+    }
+
+    await this.saga.start(dateId, slotId, restaurantId);
+    await this.saga.runDue();
+    await this.assertSagaUsable(dateId);
+
     return this.get(userId, dateId);
   }
 
@@ -162,11 +190,11 @@ export class DatesService {
   }
 
   /**
-   * Paiement v1 : aucun mouvement d’argent. La passerelle Payments n’existe pas
-   * encore (T-0014) ; on renvoie un identifiant d’intention et on confirme le date.
-   * Le branchement réel remplacera ce double sans changer les transitions.
+   * Paiement : la saga retient la table puis attend le séquestre. L'argent
+   * arrive par `payment.escrowed` (Payments) ; c'est la saga qui confirme le
+   * date et la table, jamais cette méthode. Aucun mouvement d'argent ici.
    */
-  async pay(userId: string, dateId: string): Promise<{ payment_id: string; status: string }> {
+  async pay(userId: string, dateId: string): Promise<PaymentIntent> {
     const date = await this.requireDate(userId, dateId);
     if (date.payer_id !== userId) {
       throw forbidden('Seul le payeur règle ce date');
@@ -174,13 +202,15 @@ export class DatesService {
     if (date.status !== 'negotiating' && date.status !== 'awaiting_payment') {
       throw new AppError('INVALID_STATE', 'Ce date n’attend pas de paiement');
     }
-    if (!date.slot_id) {
+    if (!date.slot_id || !date.restaurant_id) {
       throw new AppError('INVALID_STATE', 'Choisis un créneau avant de payer');
     }
 
-    await db.updateTable('dates').set({ status: 'confirmed' }).where('id', '=', dateId).execute();
+    await this.saga.start(dateId, date.slot_id, date.restaurant_id);
+    await this.saga.runDue();
+    const view = await this.assertSagaUsable(dateId);
 
-    return { payment_id: `pay_${dateId}`, status: 'escrow' };
+    return { payment_id: view.payment_id, status: view.state };
   }
 
   async cancel(userId: string, dateId: string): Promise<void> {
@@ -188,37 +218,29 @@ export class DatesService {
     if (date.status === 'cancelled' || date.status === 'completed') {
       throw new AppError('INVALID_STATE', 'Ce date ne peut plus être annulé');
     }
-    const startsAt = await this.slotStartsAt(date);
-    if (!canCancelDate(startsAt, this.now())) {
+    if (!canCancelDate(date.slot_starts_at, this.now())) {
       throw new AppError('CANCEL_WINDOW_CLOSED', 'Annulation impossible à moins de 3 h');
     }
 
-    await db.transaction().execute(async (trx) => {
-      if (date.slot_id) {
-        const slot = await trx
-          .selectFrom('restaurant_slots')
-          .select(['booked'])
-          .where('id', '=', date.slot_id)
-          .executeTakeFirst();
-        if (slot && slot.booked > 0) {
-          await trx
-            .updateTable('restaurant_slots')
-            .set({ booked: slot.booked - 1 })
-            .where('id', '=', date.slot_id)
-            .execute();
-        }
-      }
-      await trx
-        .updateTable('dates')
-        .set({ status: 'cancelled', cancelled_at: this.now(), slot_id: null })
-        .where('id', '=', dateId)
-        .execute();
-    });
+    // La retenue et l'argent sont rendus par la saga (compensation idempotente).
+    await this.saga.dispatch(dateId, { type: 'cancel_requested' });
+    await this.saga.runDue();
+
+    await db
+      .updateTable('dates')
+      .set({
+        status: 'cancelled',
+        cancelled_at: this.now(),
+        slot_id: null,
+        slot_starts_at: null,
+      })
+      .where('id', '=', dateId)
+      .execute();
   }
 
   async checkin(userId: string, dateId: string, code: string): Promise<DatingDate> {
     const date = await this.requireDate(userId, dateId);
-    if (date.status !== 'confirmed') {
+    if (date.status !== 'confirmed' && date.status !== 'checked_in') {
       throw new AppError('INVALID_STATE', 'Le check-in ouvre une fois le date confirmé');
     }
     if (code !== date.checkin_code) {
@@ -227,13 +249,18 @@ export class DatesService {
 
     const isA = date.user_a === userId;
     const now = this.now();
-    const bothIn = isA ? date.checked_in_b_at !== null : date.checked_in_a_at !== null;
+    const mine = isA ? date.checked_in_a_at : date.checked_in_b_at;
+    if (mine !== null) {
+      // Rejeu : le même participant ne décale pas son heure de check-in.
+      return this.get(userId, dateId);
+    }
+    const otherIn = isA ? date.checked_in_b_at !== null : date.checked_in_a_at !== null;
 
     await db
       .updateTable('dates')
       .set({
         ...(isA ? { checked_in_a_at: now } : { checked_in_b_at: now }),
-        ...(bothIn ? { status: 'checked_in' } : {}),
+        ...(otherIn ? { status: 'checked_in' } : {}),
       })
       .where('id', '=', dateId)
       .execute();
@@ -249,6 +276,10 @@ export class DatesService {
     await db.insertInto('date_sos').values({ date_id: dateId, user_id: userId }).execute();
   }
 
+  /**
+   * Retour privé (note et critères). Il n'ouvre plus la révélation du contact :
+   * la décision 15B ne dépend que du check-in des deux participants.
+   */
   async feedback(
     userId: string,
     dateId: string,
@@ -291,22 +322,18 @@ export class DatesService {
     });
   }
 
-  /** Le numéro n'est révélé qu'après deux « oui » et un date honoré. */
+  /**
+   * Décision 15B : le numéro n'est révélé qu'après le check-in des deux
+   * participants. Un seul check-in, un no-show ou une annulation ne révèlent rien.
+   */
   async contact(userId: string, dateId: string): Promise<{ whatsapp: string }> {
     const date = await this.requireDate(userId, dateId);
     const partnerId = date.user_a === userId ? date.user_b : date.user_a;
-    const feedbacks = await db
-      .selectFrom('date_feedback')
-      .selectAll()
-      .where('date_id', '=', dateId)
-      .execute();
-    const mine = feedbacks.find((row) => row.user_id === userId) ?? null;
-    const partner = feedbacks.find((row) => row.user_id === partnerId) ?? null;
 
     const revealed = canRevealContact({
       status: date.status,
-      myFeedback: mine,
-      partnerFeedback: partner,
+      checkedInAAt: date.checked_in_a_at,
+      checkedInBAt: date.checked_in_b_at,
     });
     if (!revealed) {
       throw new AppError('CONTACT_NOT_REVEALED', 'Le contact n’est pas encore révélé');
@@ -341,14 +368,7 @@ export class DatesService {
   }
 
   async toDate(row: DateRow, userId: string): Promise<DatingDate> {
-    const slot = row.slot_id
-      ? await db
-          .selectFrom('restaurant_slots')
-          .select(['starts_at'])
-          .where('id', '=', row.slot_id)
-          .executeTakeFirst()
-      : undefined;
-    const startsAt = slot?.starts_at ?? null;
+    const startsAt = row.slot_starts_at;
     const now = this.now();
 
     return {
@@ -369,43 +389,21 @@ export class DatesService {
     };
   }
 
-  private async lockSlot(dateId: string, slotId: string): Promise<void> {
-    const slot = await db
-      .selectFrom('restaurant_slots')
-      .selectAll()
-      .where('id', '=', slotId)
-      .executeTakeFirst();
-    if (!slot) {
-      throw notFound('Créneau');
+  private async assertSagaUsable(dateId: string) {
+    const view = await this.saga.get(dateId);
+    if (view?.state === 'failed') {
+      const code = view.failure_reason === 'SLOT_LOST' ? 'SLOT_FULL' : 'INVALID_STATE';
+      throw new AppError(code, 'Ce créneau n’est plus disponible');
     }
-    if (slot.booked >= slot.capacity) {
-      throw new AppError('SLOT_FULL', 'Ce créneau est complet');
-    }
-
-    await db.transaction().execute(async (trx) => {
-      await trx
-        .updateTable('restaurant_slots')
-        .set({ booked: slot.booked + 1 })
-        .where('id', '=', slotId)
-        .execute();
-      await trx
-        .updateTable('dates')
-        .set({ slot_id: slotId, restaurant_id: slot.restaurant_id })
-        .where('id', '=', dateId)
-        .execute();
-    });
-  }
-
-  private async slotStartsAt(date: DateRow): Promise<Date | null> {
-    if (!date.slot_id) {
-      return null;
-    }
-    const slot = await db
-      .selectFrom('restaurant_slots')
-      .select('starts_at')
-      .where('id', '=', date.slot_id)
-      .executeTakeFirst();
-    return slot?.starts_at ?? null;
+    return (
+      view ?? {
+        date_id: dateId,
+        state: 'holding' as const,
+        failure_reason: null,
+        payment_id: null,
+        attempt: 0,
+      }
+    );
   }
 
   /** Le numéro reste dans Identity : Dating ne fait que le relayer. */

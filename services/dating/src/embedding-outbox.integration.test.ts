@@ -174,11 +174,13 @@ describe.skipIf(!TEST_DATABASE_URL)('outbox transactionnelle de dating', () => {
     expect(busCalls).toHaveLength(1);
     expect(busCalls[0]).toHaveLength(2);
     expect(
-      await db
-        .selectFrom('dating_outbox')
-        .select('status')
-        .where('id', '=', rows[0]!.id)
-        .executeTakeFirstOrThrow(),
+      (
+        await db
+          .selectFrom('dating_outbox')
+          .select('status')
+          .where('id', '=', rows[0]!.id)
+          .executeTakeFirstOrThrow()
+      ).status,
     ).toBe('published');
 
     // La première enveloppe publiée porte les données du profil.

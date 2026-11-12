@@ -82,16 +82,19 @@ export function picksLeft(generated: number): number {
 
 /**
  * Règle produit v1 : la personne qui envoie l'invitation paie le date.
- * Les cas non couverts (auto-invitation, participants identiques) sont refusés.
+ * Les cas non couverts par la règle (identifiant manquant, blanc, participants
+ * identiques) sont refusés : on ne devine jamais qui doit payer.
  */
 export function resolvePayer(invite: { from_user_id: string; to_user_id: string }): string {
-  if (!invite.from_user_id || !invite.to_user_id) {
+  const from = invite.from_user_id?.trim() ?? '';
+  const to = invite.to_user_id?.trim() ?? '';
+  if (!from || !to) {
     throw new AppError('VALIDATION_ERROR', 'Invitation incomplète : payeur indéterminable');
   }
-  if (invite.from_user_id === invite.to_user_id) {
+  if (from === to) {
     throw new AppError('VALIDATION_ERROR', 'Un date ne peut pas réunir la même personne');
   }
-  return invite.from_user_id;
+  return from;
 }
 
 export function canCancelDate(slotStartsAt: Date | null, now: Date): boolean {
@@ -129,15 +132,18 @@ export function assertTransition(from: DateStatus, to: DateStatus): void {
   }
 }
 
-/** Les deux réponses doivent dire « oui », et le date doit avoir eu lieu. */
+/**
+ * Décision 15B : le contact n'est révélé qu'après le check-in des DEUX
+ * participants. Un seul check-in ne révèle rien ; une absence (`no_show`) ou une
+ * annulation ne révèle rien, même si les deux ont répondu « oui » au retour.
+ */
 export function canRevealContact(input: {
   status: DateStatus;
-  myFeedback: { wants_contact: boolean } | null;
-  partnerFeedback: { wants_contact: boolean } | null;
+  checkedInAAt: Date | null;
+  checkedInBAt: Date | null;
 }): boolean {
-  return (
-    (input.status === 'checked_in' || input.status === 'completed') &&
-    input.myFeedback?.wants_contact === true &&
-    input.partnerFeedback?.wants_contact === true
-  );
+  if (input.status !== 'checked_in' && input.status !== 'completed') {
+    return false;
+  }
+  return input.checkedInAAt !== null && input.checkedInBAt !== null;
 }
